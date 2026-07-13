@@ -1,0 +1,688 @@
+{% extends "stock_base.html" %}
+
+{% block title %}WebScraperAgent — 洞察分析{% endblock %}
+
+{% block content %}
+<section class="stats-page">
+  <header class="stats-page-header">
+    <div>
+      <h2 class="stats-page-title text-blue-900">洞察分析 · 板块交易</h2>
+      <p class="stats-page-subtitle">多分类体系板块/工业行情 · AKShare 真实数据源</p>
+      <p class="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 inline-block">
+        {{ disclaimer or '行情数据仅供参考，不构成投资建议。' }}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2 items-center">
+      <label class="text-sm text-slate-600 flex items-center gap-2">
+        排序
+        <select id="sector-sort" class="app-select app-select-sm">
+          <option value="change_pct" selected>涨跌幅</option>
+          <option value="amount">成交额</option>
+          <option value="market_cap">总市值</option>
+          <option value="turnover_rate">换手率</option>
+          <option value="constituent_count">成份个数</option>
+          <option value="pe_ttm">市盈率TTM</option>
+          <option value="pb">市净率</option>
+          <option value="rank">排名</option>
+          <option value="name">名称</option>
+        </select>
+      </label>
+      <label class="text-sm text-slate-600 flex items-center gap-2">
+        顺序
+        <select id="sector-order" class="app-select app-select-sm">
+          <option value="desc" selected>降序</option>
+          <option value="asc">升序</option>
+        </select>
+      </label>
+      <button type="button" id="sector-refresh-btn" onclick="loadSectors(true)"
+              class="stats-btn stats-btn-primary bg-blue-600 text-white hover:bg-blue-700 border-blue-600">
+        刷新行情
+      </button>
+    </div>
+  </header>
+
+  <div class="stats-section mb-4">
+    <div id="classify-tabs" class="flex flex-wrap gap-2">
+      <button type="button" data-classify="industry"
+              class="classify-tab px-3 py-1.5 rounded-lg text-sm border bg-blue-600 text-white border-blue-600">
+        行业板块
+      </button>
+      <button type="button" data-classify="concept"
+              class="classify-tab px-3 py-1.5 rounded-lg text-sm border bg-white text-blue-700 border-blue-200 hover:bg-blue-50">
+        概念板块
+      </button>
+      <button type="button" data-classify="sw_l1"
+              class="classify-tab px-3 py-1.5 rounded-lg text-sm border bg-white text-blue-700 border-blue-200 hover:bg-blue-50">
+        申万一级
+      </button>
+      <button type="button" data-classify="sw_l2"
+              class="classify-tab px-3 py-1.5 rounded-lg text-sm border bg-white text-blue-700 border-blue-200 hover:bg-blue-50">
+        申万二级
+      </button>
+      <button type="button" data-classify="sw_l3"
+              class="classify-tab px-3 py-1.5 rounded-lg text-sm border bg-white text-blue-700 border-blue-200 hover:bg-blue-50">
+        申万三级
+      </button>
+    </div>
+    <p id="classify-desc" class="text-xs text-slate-500 mt-2">东方财富 · 行业板块实时行情</p>
+  </div>
+
+  {% set index_items = (indices or {}).get('items') or [] %}
+  <div id="index-section" class="stats-section mb-6 {% if not index_items %}hidden{% endif %}">
+    <div class="stats-panel border-green-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-green-800">A 股指数概览</h3>
+        <span id="index-meta" class="stats-panel-badge bg-green-100 text-green-700">akshare</span>
+      </div>
+      <div id="index-cards" class="flex flex-wrap gap-3">
+        {% for idx in index_items %}
+        <div class="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm min-w-[120px]">
+          <span class="font-medium text-slate-800">{{ idx.name }}</span>
+          {% if idx.change_pct is not none %}
+          <span class="ml-2 {% if idx.change_pct >= 0 %}stock-up{% else %}stock-down{% endif %}">
+            {% if idx.change_pct >= 0 %}+{% endif %}{{ idx.change_pct|round(2) }}%
+          </span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div id="hk-index-section" class="stats-section mb-6 hidden">
+    <div class="stats-panel border-orange-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-orange-800">港股指数概览</h3>
+        <span id="hk-index-meta" class="stats-panel-badge bg-orange-100 text-orange-700">akshare</span>
+      </div>
+      <div id="hk-index-cards" class="flex flex-wrap gap-3"></div>
+    </div>
+  </div>
+
+  <div id="us-index-section" class="stats-section mb-6 hidden">
+    <div class="stats-panel border-indigo-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-indigo-800">美股指数概览</h3>
+        <span id="us-index-meta" class="stats-panel-badge bg-indigo-100 text-indigo-700">akshare</span>
+      </div>
+      <div id="us-index-cards" class="flex flex-wrap gap-3"></div>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 id="sector-panel-title" class="stats-panel-title text-blue-800">行业板块交易情况</h3>
+        <span id="sector-meta" class="stats-panel-badge bg-blue-100 text-blue-700">加载中…</span>
+      </div>
+      <p id="sector-hint" class="text-xs text-slate-500 mb-3 hidden">
+        按成交额排序时会逐板块拉取实时数据，首次加载可能需 10–30 秒。
+      </p>
+      <div id="sector-loading" class="text-sm text-slate-500 py-8 text-center">正在拉取板块行情…</div>
+      <div id="sector-error" class="hidden text-sm text-red-600 py-4"></div>
+      <div id="sector-table-wrap" class="hidden overflow-x-auto">
+        <table class="stats-distribution-table" id="sector-table">
+          <thead id="sector-thead">
+            <tr>
+              <th scope="col">板块</th>
+              <th scope="col">涨跌幅</th>
+              <th scope="col">总市值</th>
+              <th scope="col">成交额</th>
+              <th scope="col">换手率</th>
+              <th scope="col">涨跌家数</th>
+              <th scope="col">领涨股</th>
+              <th scope="col" class="w-16"></th>
+            </tr>
+          </thead>
+          <tbody id="sector-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  var expanded = {};
+  var currentClassify = 'industry';
+
+  var CLASSIFY_META = {
+    industry: { label: '行业板块', source: '东方财富', panelTitle: '行业板块交易情况' },
+    concept: { label: '概念板块', source: '东方财富', panelTitle: '概念板块交易情况' },
+    sw_l1: { label: '申万一级', source: '申万宏源', panelTitle: '申万一级行业交易情况' },
+    sw_l2: { label: '申万二级', source: '申万宏源', panelTitle: '申万二级行业交易情况' },
+    sw_l3: { label: '申万三级', source: '乐咕乐股', panelTitle: '申万三级行业分类' }
+  };
+
+  function isSwClassify(c) {
+    return c === 'sw_l1' || c === 'sw_l2' || c === 'sw_l3';
+  }
+
+  function isEmBoard(c) {
+    return c === 'industry' || c === 'concept';
+  }
+
+  function fmtPct(v) {
+    if (v == null || isNaN(v)) return '—';
+    var cls = v >= 0 ? 'stock-up' : 'stock-down';
+    return '<span class="' + cls + '">' + (v >= 0 ? '+' : '') + v.toFixed(2) + '%</span>';
+  }
+
+  function fmtMoney(v) {
+    if (v == null || isNaN(v)) return '—';
+    if (v >= 1e12) return (v / 1e12).toFixed(2) + ' 万亿';
+    if (v >= 1e8) return (v / 1e8).toFixed(2) + ' 亿';
+    if (v >= 1e4) return (v / 1e4).toFixed(2) + ' 万';
+    return v.toFixed(0);
+  }
+
+  function fmtNum(v, digits) {
+    if (v == null || isNaN(v)) return '—';
+    return Number(v).toFixed(digits == null ? 2 : digits);
+  }
+
+  function fmtCount(up, down) {
+    var u = up != null ? up : '—';
+    var d = down != null ? down : '—';
+    return '<span class="stock-up">' + u + '</span> / <span class="stock-down">' + d + '</span>';
+  }
+
+  function stockDetailUrl(code, name) {
+    if (!code) return '#';
+    var url = '/stock/' + encodeURIComponent(code);
+    if (name) url += '?name=' + encodeURIComponent(name);
+    return url;
+  }
+
+  function stockKlineUrl(code, name) {
+    if (!code) return '#';
+    var url = '/stock/kline/' + encodeURIComponent(code);
+    if (name) url += '?name=' + encodeURIComponent(name);
+    return url;
+  }
+
+  function stockNameLink(code, name) {
+    var label = name || code || '—';
+    if (!code) return label;
+    return '<a href="' + stockDetailUrl(code, name) + '" class="text-blue-600 hover:underline" onclick="event.stopPropagation()">' +
+      label + '</a>';
+  }
+
+  function updateTableHeader() {
+    var thead = document.getElementById('sector-thead');
+    if (!thead) return;
+    var cols;
+    if (currentClassify === 'sw_l3') {
+      cols = ['行业', '上级行业', '成份个数', '市盈率TTM', '市净率', '股息率', '', ''];
+    } else if (isSwClassify(currentClassify)) {
+      cols = ['行业', '涨跌幅', '最新价', '成交额', '成交量', '', '', ''];
+    } else {
+      cols = ['板块', '涨跌幅', '总市值', '成交额', '换手率', '涨跌家数', '领涨股', ''];
+    }
+    thead.innerHTML = '<tr>' + cols.map(function(c, i) {
+      return '<th scope="col"' + (i === cols.length - 1 ? ' class="w-16"' : '') + '>' + c + '</th>';
+    }).join('') + '</tr>';
+  }
+
+  function updateSortOptions() {
+    var sortEl = document.getElementById('sector-sort');
+    if (!sortEl) return;
+    var opts = sortEl.querySelectorAll('option');
+    opts.forEach(function(opt) {
+      var emOnly = ['market_cap', 'turnover_rate', 'rank'].indexOf(opt.value) >= 0;
+      var swL3Only = ['constituent_count', 'pe_ttm', 'pb'].indexOf(opt.value) >= 0;
+      if (currentClassify === 'sw_l3') {
+        opt.hidden = emOnly || opt.value === 'amount' || opt.value === 'change_pct';
+      } else if (isSwClassify(currentClassify)) {
+        opt.hidden = emOnly || swL3Only;
+      } else {
+        opt.hidden = swL3Only;
+      }
+    });
+    if (sortEl.selectedOptions[0] && sortEl.selectedOptions[0].hidden) {
+      sortEl.value = currentClassify === 'sw_l3' ? 'constituent_count' : 'change_pct';
+    }
+  }
+
+  function renderRow(item) {
+    var name = item.name || '';
+    var tr = document.createElement('tr');
+    tr.className = 'sector-row cursor-pointer hover:bg-blue-50/50';
+    tr.dataset.name = name;
+    tr.dataset.code = item.code || '';
+    var cells = '';
+
+    if (currentClassify === 'sw_l3') {
+      cells =
+        '<td class="font-medium text-slate-800">' + name +
+          (item.code ? ' <span class="text-xs text-slate-400 font-mono">' + item.code + '</span>' : '') +
+        '</td>' +
+        '<td class="text-sm text-slate-600">' + (item.parent || '—') + '</td>' +
+        '<td class="text-sm text-slate-600">' + (item.constituent_count != null ? item.constituent_count : '—') + '</td>' +
+        '<td class="text-sm text-slate-600">' + fmtNum(item.pe_ttm) + '</td>' +
+        '<td class="text-sm text-slate-600">' + fmtNum(item.pb) + '</td>' +
+        '<td class="text-sm text-slate-600">' + (item.dividend_yield != null ? fmtNum(item.dividend_yield) + '%' : '—') + '</td>' +
+        '<td></td>';
+    } else if (isSwClassify(currentClassify)) {
+      cells =
+        '<td class="font-medium text-slate-800">' + name +
+          (item.code ? ' <span class="text-xs text-slate-400 font-mono">' + item.code + '</span>' : '') +
+        '</td>' +
+        '<td>' + fmtPct(item.change_pct) + '</td>' +
+        '<td class="text-sm text-slate-600">' + (item.price != null ? fmtNum(item.price) : '—') + '</td>' +
+        '<td class="text-sm text-slate-600">' + fmtMoney(item.amount) + '</td>' +
+        '<td class="text-sm text-slate-600">' + fmtMoney(item.volume) + '</td>' +
+        '<td></td>';
+    } else {
+      cells =
+        '<td class="font-medium text-slate-800">' + name +
+          (item.code ? ' <span class="text-xs text-slate-400 font-mono">' + item.code + '</span>' : '') +
+        '</td>' +
+        '<td>' + fmtPct(item.change_pct) + '</td>' +
+        '<td class="text-sm text-slate-600">' + fmtMoney(item.market_cap) + '</td>' +
+        '<td class="text-sm text-slate-600">' + fmtMoney(item.amount) + '</td>' +
+        '<td class="text-sm text-slate-600">' + (item.turnover_rate != null ? item.turnover_rate.toFixed(2) + '%' : '—') + '</td>' +
+        '<td class="text-sm">' + fmtCount(item.up_count, item.down_count) + '</td>' +
+        '<td class="text-sm text-slate-600">' +
+          (item.leading_stock || '—') +
+          (item.leading_stock_change_pct != null ? ' ' + fmtPct(item.leading_stock_change_pct) : '') +
+        '</td>';
+    }
+
+    cells += '<td class="text-xs text-blue-600">' + (expanded[name] ? '收起 ▲' : '详情 ▼') + '</td>';
+    tr.innerHTML = cells;
+    tr.addEventListener('click', function() { toggleDetail(name, item.code, tr); });
+    return tr;
+  }
+
+  function renderIntroCard(intro) {
+    intro = intro || {};
+    var desc = intro.description || '暂无简介';
+    var html = '<div class="rounded-lg border border-blue-100 bg-white p-3 mb-3">' +
+      '<p class="text-xs font-medium text-blue-800 mb-2">板块介绍</p>' +
+      '<p class="text-sm text-slate-700 leading-relaxed mb-2">' + desc + '</p>';
+    if (intro.scope) {
+      html += '<p class="text-xs text-slate-600 mb-1"><span class="text-slate-500">覆盖范围：</span>' + intro.scope + '</p>';
+    }
+    if (intro.industry_chain) {
+      html += '<p class="text-xs text-slate-600 mb-1"><span class="text-slate-500">产业链：</span>' + intro.industry_chain + '</p>';
+    }
+    if (intro.hotspots) {
+      html += '<p class="text-xs text-slate-600 mb-1"><span class="text-slate-500">近期热点：</span>' + intro.hotspots + '</p>';
+    }
+    if (intro.data_source) {
+      html += '<p class="text-xs text-slate-400">数据来源：' + intro.data_source +
+        (intro.cached ? ' · 缓存' : '') + '</p>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderIndustryChainSegment(title, segments, colorClass) {
+    if (!segments || !segments.length) {
+      return '<div class="flex-1 min-w-[180px]"><p class="text-xs font-medium ' + colorClass + ' mb-1">' + title + '</p>' +
+        '<p class="text-xs text-slate-400">暂无</p></div>';
+    }
+    var html = '<div class="flex-1 min-w-[180px]"><p class="text-xs font-medium ' + colorClass + ' mb-2">' + title + '</p>';
+    segments.forEach(function(seg) {
+      html += '<div class="mb-2 rounded border border-slate-200 bg-white p-2">';
+      html += '<p class="text-xs font-medium text-slate-800">' + (seg.name || '—') + '</p>';
+      if (seg.role) {
+        html += '<p class="text-xs text-slate-500 mb-1">' + seg.role + '</p>';
+      }
+      var cos = seg.companies || [];
+      if (cos.length) {
+        html += '<div class="flex flex-wrap gap-1">';
+        cos.forEach(function(c) {
+          html += stockNameLink(c.code, c.name);
+        });
+        html += '</div>';
+      } else {
+        html += '<p class="text-xs text-slate-400">暂无代表公司</p>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function renderIndustryChainPanel(chain) {
+    chain = chain || {};
+    if (!chain.ok) {
+      return '<div class="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">' +
+        '<p class="text-sm text-slate-500">暂无产业链数据</p>' +
+        (chain.disclaimer ? '<p class="text-xs text-slate-400 mt-2">' + chain.disclaimer + '</p>' : '') +
+        '</div>';
+    }
+    var html = '<div class="rounded-lg border border-emerald-100 bg-emerald-50/30 p-3">';
+    html += '<div class="flex flex-col md:flex-row gap-3 mb-3">';
+    html += renderIndustryChainSegment('上游', chain.upstream, 'text-amber-700');
+    html += '<div class="hidden md:block w-px bg-slate-200 self-stretch"></div>';
+    html += renderIndustryChainSegment('中游', chain.midstream, 'text-blue-700');
+    html += '<div class="hidden md:block w-px bg-slate-200 self-stretch"></div>';
+    html += renderIndustryChainSegment('下游', chain.downstream, 'text-emerald-700');
+    html += '</div>';
+    if (chain.analysis) {
+      html += '<p class="text-sm text-slate-700 leading-relaxed border-t border-emerald-100 pt-2 mt-1">' + chain.analysis + '</p>';
+    }
+    html += '<p class="text-xs text-slate-400 mt-2">数据来源：' + (chain.data_source || '—') +
+      (chain.cached ? ' · 缓存' : '') + '</p>';
+    if (chain.disclaimer) {
+      html += '<p class="text-xs text-slate-400 mt-1">' + chain.disclaimer + '</p>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function loadIndustryChain(name, code, containerEl) {
+    if (!containerEl) return;
+    containerEl.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">产业链分析加载中…</p>';
+    var url = '/api/stock/sectors/industry-chain?classify=' + encodeURIComponent(currentClassify) +
+      '&symbol=' + encodeURIComponent(name) + '&cons_limit=5';
+    if (code) url += '&code=' + encodeURIComponent(code);
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        containerEl.innerHTML = renderIndustryChainPanel(data);
+        containerEl.dataset.loaded = '1';
+      })
+      .catch(function() {
+        containerEl.innerHTML = '<p class="text-xs text-red-500 py-4 text-center">产业链数据加载失败</p>';
+      });
+  }
+
+  function renderDetailRow(name, data, code) {
+    var tr = document.createElement('tr');
+    tr.className = 'sector-detail bg-slate-50';
+    tr.dataset.detailFor = name;
+    var spot = data.spot || {};
+    var cons = data.constituents || [];
+    var spotHtml = '<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-3">';
+    ['最新', '涨跌幅', '成交额', '换手率', '成交量', '振幅', '最高', '最低', '开盘', '日期'].forEach(function(k) {
+      if (spot[k] != null && spot[k] !== '') {
+        var val;
+        if (k === '涨跌幅' || k.indexOf('幅') >= 0 || k === '换手率') {
+          val = typeof spot[k] === 'number' ? spot[k].toFixed(2) + '%' : spot[k];
+        } else if (k === '成交额' || k === '成交量') {
+          val = fmtMoney(spot[k]);
+        } else if (k === '日期') {
+          val = spot[k];
+        } else {
+          val = typeof spot[k] === 'number' ? spot[k].toFixed(2) : spot[k];
+        }
+        spotHtml += '<div><span class="text-slate-500">' + k + '</span> <span class="font-medium">' + val + '</span></div>';
+      }
+    });
+    spotHtml += '</div>';
+
+    var consHtml = '';
+    if (cons.length) {
+      var isSw = isSwClassify(data.classify || currentClassify);
+      if (isSw) {
+        consHtml = '<table class="w-full text-xs"><thead><tr class="text-slate-500">' +
+          '<th class="text-left py-1">代码</th><th class="text-left py-1">名称</th>' +
+          '<th class="text-right py-1">权重%</th><th class="text-right py-1">计入日期</th></tr></thead><tbody>';
+        cons.forEach(function(c) {
+          consHtml += '<tr class="border-t border-slate-200">' +
+            '<td class="py-1 font-mono">' + (c.code || '') + '</td>' +
+            '<td class="py-1">' + stockNameLink(c.code, c.name) +
+            ' <a href="' + stockKlineUrl(c.code, c.name) + '" class="text-xs text-slate-400 hover:text-blue-600 ml-1" onclick="event.stopPropagation()">K线</a></td>' +
+            '<td class="py-1 text-right text-slate-600">' + (c.weight != null ? fmtNum(c.weight) : '—') + '</td>' +
+            '<td class="py-1 text-right text-slate-600">' + (c.inclusion_date || '—') + '</td></tr>';
+        });
+      } else {
+        consHtml = '<table class="w-full text-xs"><thead><tr class="text-slate-500">' +
+          '<th class="text-left py-1">代码</th><th class="text-left py-1">名称</th>' +
+          '<th class="text-right py-1">涨跌幅</th><th class="text-right py-1">成交额</th></tr></thead><tbody>';
+        cons.forEach(function(c) {
+          consHtml += '<tr class="border-t border-slate-200">' +
+            '<td class="py-1 font-mono">' + (c.code || '') + '</td>' +
+            '<td class="py-1">' + stockNameLink(c.code, c.name) +
+            ' <a href="' + stockKlineUrl(c.code, c.name) + '" class="text-xs text-slate-400 hover:text-blue-600 ml-1" onclick="event.stopPropagation()">K线</a></td>' +
+            '<td class="py-1 text-right">' + fmtPct(c.change_pct) + '</td>' +
+            '<td class="py-1 text-right text-slate-600">' + fmtMoney(c.amount) + '</td></tr>';
+        });
+      }
+      consHtml += '</tbody></table>';
+    } else {
+      consHtml = '<p class="text-xs text-slate-400">暂无成分股数据</p>';
+    }
+
+    tr.innerHTML = '<td colspan="8" class="py-3 px-2">' +
+      renderIntroCard(data.introduction) +
+      '<div class="flex gap-2 mb-3 border-b border-slate-200">' +
+        '<button type="button" class="detail-tab px-3 py-1.5 text-xs font-medium border-b-2 border-blue-600 text-blue-700" data-tab="snapshot">行情详情</button>' +
+        '<button type="button" class="detail-tab px-3 py-1.5 text-xs font-medium border-b-2 border-transparent text-slate-500 hover:text-blue-600" data-tab="chain">产业链分析</button>' +
+      '</div>' +
+      '<div class="detail-tab-panel" data-panel="snapshot">' +
+        '<p class="text-xs font-medium text-blue-800 mb-2">' + name + ' · 详情快照</p>' +
+        spotHtml + '<p class="text-xs font-medium text-blue-800 mb-2 mt-2">成分股 TOP ' + cons.length + '</p>' +
+        consHtml +
+      '</div>' +
+      '<div class="detail-tab-panel hidden" data-panel="chain">' +
+        '<p class="text-xs text-slate-400 py-4 text-center">切换到本页后加载产业链…</p>' +
+      '</div>' +
+      '</td>';
+
+    tr.querySelectorAll('.detail-tab').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var tab = btn.dataset.tab;
+        tr.querySelectorAll('.detail-tab').forEach(function(b) {
+          var active = b.dataset.tab === tab;
+          b.className = 'detail-tab px-3 py-1.5 text-xs font-medium border-b-2 ' +
+            (active ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-blue-600');
+        });
+        tr.querySelectorAll('.detail-tab-panel').forEach(function(p) {
+          p.classList.toggle('hidden', p.dataset.panel !== tab);
+        });
+        if (tab === 'chain') {
+          var chainPanel = tr.querySelector('[data-panel="chain"]');
+          if (chainPanel && chainPanel.dataset.loaded !== '1') {
+            loadIndustryChain(name, code, chainPanel);
+          }
+        }
+      });
+    });
+    return tr;
+  }
+
+  function removeDetail(name) {
+    document.querySelectorAll('tr[data-detail-for="' + name + '"]').forEach(function(el) { el.remove(); });
+  }
+
+  function toggleDetail(name, code, rowEl) {
+    if (expanded[name]) {
+      expanded[name] = false;
+      removeDetail(name);
+      var hint = rowEl.querySelector('td:last-child');
+      if (hint) hint.textContent = '详情 ▼';
+      return;
+    }
+    expanded[name] = true;
+    var hint = rowEl.querySelector('td:last-child');
+    if (hint) hint.textContent = '加载…';
+    var url = '/api/stock/sectors/detail?classify=' + encodeURIComponent(currentClassify) +
+      '&symbol=' + encodeURIComponent(name) + '&cons_limit=20';
+    if (code) url += '&code=' + encodeURIComponent(code);
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (hint) hint.textContent = '收起 ▲';
+        removeDetail(name);
+        rowEl.insertAdjacentElement('afterend', renderDetailRow(name, data, code));
+      })
+      .catch(function() {
+        expanded[name] = false;
+        if (hint) hint.textContent = '详情 ▼';
+        alert('加载板块详情失败');
+      });
+  }
+
+  function setActiveClassifyTab(classify) {
+    currentClassify = classify;
+    document.querySelectorAll('.classify-tab').forEach(function(btn) {
+      var active = btn.dataset.classify === classify;
+      btn.className = 'classify-tab px-3 py-1.5 rounded-lg text-sm border ' +
+        (active
+          ? 'bg-blue-600 text-white border-blue-600'
+          : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50');
+    });
+    var meta = CLASSIFY_META[classify] || CLASSIFY_META.industry;
+    var desc = document.getElementById('classify-desc');
+    if (desc) desc.textContent = meta.source + ' · ' + meta.label;
+    var title = document.getElementById('sector-panel-title');
+    if (title) title.textContent = meta.panelTitle;
+    updateTableHeader();
+    updateSortOptions();
+  }
+
+  window.loadSectors = function(force) {
+    var sortBy = document.getElementById('sector-sort').value;
+    var order = document.getElementById('sector-order').value;
+    var btn = document.getElementById('sector-refresh-btn');
+    var loading = document.getElementById('sector-loading');
+    var errBox = document.getElementById('sector-error');
+    var wrap = document.getElementById('sector-table-wrap');
+    var meta = document.getElementById('sector-meta');
+    var hint = document.getElementById('sector-hint');
+
+    if (btn) { btn.disabled = true; btn.textContent = '刷新中…'; }
+    loading.classList.remove('hidden');
+    errBox.classList.add('hidden');
+    wrap.classList.add('hidden');
+    hint.classList.toggle('hidden', sortBy !== 'amount' || !isEmBoard(currentClassify));
+    expanded = {};
+
+    var url = '/api/stock/sectors?classify=' + encodeURIComponent(currentClassify) +
+      '&limit=100&sort_by=' + encodeURIComponent(sortBy) +
+      '&order=' + encodeURIComponent(order) +
+      (sortBy === 'amount' && isEmBoard(currentClassify) ? '&enrich_amount=true' : '');
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        loading.classList.add('hidden');
+        if (!data.ok || !(data.items && data.items.length)) {
+          errBox.textContent = data.error || '暂无板块数据';
+          errBox.classList.remove('hidden');
+          meta.textContent = '无数据';
+          return;
+        }
+        var tbody = document.getElementById('sector-tbody');
+        tbody.innerHTML = '';
+        data.items.forEach(function(item) {
+          tbody.appendChild(renderRow(item));
+        });
+        wrap.classList.remove('hidden');
+        var ts = (data.fetched_at || '').replace('T', ' ').slice(0, 19);
+        meta.textContent = (data.classify_label || '') + ' · ' + data.total + ' 项 · ' +
+          (data.provider || 'akshare') +
+          (data.degraded ? ' · 降级' : '') + (ts ? ' · ' + ts : '');
+      })
+      .catch(function(e) {
+        loading.classList.add('hidden');
+        errBox.textContent = '请求失败: ' + e;
+        errBox.classList.remove('hidden');
+        meta.textContent = '加载失败';
+      })
+      .finally(function() {
+        if (btn) { btn.disabled = false; btn.textContent = '刷新行情'; }
+      });
+  };
+
+  function loadIndices() {
+    var section = document.getElementById('index-section');
+    var cards = document.getElementById('index-cards');
+    var meta = document.getElementById('index-meta');
+    if (!section || !cards) return;
+    fetch('/api/stock/market')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var items = ((data.indices || {}).items) || [];
+        if (!items.length) return;
+        cards.innerHTML = '';
+        items.forEach(function(idx) {
+          var div = document.createElement('div');
+          div.className = 'px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm min-w-[120px]';
+          var pct = idx.change_pct;
+          var pctHtml = (pct == null || isNaN(pct)) ? '' :
+            '<span class="ml-2 ' + (pct >= 0 ? 'stock-up' : 'stock-down') + '">' +
+            (pct >= 0 ? '+' : '') + Number(pct).toFixed(2) + '%</span>';
+          div.innerHTML = '<span class="font-medium text-slate-800">' + (idx.name || '') + '</span>' + pctHtml;
+          cards.appendChild(div);
+        });
+        section.classList.remove('hidden');
+        if (meta) meta.textContent = (data.degraded ? '降级 · ' : '') + (data.provider || 'akshare');
+      })
+      .catch(function() { /* 指数可选，失败不影响板块表 */ });
+  }
+
+  function loadHkIndices() {
+    fetch('/api/stock/hk/overview')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var items = (data.items || []);
+        var section = document.getElementById('hk-index-section');
+        var cards = document.getElementById('hk-index-cards');
+        var meta = document.getElementById('hk-index-meta');
+        if (!items.length || !section || !cards) return;
+        cards.innerHTML = '';
+        items.forEach(function(idx) {
+          var div = document.createElement('div');
+          div.className = 'px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm min-w-[140px]';
+          var pct = idx.change_pct;
+          var pctHtml = (pct == null || isNaN(pct)) ? '' :
+            '<span class="ml-2 ' + (pct >= 0 ? 'stock-up' : 'stock-down') + '">' +
+            (pct >= 0 ? '+' : '') + Number(pct).toFixed(2) + '%</span>';
+          div.innerHTML = '<span class="font-medium text-slate-800">' + (idx.name || '') + '</span>' + pctHtml;
+          cards.appendChild(div);
+        });
+        section.classList.remove('hidden');
+        if (meta) meta.textContent = (data.degraded ? '降级 · ' : '') + (data.provider || 'akshare');
+      })
+      .catch(function() { /* 港股指数可选 */ });
+  }
+
+  function loadUsIndices() {
+    fetch('/api/stock/us/overview')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var items = (data.items || []);
+        var section = document.getElementById('us-index-section');
+        var cards = document.getElementById('us-index-cards');
+        var meta = document.getElementById('us-index-meta');
+        if (!items.length || !section || !cards) return;
+        cards.innerHTML = '';
+        items.forEach(function(idx) {
+          var div = document.createElement('div');
+          div.className = 'px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm min-w-[140px]';
+          var pct = idx.change_pct;
+          var pctHtml = (pct == null || isNaN(pct)) ? '' :
+            '<span class="ml-2 ' + (pct >= 0 ? 'stock-up' : 'stock-down') + '">' +
+            (pct >= 0 ? '+' : '') + Number(pct).toFixed(2) + '%</span>';
+          div.innerHTML = '<span class="font-medium text-slate-800">' + (idx.name || '') + '</span>' + pctHtml;
+          cards.appendChild(div);
+        });
+        section.classList.remove('hidden');
+        if (meta) meta.textContent = (data.degraded ? '降级 · ' : '') + (data.provider || 'akshare');
+      })
+      .catch(function() { /* 美股指数可选 */ });
+  }
+
+  document.querySelectorAll('.classify-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setActiveClassifyTab(btn.dataset.classify);
+      loadSectors();
+    });
+  });
+  document.getElementById('sector-sort').addEventListener('change', function() { loadSectors(); });
+  document.getElementById('sector-order').addEventListener('change', function() { loadSectors(); });
+  setActiveClassifyTab('industry');
+  loadIndices();
+  loadHkIndices();
+  loadUsIndices();
+  loadSectors();
+})();
+</script>
+{% endblock %}

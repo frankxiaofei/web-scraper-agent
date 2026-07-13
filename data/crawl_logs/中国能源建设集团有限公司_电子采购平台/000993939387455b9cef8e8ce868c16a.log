@@ -1,0 +1,3 @@
+2026-07-12 07:03:11 [INFO] run_id=000993939387455b9cef8e8ce868c16a site_id=中国能源建设集团有限公司_电子采购平台 [start] 开始爬取 电子采购平台 url=https://ceec.dnezb.com/
+2026-07-12 07:03:11 [INFO] run_id=000993939387455b9cef8e8ce868c16a site_id=中国能源建设集团有限公司_电子采购平台 [fetch_list] 开始抓取列表 (max_items=30, detail=True, intelligent=False) url=https://ceec.dnezb.com/
+2026-07-12 07:03:11 [INFO] run_id=000993939387455b9cef8e8ce868c16a site_id=中国能源建设集团有限公司_电子采购平台 [delay] 请求前等待 180.0s

@@ -1,0 +1,7 @@
+2026-07-12 11:18:33 [INFO] run_id=0a37b0c6decc49418030366dde21b207 site_id=wechat_agritech [start] 开始爬取 农业科技侠数字与智慧农业（微信公众号） url=https://mp.weixin.qq.com/s/qd_-1mRCRpkDHgxgplPLeQ
+2026-07-12 11:18:33 [INFO] run_id=0a37b0c6decc49418030366dde21b207 site_id=wechat_agritech [fetch_list] 开始抓取列表 (max_items=500, detail=False, intelligent=False) url=https://mp.weixin.qq.com/s/qd_-1mRCRpkDHgxgplPLeQ
+2026-07-12 11:18:33 [INFO] run_id=0a37b0c6decc49418030366dde21b207 site_id=wechat_agritech [delay] 请求前等待 3.0s
+2026-07-12 11:18:36 [INFO] run_id=0a37b0c6decc49418030366dde21b207 site_id=wechat_agritech [fetch_list] 抓取列表页 (尝试 1/3) url=https://mp.weixin.qq.com/s/qd_-1mRCRpkDHgxgplPLeQ
+2026-07-12 11:18:46 [INFO] run_id=0a37b0c6decc49418030366dde21b207 site_id=wechat_agritech [parse] 解析完成: 0 条公告
+2026-07-12 11:18:46 [INFO] run_id=0a37b0c6decc49418030366dde21b207 site_id=wechat_agritech [save] 入库: 新增 0, 更新 0
+2026-07-12 11:18:46 [SUCCESS] run_id=0a37b0c6decc49418030366dde21b207 site_id=wechat_agritech [done] 爬取完成: 0 条公告, 新增/更新 0

@@ -1,0 +1,131 @@
+/* 站点爬取规则工作流画布 — 视口平移/缩放/最大化 */
+
+.crawl-workflow-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  transition: box-shadow 0.2s ease;
+}
+
+.crawl-workflow-shell.is-maximized {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  border-radius: 0 !important;
+  border: none !important;
+  min-height: 100vh;
+  max-height: none !important;
+  box-shadow: none;
+}
+
+.crawl-workflow-shell.is-maximized .workflow-layout {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+}
+
+.crawl-workflow-shell.is-maximized .workflow-canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.workflow-canvas {
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+
+.workflow-canvas.is-panning {
+  cursor: grabbing;
+}
+
+.workflow-canvas-transform {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.workflow-canvas-hint {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  font-size: 0.75rem;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.workflow-canvas.is-panning .workflow-canvas-hint {
+  display: flex;
+}
+
+.wf-viewport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.625rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.wf-viewport-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.wf-viewport-btn-text {
+  font-size: 0.75rem;
+  padding: 0 0.75rem;
+}
+
+.wf-viewport-btn-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.wf-viewport-btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+
+.wf-zoom-label {
+  min-width: 3rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+}
+
+.wf-viewport-divider {
+  width: 1px;
+  height: 1.25rem;
+  background: #e2e8f0;
+  margin: 0 0.25rem;
+}
+
+body.crawl-workflow-body-lock {
+  overflow: hidden;
+}

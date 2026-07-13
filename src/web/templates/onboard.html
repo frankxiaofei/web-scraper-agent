@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 站点接入{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">站点 Onboarding</h2>
+      <p class="text-sm text-slate-500 mt-1">五阶段向导：录入 → 探查 → 分析 → 工具链 → 调度</p>
+    </div>
+    {% if site_id %}
+    <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+      site_id: <code class="ml-1">{{ site_id }}</code>
+    </span>
+    {% endif %}
+  </div>
+
+  <ol class="flex flex-col sm:flex-row gap-2 sm:gap-0 mb-8">
+    {% for stage in stages %}
+    {% set st = stage_status.get(stage.key, 'pending') %}
+    <li class="flex-1 flex items-center gap-2 sm:flex-col sm:items-stretch sm:text-center">
+      <div class="flex items-center gap-2 sm:flex-col sm:gap-1">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold
+          {% if st == 'completed' %}bg-emerald-600 text-white
+          {% elif st == 'in_progress' %}bg-brand-600 text-white ring-4 ring-brand-100
+          {% else %}bg-slate-200 text-slate-600{% endif %}">
+          {{ loop.index }}
+        </span>
+        <span class="text-sm font-medium text-slate-800">{{ stage.label }}</span>
+      </div>
+      {% if not loop.last %}
+      <span class="hidden sm:block flex-1 h-0.5 bg-slate-200 mx-2 mt-4"></span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <h3 class="text-lg font-semibold text-slate-900 mb-4">1. 录入站点</h3>
+      <form id="register-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1" for="site-name">站点名称</label>
+          <input id="site-name" name="name" type="text" required
+                 value="{{ site_name|default('') }}"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                 placeholder="例如：电建公共资源交易服务平台">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1" for="site-url">入口 URL</label>
+          <input id="site-url" name="url" type="url" required
+                 value="{{ site_url|default('') }}"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                 placeholder="https://bid.powerchina.cn">
+        </div>
+        <button type="submit"
+                class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition">
+          注册并进入探查
+        </button>
+      </form>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <h3 class="text-lg font-semibold text-slate-900 mb-2">当前进度</h3>
+      {% if onboarding %}
+      <dl class="text-sm space-y-2">
+        <div class="flex justify-between gap-4">
+          <dt class="text-slate-500">当前阶段</dt>
+          <dd class="font-medium text-slate-900">{{ current_stage_label }}</dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-slate-500">草稿</dt>
+          <dd>{{ "是" if onboarding.draft else "否（已写入 sites.yaml）" }}</dd>
+        </div>
+        {% if onboarding.probe_report %}
+        <div class="mt-4 rounded-lg bg-slate-50 border border-slate-100 p-3">
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">ProbeReport（stub）</p>
+          <p class="text-sm text-slate-700">状态：{{ onboarding.probe_report.status }}</p>
+          {% if onboarding.probe_report.summary %}
+          <p class="text-sm text-slate-600 mt-1">{{ onboarding.probe_report.summary }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      </dl>
+      {% else %}
+      <p class="text-sm text-slate-500">填写左侧表单注册新站点，或访问 <code class="bg-slate-100 px-1 rounded">/onboard/{site_id}</code> 查看已有站点进度。</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  var form = document.getElementById('register-form');
+  if (!form) return;
+  form.addEventListener('submit', function(ev) {
+    ev.preventDefault();
+    var name = document.getElementById('site-name').value.trim();
+    var url = document.getElementById('site-url').value.trim();
+    fetch('/api/sites/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, url: url })
+    }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) {
+          showToast(res.data.detail || '注册失败', 'error');
+          return;
+        }
+        showToast('已注册 ' + res.data.site_id, 'success');
+        window.location.href = '/onboard/' + encodeURIComponent(res.data.site_id);
+      })
+      .catch(function() { showToast('网络错误', 'error'); });
+  });
+})();
+</script>
+{% endblock %}

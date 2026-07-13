@@ -1,0 +1,29 @@
+version: 1
+site_id: 中国能源建设集团_ec_ceec
+name: 中国能建电子采购平台（ec.ceec.net.cn）
+enabled: true
+entry_url: https://ec.ceec.net.cn/HomeInfo/ProjectList.aspx?InfoLevel=MQA=&bigType=WgBCAEcARwA=
+list_page:
+  strategy: dom
+  container: "table"
+  item: "tr"
+  title: "td a"
+  link: "td a"
+  date: "td:last-child"
+  wait_for: "table a"
+pagination:
+  type: next_button
+  selector: "a.layui-laypage-next"
+  disabled_selector: "a.layui-laypage-next.layui-disabled"
+  wait_after_ms: 2000
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "/HomeInfo/ZhaoBiaoGG_Details.aspx"
+  content_selector: "body"
+  wait_for: "body"
+limits:
+  max_pages: 5
+  max_items: 100
+  max_depth: 2
+  rate_limit_seconds: 3.0

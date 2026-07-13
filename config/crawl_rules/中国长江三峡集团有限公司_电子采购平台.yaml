@@ -1,0 +1,49 @@
+version: 1
+site_id: 中国长江三峡集团有限公司_电子采购平台
+name: 中国三峡集团电子采购平台
+enabled: true
+entry_url: https://eps.ctg.com.cn/cms/channel/1ywgg1/index.htm
+list_page:
+  strategy: dom
+  container: "#list1"
+  item: "li[name='li_name']"
+  title: "a span"
+  link: "a"
+  date: "a em:last-child"
+  date_format: "2006-01-02"
+  wait_for: "li[name='li_name']"
+pagination:
+  type: page_number
+  page_param: pageNo
+  url_style: query
+  max_pages: 20
+  stop_when_empty: true
+  page_size: 10
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "https://eps.ctg.com.cn/cms/channel/.*"
+  detail_url_template: "https://eps.ctg.com.cn{full_link}"
+  content_selector: ".article-content"
+  title_selector: "h1, h2"
+  wait_for: ".article-content"
+limits:
+  max_pages: 50
+  max_items: 500
+  max_depth: 2
+  rate_limit_seconds: 1.0
+search:
+  enabled: true
+  type: webbridge_interactive
+  steps:
+    - action: navigate
+      url: "https://eps.ctg.com.cn/cms/channel/1ywgg1/index.htm"
+      label: "招标公告列表页"
+    - action: fill
+      selector: "#inp-txt"
+      value: "BIM"
+    - action: click
+      selector: "#btnSearch"
+      label: "点击搜索按钮（搜索跳转到/search.jspx?q=BIM页面）"
+    - action: wait
+      seconds: 3

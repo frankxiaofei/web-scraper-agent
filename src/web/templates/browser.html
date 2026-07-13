@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 浏览器控制{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">浏览器控制</h2>
+      <p class="text-sm text-slate-500 mt-1">通过 Kimi WebBridge 控制本机真实浏览器（需 daemon + 扩展已连接）</p>
+    </div>
+    <button type="button" id="btn-refresh-status"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+      刷新状态
+    </button>
+  </div>
+
+  <div id="status-card" class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 mb-6">
+    <div class="flex items-center gap-3">
+      <span id="status-dot" class="w-3 h-3 rounded-full bg-slate-300"></span>
+      <div>
+        <p id="status-text" class="text-sm font-medium text-slate-700">检测中…</p>
+        <p id="status-detail" class="text-xs text-slate-500 mt-0.5"></p>
+      </div>
+    </div>
+    <pre id="install-hint" class="hidden mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 whitespace-pre-wrap"></pre>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+      <h3 class="text-sm font-semibold text-slate-900">导航</h3>
+      <div>
+        <label class="block text-xs text-slate-500 mb-1">Session ID</label>
+        <input id="session-id" type="text" value="browser-ui"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="crawl-agent">
+      </div>
+      <div>
+        <label class="block text-xs text-slate-500 mb-1">URL</label>
+        <input id="nav-url" type="url"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+               placeholder="https://example.com">
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" id="btn-navigate"
+                class="rounded-lg bg-brand-600 text-white px-4 py-2 text-sm font-medium hover:bg-brand-700 transition">
+          打开 URL
+        </button>
+        <button type="button" id="btn-back"
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50 transition">
+          后退
+        </button>
+        <button type="button" id="btn-forward"
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50 transition">
+          前进
+        </button>
+        <button type="button" id="btn-snapshot"
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50 transition">
+          刷新页面信息
+        </button>
+        <button type="button" id="btn-screenshot"
+                class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50 transition">
+          截图
+        </button>
+      </div>
+      <div id="page-info" class="text-xs text-slate-600 bg-slate-50 rounded-lg p-3 hidden">
+        <p><span class="font-medium">标题：</span><span id="page-title">—</span></p>
+        <p class="mt-1"><span class="font-medium">URL：</span><span id="page-url">—</span></p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+      <h3 class="text-sm font-semibold text-slate-900 mb-3">截图预览</h3>
+      <div id="screenshot-empty" class="text-sm text-slate-400 py-12 text-center border border-dashed border-slate-200 rounded-xl">
+        点击「截图」获取当前页面预览
+      </div>
+      <img id="screenshot-img" class="hidden w-full rounded-xl border border-slate-200" alt="页面截图">
+    </div>
+  </div>
+
+  <div class="mt-6 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 shadow-sm p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+      <div>
+        <h3 class="text-sm font-semibold text-violet-900">自动爬取当前页</h3>
+        <p class="text-xs text-violet-700/80 mt-0.5">snapshot → 列表提取 → 翻页 → 批量入库（需 sites.yaml 注册）</p>
+      </div>
+      <span id="crawl-mode-badge" class="hidden text-xs font-medium text-violet-700 bg-violet-100 border border-violet-200 rounded-full px-3 py-1"></span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label for="crawl-site-id" class="block text-xs text-violet-800/70 mb-1">站点 site_id</label>
+        <select id="crawl-site-id" class="app-select">
+          <option value="">（从当前 URL 推断）</option>
+        </select>
+        <p id="crawl-site-hint" class="text-xs text-violet-600/70 mt-1"></p>
+      </div>
+      <div>
+        <label class="block text-xs text-violet-800/70 mb-1">最多翻页</label>
+        <input id="crawl-max-pages" type="number" min="1" max="20" value="3"
+               class="w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm">
+        <p class="text-xs text-violet-600/70 mt-1">上限 20 页</p>
+      </div>
+      <div class="flex items-end">
+        <label class="inline-flex items-center gap-2 text-sm text-violet-900 cursor-pointer">
+          <input id="crawl-save" type="checkbox" checked
+                 class="rounded border-violet-300 text-violet-600 focus:ring-violet-400">
+          提取后入库
+        </label>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button type="button" id="btn-auto-crawl"
+              class="rounded-lg bg-violet-600 text-white px-4 py-2 text-sm font-medium hover:bg-violet-700 transition disabled:opacity-50">
+        自动爬取当前页
+      </button>
+      <button type="button" id="btn-confirm-save"
+              class="hidden rounded-lg border border-violet-400 bg-white text-violet-800 px-4 py-2 text-sm font-medium hover:bg-violet-50 transition">
+        确认通用提取并入库
+      </button>
+    </div>
+
+    <div id="crawl-progress" class="hidden rounded-xl border border-violet-200 bg-white/80 p-4 text-sm">
+      <div class="flex items-center gap-2 mb-2">
+        <span id="crawl-progress-dot" class="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+        <span id="crawl-progress-text" class="font-medium text-violet-900">准备中…</span>
+      </div>
+      <ul id="crawl-steps" class="text-xs text-slate-600 space-y-1 mb-3"></ul>
+      <div id="crawl-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs"></div>
+      <div id="crawl-errors" class="hidden mt-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-2"></div>
+      <div id="crawl-items-preview" class="hidden mt-3 max-h-48 overflow-y-auto text-xs border border-violet-100 rounded-lg divide-y divide-violet-50"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  function sessionId() {
+    return (document.getElementById('session-id').value || '').trim() || 'browser-ui';
+  }
+
+  async function api(path, body) {
+    const opts = { method: body ? 'POST' : 'GET', headers: {} };
+    if (body) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    const resp = await fetch(path, opts);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || data.error || '请求失败');
+    return data;
+  }
+
+  function setStatus(ok, text, detail, hint) {
+    var dot = document.getElementById('status-dot');
+    var hintEl = document.getElementById('install-hint');
+    document.getElementById('status-text').textContent = text;
+    document.getElementById('status-detail').textContent = detail || '';
+    dot.className = 'w-3 h-3 rounded-full ' + (ok ? 'bg-emerald-500' : 'bg-red-400');
+    if (hint) {
+      hintEl.textContent = hint;
+      hintEl.classList.remove('hidden');
+    } else {
+      hintEl.classList.add('hidden');
+    }
+  }
+
+  function showPageInfo(title, url) {
+    document.getElementById('page-info').classList.remove('hidden');
+    document.getElementById('page-title').textContent = title || '—';
+    document.getElementById('page-url').textContent = url || '—';
+  }
+
+  async function refreshStatus() {
+    try {
+      var data = await api('/api/browser/status');
+      var r = data.result || {};
+      if (r.ok) {
+        setStatus(true, 'WebBridge 已连接', 'v' + (r.version || '?') + ' · daemon ' + (r.daemon_url || ''));
+      } else {
+        setStatus(false, r.error || 'WebBridge 不可用', r.running ? 'daemon 运行中，扩展未连接' : 'daemon 未运行', r.install_hint);
+      }
+      return r.ok;
+    } catch (e) {
+      setStatus(false, '状态检测失败', e.message);
+      return false;
+    }
+  }
+
+  async function withCheck(fn) {
+    var ok = await refreshStatus();
+    if (!ok) {
+      showToast('请先安装并连接 Kimi WebBridge', 'error');
+      return;
+    }
+    return fn();
+  }
+
+  document.getElementById('btn-refresh-status').addEventListener('click', refreshStatus);
+
+  document.getElementById('btn-navigate').addEventListener('click', function() {
+    withCheck(async function() {
+      var url = (document.getElementById('nav-url').value || '').trim();
+      if (!url) { showToast('请输入 URL', 'error'); return; }
+      var data = await api('/api/browser/navigate', { url: url, session_id: sessionId(), new_tab: true });
+      if (!data.ok) { showToast(data.error || '导航失败', 'error'); return; }
+      var r = data.result || {};
+      showPageInfo(r.title, r.url);
+      showToast('已打开页面', 'success');
+    });
+  });
+
+  document.getElementById('btn-back').addEventListener('click', function() {
+    withCheck(async function() {
+      var data = await api('/api/browser/go', { direction: 'back', session_id: sessionId() });
+      if (!data.ok) { showToast(data.error || '后退失败', 'error'); return; }
+      var r = data.result || {};
+      showPageInfo(r.title, r.url);
+    });
+  });
+
+  document.getElementById('btn-forward').addEventListener('click', function() {
+    withCheck(async function() {
+      var data = await api('/api/browser/go', { direction: 'forward', session_id: sessionId() });
+      if (!data.ok) { showToast(data.error || '前进失败', 'error'); return; }
+      var r = data.result || {};
+      showPageInfo(r.title, r.url);
+    });
+  });
+
+  document.getElementById('btn-snapshot').addEventListener('click', function() {
+    withCheck(async function() {
+      var data = await api('/api/browser/snapshot', { session_id: sessionId() });
+      if (!data.ok) { showToast(data.error || '获取失败', 'error'); return; }
+      var r = data.result || {};
+      showPageInfo(r.title, r.url);
+      showToast('页面信息已更新', 'success');
+    });
+  });
+
+  document.getElementById('btn-screenshot').addEventListener('click', function() {
+    withCheck(async function() {
+      var data = await api('/api/browser/screenshot', { session_id: sessionId(), format: 'png' });
+      if (!data.ok) { showToast(data.error || '截图失败', 'error'); return; }
+      var r = data.result || {};
+      var img = document.getElementById('screenshot-img');
+      var empty = document.getElementById('screenshot-empty');
+      if (r.image_url) {
+        img.src = r.image_url + '?t=' + Date.now();
+        img.classList.remove('hidden');
+        empty.classList.add('hidden');
+        showToast('截图完成', 'success');
+      }
+    });
+  });
+
+  var lastCrawlPayload = null;
+
+  function renderCrawlResult(result) {
+    var box = document.getElementById('crawl-progress');
+    var stepsEl = document.getElementById('crawl-steps');
+    var statsEl = document.getElementById('crawl-stats');
+    var errEl = document.getElementById('crawl-errors');
+    var previewEl = document.getElementById('crawl-items-preview');
+    var badge = document.getElementById('crawl-mode-badge');
+    var confirmBtn = document.getElementById('btn-confirm-save');
+    box.classList.remove('hidden');
+    document.getElementById('crawl-progress-text').textContent = result.needs_confirmation
+      ? '提取完成，待确认入库'
+      : '爬取完成';
+    document.getElementById('crawl-progress-dot').className = 'w-2 h-2 rounded-full ' +
+      (result.errors && result.errors.length ? 'bg-amber-500' : 'bg-emerald-500');
+
+    stepsEl.innerHTML = (result.steps || []).map(function(s) {
+      var label = s.step;
+      if (s.page_num) label += ' · 第' + s.page_num + '页';
+      if (s.item_count != null) label += ' · ' + s.item_count + ' 条';
+      if (s.saved_count != null) label += ' · 入库 ' + s.saved_count;
+      return '<li>' + label + (s.ok === false ? ' ✗' : ' ✓') + '</li>';
+    }).join('');
+
+    statsEl.innerHTML = [
+      ['提取', result.item_count || 0],
+      ['入库', result.saved_count || 0],
+      ['重复', result.duplicate_count || 0],
+      ['页数', result.pages_crawled || 0]
+    ].map(function(pair) {
+      return '<div class="rounded-lg bg-violet-50 border border-violet-100 px-2 py-1.5">' +
+        '<span class="text-violet-600">' + pair[0] + '</span> ' +
+        '<span class="font-semibold text-violet-900">' + pair[1] + '</span></div>';
+    }).join('');
+
+    if (result.extraction_mode) {
+      badge.textContent = result.extraction_mode === 'generic' ? '通用链接提取' : '规则提取';
+      badge.classList.remove('hidden');
+    }
+
+    if (result.errors && result.errors.length) {
+      errEl.textContent = result.errors.join('\n');
+      errEl.classList.remove('hidden');
+    } else {
+      errEl.classList.add('hidden');
+    }
+
+    var items = result.items || [];
+    if (items.length) {
+      previewEl.innerHTML = items.map(function(it) {
+        return '<div class="px-2 py-1.5"><a class="text-violet-700 hover:underline" href="' +
+          it.url + '" target="_blank" rel="noopener">' +
+          (it.title || it.url) + '</a></div>';
+      }).join('') + (result.items_truncated ? '<div class="px-2 py-1 text-violet-500">…仅展示前 50 条</div>' : '');
+      previewEl.classList.remove('hidden');
+    } else {
+      previewEl.classList.add('hidden');
+    }
+
+    if (result.needs_confirmation) {
+      confirmBtn.classList.remove('hidden');
+    } else {
+      confirmBtn.classList.add('hidden');
+    }
+  }
+
+  async function loadSiteOptions() {
+    try {
+      var data = await api('/api/tasks/sites');
+      var select = document.getElementById('crawl-site-id');
+      (data.sites || []).forEach(function(site) {
+        var opt = document.createElement('option');
+        opt.value = site.site_id || '';
+        opt.textContent = (site.site_name || site.site_id) + ' (' + site.site_id + ')';
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  async function inferSiteFromPage() {
+    var url = (document.getElementById('page-url').textContent || '').trim();
+    if (!url || url === '—') return;
+    try {
+      var data = await api('/api/browser/infer-site', { url: url });
+      var hint = document.getElementById('crawl-site-hint');
+      if (data.site_id) {
+        hint.textContent = '推断: ' + data.site_id + (data.registered ? '' : '（未注册）');
+        if (data.registered && !document.getElementById('crawl-site-id').value) {
+          document.getElementById('crawl-site-id').value = data.site_id;
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  async function runAutoCrawl(confirmGeneric) {
+    var btn = document.getElementById('btn-auto-crawl');
+    var confirmBtn = document.getElementById('btn-confirm-save');
+    btn.disabled = true;
+    confirmBtn.disabled = true;
+    document.getElementById('crawl-progress-text').textContent = '爬取中…';
+    document.getElementById('crawl-progress').classList.remove('hidden');
+    try {
+      var payload = {
+        session_id: sessionId(),
+        site_id: (document.getElementById('crawl-site-id').value || '').trim() || null,
+        max_pages: parseInt(document.getElementById('crawl-max-pages').value, 10) || 3,
+        save: document.getElementById('crawl-save').checked,
+        confirm_generic: !!confirmGeneric
+      };
+      lastCrawlPayload = payload;
+      var data = await api('/api/browser/crawl', payload);
+      if (!data.ok) { showToast(data.error || data.detail || '爬取失败', 'error'); return; }
+      renderCrawlResult(data.result || {});
+      showToast(data.result && data.result.needs_confirmation ? '请确认后入库' : '爬取完成', 'success');
+    } catch (e) {
+      showToast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      confirmBtn.disabled = false;
+    }
+  }
+
+  document.getElementById('btn-auto-crawl').addEventListener('click', function() {
+    withCheck(function() { return runAutoCrawl(false); });
+  });
+
+  document.getElementById('btn-confirm-save').addEventListener('click', function() {
+    withCheck(function() { return runAutoCrawl(true); });
+  });
+
+  var origShowPageInfo = showPageInfo;
+  showPageInfo = function(title, url) {
+    origShowPageInfo(title, url);
+    inferSiteFromPage();
+  };
+
+  loadSiteOptions();
+  refreshStatus();
+})();
+</script>
+{% endblock %}

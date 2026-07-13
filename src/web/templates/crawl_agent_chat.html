@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 智能采集{% endblock %}
+
+{% block content %}
+{% set hermes_theme = hermes_theme|default('violet') %}
+{% set agent_profile = agent_profile|default('default') %}
+{% include "crawl_agent_chat_body.html" %}
+{% endblock %}

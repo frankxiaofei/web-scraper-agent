@@ -1,0 +1,6 @@
+2026-07-12 11:13:10 [INFO] run_id=c260fd2f7aee44518ed81224bafc7466 site_id=ggzy_national [start] 开始爬取 全国公共资源交易平台 url=https://www.ggzy.gov.cn/
+2026-07-12 11:13:10 [INFO] run_id=c260fd2f7aee44518ed81224bafc7466 site_id=ggzy_national [fetch_list] 开始抓取列表 (max_items=10, detail=True, intelligent=False) url=https://www.ggzy.gov.cn/
+2026-07-12 11:13:10 [INFO] run_id=c260fd2f7aee44518ed81224bafc7466 site_id=ggzy_national [delay] 请求前等待 2.0s
+2026-07-12 11:13:12 [INFO] run_id=c260fd2f7aee44518ed81224bafc7466 site_id=ggzy_national [fetch_list] 抓取列表页 (尝试 1/3) url=https://www.ggzy.gov.cn/
+2026-07-12 11:13:13 [INFO] run_id=c260fd2f7aee44518ed81224bafc7466 site_id=ggzy_national [fetch_detail] 抓取详情页 (1/10) url=https://www.ggzy.gov.cn/information/deal/html/a/640000/0104/20260712/006420a6bfcacb754fc788329b583088956a.html
+2026-07-12 11:13:31 [INFO] run_id=c260fd2f7aee44518ed81224bafc7466 site_id=ggzy_national [fetch_detail] 抓取详情页 (2/10) url=https://www.ggzy.gov.cn/information/deal/html/a/640000/0104/20260712/00645c0623cd895c47a599201d454cb7a07c.html

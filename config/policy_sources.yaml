@@ -1,0 +1,164 @@
+# 国内权威政府网站政策信息源（十五五 / 产业政策）
+version: 1
+description: 国务院及部委官网最新政策，支撑十五五投资方向分析
+scope_label: 国务院 · 发改委 · 工信部 · 科技部 · 农业农村部 · 生态环境部 · 国资委 · 商务部
+
+use_mock_when_empty: false
+request_interval_seconds: 3
+max_items_per_source: 15
+timeout_seconds: 25
+
+# 全局匹配关键词（标题/摘要命中任一即保留）
+match_keywords:
+  - 十五五
+  - 十四五
+  - 五年规划
+  - 规划纲要
+  - 产业政策
+  - 新质生产力
+  - 双碳
+  - 碳达峰
+  - 碳中和
+  - 数字经济
+  - 现代化产业体系
+  - 高质量发展
+  - 专项规划
+  - 投资
+  - 制造业
+  - 科技创新
+  - 乡村振兴
+  - 绿色低碳
+  - 人工智能
+  - 半导体
+  - 新能源
+
+# 十五五主题对齐（投资方向分析用）
+themes:
+  - id: new_productivity
+    name: 新质生产力
+    keywords: [新质生产力, 先进制造, 未来产业, 战略性新兴产业]
+  - id: digital_economy
+    name: 数字经济
+    keywords: [数字经济, 数据要素, 算力, 工业互联网, 信息化]
+  - id: dual_carbon
+    name: 双碳绿色
+    keywords: [双碳, 碳达峰, 碳中和, 绿色低碳, 生态环保, 节能]
+  - id: sci_tech
+    name: 科技创新
+    keywords: [科技创新, 研发, 关键技术, 自立自强, 半导体, 芯片]
+  - id: advanced_manufacturing
+    name: 先进制造
+    keywords: [制造业, 工业, 装备, 智能制造, 专精特新]
+  - id: rural_revitalization
+    name: 乡村振兴
+    keywords: [乡村振兴, 农业, 农村, 粮食, 种业]
+  - id: regional
+    name: 区域协调
+    keywords: [区域, 京津冀, 长三角, 粤港澳, 西部, 东北振兴]
+
+default_sources:
+  - gov_cn
+  - ndrc
+  - miit
+  - most
+  - moa
+  - mee
+  - sasac
+  - mofcom
+
+sources:
+  - id: gov_cn
+    type: html_list
+    name: 国务院
+    domain: www.gov.cn
+    url: https://www.gov.cn/zhengce/index.htm
+    link_href_contains: /zhengce/
+    enabled: true
+
+  - id: ndrc
+    type: html_list
+    name: 国家发展改革委
+    domain: www.ndrc.gov.cn
+    url: https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/
+    link_href_contains: /xxgk/
+    enabled: true
+
+  - id: miit
+    type: html_list
+    name: 工业和信息化部
+    domain: www.miit.gov.cn
+    url: https://www.miit.gov.cn/zwgk/zcwj/index.html
+    link_href_contains: /zwgk/
+    enabled: true
+
+  - id: most
+    type: html_list
+    name: 科学技术部
+    domain: www.most.gov.cn
+    url: https://www.most.gov.cn/kjbgz/
+    link_href_contains: /kjbgz/
+    enabled: true
+
+  - id: moa
+    type: html_list
+    name: 农业农村部
+    domain: www.moa.gov.cn
+    url: https://www.moa.gov.cn/gk/zcfg/
+    link_href_contains: /gk/
+    enabled: true
+
+  - id: mee
+    type: html_list
+    name: 生态环境部
+    domain: www.mee.gov.cn
+    url: https://www.mee.gov.cn/zcwj/
+    link_href_contains: /zcwj/
+    enabled: true
+
+  - id: sasac
+    type: html_list
+    name: 国务院国资委
+    domain: www.sasac.gov.cn
+    url: http://www.sasac.gov.cn/n2588025/index.html
+    link_href_contains: /n2588
+    enabled: true
+
+  - id: mofcom
+    type: html_list
+    name: 商务部
+    domain: www.mofcom.gov.cn
+    url: https://www.mofcom.gov.cn/zwgk/index.html
+    link_href_contains: /zwgk/
+    enabled: true
+
+  - id: mock
+    type: mock
+    name: 演示政策
+    enabled: true
+
+mock_items:
+  - title: "「十五五」规划纲要编制工作启动，聚焦新质生产力与现代化产业体系"
+    url: "https://example.com/policy/mock-15th-fyp"
+    source_name: 演示政策
+    summary: "国家层面启动第十五个五年规划（2026-2030）纲要编制，强调科技创新、绿色低碳与数字经济协同推进。"
+    themes: [新质生产力, 科技创新]
+  - title: "发改委：加快培育战略性新兴产业，扩大有效投资"
+    url: "https://example.com/policy/mock-ndrc-invest"
+    source_name: 演示政策
+    summary: "围绕新能源、人工智能、生物医药等领域，完善产业政策与投资引导机制。"
+    themes: [新质生产力, 先进制造]
+  - title: "工信部：推进制造业数字化转型与专精特新企业培育"
+    url: "https://example.com/policy/mock-miit-digital"
+    source_name: 演示政策
+    summary: "工业互联网、智能制造与算力基础设施成为「十五五」制造业政策重点方向。"
+    themes: [数字经济, 先进制造]
+  - title: "生态环境部：双碳目标下绿色低碳产业投资指引"
+    url: "https://example.com/policy/mock-mee-dual-carbon"
+    source_name: 演示政策
+    summary: "碳达峰碳中和路线图与生态环保专项规划衔接，储能、绿电、循环经济获政策支持。"
+    themes: [双碳绿色]
+  - title: "科技部：强化关键核心技术攻关，布局未来产业"
+    url: "https://example.com/policy/mock-most-tech"
+    source_name: 演示政策
+    summary: "半导体、人工智能、量子信息等纳入科技创新专项，与十五五科技规划编制同步推进。"
+    themes: [科技创新, 新质生产力]

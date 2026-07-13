@@ -1,0 +1,37 @@
+2026-07-13 07:17:36 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [start] 开始爬取 广东省政府采购网 url=http://www.ccgp-guangdong.gov.cn/
+2026-07-13 07:17:36 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_list] 开始抓取列表 (max_items=30, detail=True, intelligent=False) url=http://www.ccgp-guangdong.gov.cn/
+2026-07-13 07:17:36 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [delay] 请求前等待 2.0s
+2026-07-13 07:17:38 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_list] 抓取列表页 (尝试 1/3) url=http://www.ccgp-guangdong.gov.cn/
+2026-07-13 07:17:38 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (1/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=66399f46-1f07-438b-9b5e-b8e5ce7da635
+2026-07-13 07:17:57 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (2/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=51f9d67f-7ccb-4bc1-9555-fe4e83fcb8c4
+2026-07-13 07:18:15 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (3/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=eb24965b-d7bd-4c49-a441-b16cba9053fb
+2026-07-13 07:18:33 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (4/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=c0a138c0-7d0e-4f1b-ba02-da6f71f8610f
+2026-07-13 07:18:51 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (5/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=08a90396-04cf-4c85-ae42-9797e2ffd1e7
+2026-07-13 07:19:10 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (6/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=e37a7ee6-54a1-431f-9c5c-8cf914e18c1b
+2026-07-13 07:19:28 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (7/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=15c28a64-b692-4ab0-905b-2d60307441b2
+2026-07-13 07:19:46 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (8/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=f13352c2-a797-48ac-aabb-5a2c4392a964
+2026-07-13 07:20:05 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (9/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=1f1cc1bd-d9c2-4dde-b37b-c914cfa2b666
+2026-07-13 07:20:23 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (10/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=33a410aa-a3ed-44a5-91c8-f641c60d2dfc
+2026-07-13 07:20:41 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (11/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=3f4c8331-db40-42b8-a68d-7126f1cdd0cb
+2026-07-13 07:21:00 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (12/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=ed5094ce-5464-4c2a-b9a5-720b6d544292
+2026-07-13 07:21:18 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (13/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=8171a530-ee96-43f9-bd41-df160080ef52
+2026-07-13 07:21:37 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (14/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=dd126e16-2797-449e-a2f8-2af326069896
+2026-07-13 07:21:55 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (15/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=1c5e6acd-fc3e-4b6e-8cd5-58114643ff46
+2026-07-13 07:22:13 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (16/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=a2ad2641-feef-46d9-ba20-22b6e0f3454b
+2026-07-13 07:22:32 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (17/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=c90c4483-2398-4a58-8deb-661cd57c7aff
+2026-07-13 07:22:50 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (18/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=7b6296fe-7cbc-4177-b5b1-dd60e6d04bdf
+2026-07-13 07:23:08 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (19/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=322de403-ddb8-4215-ba1b-c1372f9823d7
+2026-07-13 07:23:27 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (20/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=30bf78e8-8501-4b74-a569-6cfe173c69f1
+2026-07-13 07:23:45 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (21/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=7f979458-8c77-49b5-a8eb-ce5c5eccc7fa
+2026-07-13 07:24:03 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (22/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=03ec5a24-e352-4ebe-b8ca-b0d85e0b1892
+2026-07-13 07:24:22 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (23/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=79ab100b-1ef4-4ce7-a463-bce052b2ac8a
+2026-07-13 07:24:40 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (24/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=f5ea5bb5-d022-4cdd-aeed-2e741258d76f
+2026-07-13 07:24:58 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (25/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=c1656571-ebbc-459a-834a-27aedb278123
+2026-07-13 07:25:17 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (26/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=5de6995d-5e4d-4270-93df-d5a3ef3bfe43
+2026-07-13 07:25:35 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (27/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=961ab420-c64d-44d3-9612-3ff8861ea84f
+2026-07-13 07:25:53 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (28/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=6ade4db2-89c1-48bb-a137-35eeb239dda7
+2026-07-13 07:26:11 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (29/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=d04028a8-c3cb-4488-a6ca-c1e24b4047d4
+2026-07-13 07:26:30 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [fetch_detail] 抓取详情页 (30/30) url=https://gdgpo.czt.gd.gov.cn/maincms-web/article?type=notice&id=5905e826-8ddd-40dd-8262-db323ccb0408
+2026-07-13 07:26:46 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [parse] 解析完成: 30 条公告
+2026-07-13 07:26:46 [INFO] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [save] 入库: 新增 30, 更新 0
+2026-07-13 07:26:46 [SUCCESS] run_id=a8e883b6c5594235a83426bd0e9aee0c site_id=ccgp_广东省 [done] 爬取完成: 30 条公告, 新增/更新 30

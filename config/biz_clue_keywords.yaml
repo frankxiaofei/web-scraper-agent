@@ -1,0 +1,134 @@
+# 商机洞察 Agent 词库（已迁移至 config/biz_clue.yaml，本文件保留兼容引用）
+# 主配置入口：config/biz_clue.yaml
+
+product_lines:
+  农业平台:
+    keywords:
+      - 数字农业
+      - 智慧农业
+      - 农业大数据
+      - 农业一张图
+      - 农业物联网
+      - 产业园数字化
+      - 质量追溯
+      - 农情监测平台
+      - 农业云平台
+      - 农业驾驶舱
+      - 农业信息化
+      - 数字乡村
+  田间作业:
+    keywords:
+      - 田间助手
+      - 巡田
+      - 农事作业
+      - 农事记录
+      - 轨迹采集
+      - 地块管理
+      - 移动采集
+      - 农机调度
+      - 智能灌溉
+      - 水肥一体化
+      - 智慧种植
+      - 智慧大棚
+  AI能力:
+    keywords:
+      - 农业大模型
+      - 农业知识库
+      - 智能问答
+      - 智能体
+      - 语音识别
+      - 病虫害识别
+      - 农情分析
+      - 智能决策
+      - AI识别
+
+stages:
+  - name: 政策资金
+    order: 1
+    keywords:
+      - 专项资金
+      - 资金下达
+      - 预算安排
+      - 中央预算内投资
+      - 专项债
+      - 转移支付
+    check_days: 30
+  - name: 项目申报
+    order: 2
+    keywords:
+      - 项目申报
+      - 项目储备
+      - 建设名单
+      - 拟支持名单
+      - 实施主体公示
+    check_days: 14
+  - name: 立项审批
+    order: 3
+    keywords:
+      - 项目建议书
+      - 立项批复
+      - 可行性研究
+      - 初步设计
+      - 实施方案
+    check_days: 14
+  - name: 咨询设计
+    order: 4
+    keywords:
+      - 可研编制
+      - 设计服务
+      - 咨询服务
+      - 造价
+      - 监理
+      - 方案征集
+    check_days: 7
+  - name: 采购前置
+    order: 5
+    keywords:
+      - 采购意向
+      - 需求调查
+      - 市场调研
+      - 参数征集
+      - 招标计划
+      - 预公告
+    check_days: 3
+  - name: 正式采购
+    order: 6
+    keywords:
+      - 公开招标
+      - 竞争性磋商
+      - 竞争性谈判
+      - 询价公告
+      - 招标公告
+      - 采购公告
+    check_days: 1
+
+exclude_keywords:
+  - 钢材采购
+  - 水泥采购
+  - 办公用品
+  - 桌椅板凳
+  - 纯土建
+
+funding_keywords:
+  已下达:
+    - 资金下达
+    - 已下达
+    - 批复资金
+  已列预算:
+    - 预算安排
+    - 预算金额
+    - 采购预算
+    - 投资估算
+  正在申报:
+    - 项目申报
+    - 拟申报
+    - 申报指南
+
+source_levels:
+  P0_domains:
+    - gov.cn
+    - ggzy.gov.cn
+    - ccgp.gov.cn
+  P1_domains:
+    - edu.cn
+    - org.cn

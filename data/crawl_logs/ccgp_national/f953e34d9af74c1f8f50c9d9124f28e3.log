@@ -1,0 +1,18 @@
+2026-07-13 06:54:15 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [start] 开始爬取 中国政府采购网 url=http://www.ccgp.gov.cn/
+2026-07-13 06:54:15 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_list] 开始抓取列表 (max_items=10, detail=True, intelligent=True) url=http://www.ccgp.gov.cn/
+2026-07-13 06:54:15 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [delay] 请求前等待 2.0s
+2026-07-13 06:54:17 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_list] 抓取列表页 (尝试 1/3) url=http://www.ccgp.gov.cn/
+2026-07-13 06:54:18 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (1/10) url=https://www.ccgp.gov.cn/news/202606/t20260624_26803448.htm
+2026-07-13 06:54:21 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (2/10) url=https://www.ccgp.gov.cn/news/202606/t20260622_26785066.htm
+2026-07-13 06:54:24 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (3/10) url=https://www.ccgp.gov.cn/news/202606/t20260617_26763914.htm
+2026-07-13 06:54:26 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (4/10) url=https://www.ccgp.gov.cn/news/202606/t20260612_26740227.htm
+2026-07-13 06:54:29 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (5/10) url=https://www.ccgp.gov.cn/news/202606/t20260608_26702139.htm
+2026-07-13 06:54:32 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (6/10) url=https://www.ccgp.gov.cn/news/202606/t20260601_26660628.htm
+2026-07-13 06:54:34 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (7/10) url=https://www.ccgp.gov.cn/news/202606/t20260601_26660667.htm
+2026-07-13 06:54:37 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (8/10) url=https://www.ccgp.gov.cn/news/202605/t20260522_26610688.htm
+2026-07-13 06:54:40 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (9/10) url=https://www.ccgp.gov.cn/news/202605/t20260512_26549039.htm
+2026-07-13 06:54:42 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [fetch_detail] 抓取详情页 (10/10) url=https://www.ccgp.gov.cn/news/202604/t20260424_26453931.htm
+2026-07-13 06:54:43 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [intelligent] 启动智能爬取扩展
+2026-07-13 06:56:10 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [parse] 解析完成: 63 条公告
+2026-07-13 06:56:10 [INFO] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [save] 入库: 新增 0, 更新 62
+2026-07-13 06:56:10 [SUCCESS] run_id=f953e34d9af74c1f8f50c9d9124f28e3 site_id=ccgp_national [done] 爬取完成: 63 条公告, 新增/更新 62

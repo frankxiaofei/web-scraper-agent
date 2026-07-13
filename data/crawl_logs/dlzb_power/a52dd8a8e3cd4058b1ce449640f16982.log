@@ -1,0 +1,35 @@
+2026-07-12 07:11:53 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [start] 开始爬取 电力招标网 url=https://www.dlzb.com/zb/search.php?kw=BIM
+2026-07-12 07:11:53 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_list] 开始抓取列表 (max_items=30, detail=True, intelligent=False) url=https://www.dlzb.com/zb/search.php?kw=BIM
+2026-07-12 07:11:53 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [delay] 请求前等待 2.0s
+2026-07-12 07:11:55 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_list] 抓取列表页 (尝试 1/3) url=https://www.dlzb.com/zb/search.php?kw=BIM
+2026-07-12 07:11:55 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_list] 规则驱动抓取列表 (max_items=30) url=https://www.dlzb.com/zb/search.php?kw=BIM
+2026-07-12 07:11:55 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [rule_step] 入口步骤 1/1: navigate url=https://www.dlzb.com/zb/search.php?kw=BIM
+2026-07-12 07:11:55 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [navigate] 打开 https://www.dlzb.com/zb/search.php?kw=BIM url=https://www.dlzb.com/zb/search.php?kw=BIM
+2026-07-12 07:11:57 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [parse] 解析第 1 页: 23 条 url=https://www.dlzb.com/zb/search.php?kw=BIM
+2026-07-12 07:11:57 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [parse] 规则抓取完成: 23 条
+2026-07-12 07:11:57 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (1/23) url=https://www.dlzb.com/d-zb-67628795.html
+2026-07-12 07:11:59 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (2/23) url=https://www.dlzb.com/d-zb-67615799.html
+2026-07-12 07:12:01 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (3/23) url=https://www.dlzb.com/d-zb-67638260.html
+2026-07-12 07:12:03 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (4/23) url=https://www.dlzb.com/d-zb-67654045.html
+2026-07-12 07:12:05 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (5/23) url=https://www.dlzb.com/d-zb-67608869.html
+2026-07-12 07:12:06 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (6/23) url=https://www.dlzb.com/d-zb-67603784.html
+2026-07-12 07:12:08 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (7/23) url=https://www.dlzb.com/d-zb-67589925.html
+2026-07-12 07:12:10 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (8/23) url=https://www.dlzb.com/d-zb-67571378.html
+2026-07-12 07:12:12 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (9/23) url=https://www.dlzb.com/d-zb-67533705.html
+2026-07-12 07:12:14 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (10/23) url=https://www.dlzb.com/d-zb-67510847.html
+2026-07-12 07:12:16 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (11/23) url=https://www.dlzb.com/d-zb-67509474.html
+2026-07-12 07:12:18 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (12/23) url=https://www.dlzb.com/d-zb-67490685.html
+2026-07-12 07:12:23 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (13/23) url=https://www.dlzb.com/d-zb-67524604.html
+2026-07-12 07:12:26 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (14/23) url=https://www.dlzb.com/d-zb-67492696.html
+2026-07-12 07:12:34 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (15/23) url=https://www.dlzb.com/d-zb-67467659.html
+2026-07-12 07:12:38 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (16/23) url=https://www.dlzb.com/d-zb-67453764.html
+2026-07-12 07:12:43 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (17/23) url=https://www.dlzb.com/d-zb-67477929.html
+2026-07-12 07:12:47 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (18/23) url=https://www.dlzb.com/d-zb-67457728.html
+2026-07-12 07:12:48 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (19/23) url=https://www.dlzb.com/d-zb-67447122.html
+2026-07-12 07:12:50 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (20/23) url=https://www.dlzb.com/d-zb-67447250.html
+2026-07-12 07:12:52 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (21/23) url=https://www.dlzb.com/d-zb-67402521.html
+2026-07-12 07:12:54 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (22/23) url=https://www.dlzb.com/d-zb-67408612.html
+2026-07-12 07:12:56 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [fetch_detail] 抓取详情页 (23/23) url=https://www.dlzb.com/d-zb-67402570.html
+2026-07-12 07:12:56 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [parse] 解析完成: 23 条公告
+2026-07-12 07:12:56 [INFO] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [save] 入库: 新增 0, 更新 21
+2026-07-12 07:12:56 [SUCCESS] run_id=a52dd8a8e3cd4058b1ce449640f16982 site_id=dlzb_power [done] 爬取完成: 23 条公告, 新增/更新 21

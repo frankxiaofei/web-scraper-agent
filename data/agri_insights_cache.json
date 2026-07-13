@@ -1,0 +1,31 @@
+{
+  "cache_key": "7:all",
+  "generated_at": "2026-07-12T07:18:48.223005",
+  "summary": {
+    "days": 7,
+    "agri_count_in_window": 0,
+    "counts": {
+      "total": 59,
+      "agri_true": 0,
+      "agri_false": 59,
+      "agri_unclassified": 0
+    },
+    "by_site": [],
+    "hot_keywords": [],
+    "scope_label": "七大央企招采数据源（云筑/鲁班/电力招标/铁建物资/中交供应链/电建/能建）",
+    "generated_at": "2026-07-12T07:18:48.222924+08:00",
+    "structured": {
+      "total": 0,
+      "with_price": 0,
+      "with_tender_party": 0,
+      "with_requirements": 0,
+      "price_buckets": [],
+      "top_tender_parties": [],
+      "requirement_keywords": [],
+      "top_locations": [],
+      "deadline_samples": [],
+      "amount_stats": {}
+    },
+    "latest": []
+  }
+}

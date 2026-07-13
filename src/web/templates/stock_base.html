@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}WebScraperAgent — 股票领域分析{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/logo.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            stock: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af' },
+            amber: { 500: '#f59e0b', 600: '#d97706' }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .stock-header { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 45%, #d97706 100%); }
+    .stats-kpi-card-blue { border-top-color: #3b82f6; }
+    .stats-kpi-card-indigo { border-top-color: #6366f1; }
+    .stats-kpi-card-amber { border-top-color: #f59e0b; }
+    .stats-kpi-card-sky { border-top-color: #0ea5e9; }
+    .stats-kpi-card-blue .stats-kpi-value { color: #2563eb; }
+    .stats-kpi-card-indigo .stats-kpi-value { color: #4f46e5; }
+    .stats-kpi-card-amber .stats-kpi-value { color: #d97706; }
+    .stats-kpi-card-sky .stats-kpi-value { color: #0284c7; }
+    .stats-bar-fill-blue { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+    .stats-bar-fill-amber { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+    .stock-badge { background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); }
+    .stock-up { color: #dc2626; }
+    .stock-down { color: #16a34a; }
+    .stock-search-dropdown { max-height: 20rem; }
+  </style>
+</head>
+<body class="bg-blue-50/40 text-slate-800 min-h-screen flex flex-col">
+  <header class="stock-header text-white shadow-lg sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/static/logo.svg" alt="WebScraperAgent" width="40" height="40" class="w-10 h-10 rounded-xl shadow-md group-hover:opacity-90 transition">
+        <div>
+          <h1 class="text-lg font-semibold leading-tight">WebScraperAgent</h1>
+          <p class="text-xs text-blue-100/90">股票领域分析 · 政策 + 行情 + 招采多源聚合 · :{{ stock_ui_port or 8092 }}</p>
+        </div>
+      </a>
+      <nav class="flex items-center gap-2 text-sm flex-wrap">
+        <div id="stockNavSearch" class="relative">
+          <form id="stockNavSearchForm" action="/search" method="get" class="relative">
+            <input id="stockNavSearchInput" name="q" type="search"
+                   placeholder="搜个股 代码/名称"
+                   autocomplete="off"
+                   class="w-40 sm:w-52 pl-3 pr-8 py-1.5 rounded-lg bg-white/15 border border-white/20 text-white placeholder-blue-100/70 text-sm focus:outline-none focus:bg-white/20 focus:border-white/40" />
+            <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-blue-100/60 text-xs">⌕</span>
+          </form>
+          <div id="stockNavSearchDropdown"
+               class="stock-search-dropdown hidden absolute left-0 right-0 sm:right-auto sm:min-w-[18rem] top-full mt-2 bg-white rounded-xl shadow-xl border border-blue-100 overflow-y-auto z-20">
+            <div id="stockNavSearchHint" class="px-3 py-2 text-xs text-slate-400 hidden"></div>
+            <div id="stockNavSearchResults" class="divide-y divide-blue-50"></div>
+          </div>
+        </div>
+        <a href="/insights" class="px-3 py-1.5 rounded-lg transition {% if active_nav == 'insights' %}bg-white/25 font-medium{% else %}text-blue-100 hover:bg-white/15{% endif %}">洞察分析</a>
+        <a href="/simulator" class="px-3 py-1.5 rounded-lg transition {% if active_nav == 'simulator' %}bg-white/25 font-medium{% else %}text-blue-100 hover:bg-white/15{% endif %}">模拟交易</a>
+        <button type="button" id="stockNavHermesBtn"
+                class="px-3 py-1.5 rounded-lg transition text-blue-100 hover:bg-white/15 border border-transparent hover:border-white/20"
+                title="打开右下角 Hermes 问答悬浮球">
+          Hermes 问答
+        </button>
+        <a href="http://127.0.0.1:{{ main_ui_port or 8090 }}/" target="_blank" rel="noopener"
+           class="px-3 py-1.5 rounded-lg stock-badge text-blue-50 hover:bg-white/25 transition text-xs">
+          招标 :{{ main_ui_port or 8090 }} ↗
+        </a>
+        <a href="http://127.0.0.1:{{ main_ui_port or 8090 }}/insights" target="_blank" rel="noopener"
+           class="px-3 py-1.5 rounded-lg stock-badge text-blue-50 hover:bg-white/25 transition text-xs">
+          商机洞察 ↗
+        </a>
+      </nav>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="stock-badge px-2.5 py-1 rounded-full font-medium {% if data_source == 'mongodb' %}text-blue-50{% else %}text-amber-100{% endif %}">
+          {% if data_source == 'mongodb' %}MongoDB{% else %}JSONL{% endif %}
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-blue-100 bg-white/80 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-slate-400">
+      web_scraper · 股票专题 · 端口 {{ stock_ui_port or 8092 }} ·
+      <span class="text-red-500">仅供参考，不构成投资建议</span>
+    </div>
+  </footer>
+  <script>
+  (function () {
+    var input = document.getElementById('stockNavSearchInput');
+    var dropdown = document.getElementById('stockNavSearchDropdown');
+    var hint = document.getElementById('stockNavSearchHint');
+    var results = document.getElementById('stockNavSearchResults');
+    var form = document.getElementById('stockNavSearchForm');
+    if (!input || !dropdown) return;
+
+    var timer = null;
+    var reqId = 0;
+    var RECENT_KEY = 'stock_search_recent';
+
+    function marketBadge(market) {
+      var cls = market === 'SH' ? 'bg-red-50 text-red-600'
+        : (market === 'BJ' ? 'bg-purple-50 text-purple-600'
+        : (market === 'HK' ? 'bg-orange-50 text-orange-600'
+        : (market === 'US' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600')));
+      return '<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ' + cls + '">' + (market || 'SZ') + '</span>';
+    }
+
+    function stockUrl(code, name, market) {
+      var url;
+      if (market === 'HK') url = '/stock/hk/' + encodeURIComponent(code);
+      else if (market === 'US') url = '/stock/us/' + encodeURIComponent(code);
+      else url = '/stock/' + encodeURIComponent(code);
+      var params = [];
+      if (name) params.push('name=' + encodeURIComponent(name));
+      if (market && market !== 'HK' && market !== 'US') params.push('market=' + encodeURIComponent(market));
+      if (params.length) url += '?' + params.join('&');
+      return url;
+    }
+
+    function klineUrl(code, name, market, period) {
+      var url = '/stock/kline/' + encodeURIComponent(code);
+      var params = [];
+      if (name) params.push('name=' + encodeURIComponent(name));
+      if (market) params.push('market=' + encodeURIComponent(market));
+      if (period) params.push('period=' + encodeURIComponent(period));
+      if (params.length) url += '?' + params.join('&');
+      return url;
+    }
+
+    function saveRecent(item) {
+      try {
+        var list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+        list = list.filter(function (x) { return x.code !== item.code; });
+        list.unshift({ code: item.code, name: item.name, market: item.market });
+        localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 8)));
+      } catch (e) {}
+    }
+
+    function hideDropdown() {
+      dropdown.classList.add('hidden');
+    }
+
+    function showDropdown() {
+      dropdown.classList.remove('hidden');
+    }
+
+    function renderRecent() {
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) {}
+      if (!list.length) return false;
+      hint.textContent = '最近访问';
+      hint.classList.remove('hidden');
+      results.innerHTML = list.map(function (item) {
+        return '<button type="button" data-code="' + item.code + '" data-name="' + item.name + '" data-market="' + item.market + '" ' +
+          'class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2">' +
+          marketBadge(item.market) +
+          '<span class="font-mono text-xs text-stock-700">' + item.code + '</span>' +
+          '<span class="text-sm text-slate-700 truncate">' + item.name + '</span></button>';
+      }).join('');
+      bindResultClicks();
+      showDropdown();
+      return true;
+    }
+
+    function bindResultClicks() {
+      results.querySelectorAll('[data-code]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var code = el.getAttribute('data-code');
+          var name = el.getAttribute('data-name');
+          var market = el.getAttribute('data-market');
+          saveRecent({ code: code, name: name, market: market });
+          window.location.href = stockUrl(code, name, market);
+        });
+      });
+    }
+
+    function renderResults(items, total, q) {
+      if (!items.length) {
+        hint.textContent = q ? '未找到「' + q + '」相关个股' : '';
+        hint.classList.toggle('hidden', !q);
+        results.innerHTML = q ? '' : '';
+        if (q) showDropdown();
+        else hideDropdown();
+        return;
+      }
+      hint.textContent = total > items.length ? ('共 ' + total + ' 条，展示前 ' + items.length + ' 条') : ('共 ' + items.length + ' 条');
+      hint.classList.remove('hidden');
+      results.innerHTML = items.map(function (item) {
+        return '<button type="button" data-code="' + item.code + '" data-name="' + item.name + '" data-market="' + item.market + '" ' +
+          'class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center gap-2">' +
+          marketBadge(item.market) +
+          '<span class="font-mono text-xs text-stock-700">' + item.code + '</span>' +
+          '<span class="text-sm text-slate-700 truncate">' + item.name + '</span></button>';
+      }).join('') + (total > items.length
+        ? '<a href="/search?q=' + encodeURIComponent(q) + '" class="block px-3 py-2 text-xs text-center text-stock-600 hover:bg-blue-50">查看全部结果 →</a>'
+        : '');
+      bindResultClicks();
+      showDropdown();
+    }
+
+    function search(q) {
+      var current = ++reqId;
+      fetch('/api/stock/search?q=' + encodeURIComponent(q) + '&limit=12')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (current !== reqId) return;
+          if (!data.ok) {
+            hint.textContent = data.error || '检索失败';
+            hint.classList.remove('hidden');
+            results.innerHTML = '';
+            showDropdown();
+            return;
+          }
+          renderResults(data.items || [], data.total || 0, q);
+        })
+        .catch(function () {
+          if (current !== reqId) return;
+          hint.textContent = '网络错误';
+          hint.classList.remove('hidden');
+          results.innerHTML = '';
+          showDropdown();
+        });
+    }
+
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+      var q = input.value.trim();
+      if (!q) {
+        renderRecent() || hideDropdown();
+        return;
+      }
+      timer = setTimeout(function () { search(q); }, 280);
+    });
+
+    input.addEventListener('focus', function () {
+      var q = input.value.trim();
+      if (q) search(q);
+      else renderRecent();
+    });
+
+    form.addEventListener('submit', function (e) {
+      var q = input.value.trim();
+      if (!q) {
+        e.preventDefault();
+        renderRecent() || hideDropdown();
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!document.getElementById('stockNavSearch').contains(e.target)) hideDropdown();
+    });
+  })();
+  </script>
+  {% include "stock_hermes_fab.html" %}
+  {% block scripts %}{% endblock %}
+  <script>
+  (function () {
+    var navBtn = document.getElementById('stockNavHermesBtn');
+    var fabBtn = document.getElementById('stockHermesFabBtn');
+    if (navBtn && fabBtn) {
+      navBtn.addEventListener('click', function () {
+        if (!document.getElementById('stockHermesDrawer').classList.contains('is-open')) {
+          fabBtn.click();
+        }
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

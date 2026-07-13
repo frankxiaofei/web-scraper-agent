@@ -1,0 +1,306 @@
+{% extends "agri_base.html" %}
+
+{% block title %}WebScraperAgent — 商机洞察{% endblock %}
+
+{% block content %}
+<section class="stats-page">
+  <header class="stats-page-header">
+    <div>
+      <h2 class="stats-page-title text-emerald-900">商机洞察</h2>
+      <p class="stats-page-subtitle">基于采集数据的智能商机分析 Agent · 近 {{ days }} 天</p>
+      <p class="mt-2 text-sm text-emerald-800/90 max-w-3xl leading-relaxed">
+        Agent 读取已采集的招采公告，按产品线匹配、阶段识别、商机评分与去重规则输出结构化线索，无需重新爬取即可分析。
+      </p>
+      {% if analyzed_at %}
+      <p class="mt-1 text-xs text-slate-500">最近分析：{{ analyzed_at[:19].replace('T', ' ') }} · 扫描 {{ total_notices_scanned or 0 }} 条公告</p>
+      {% endif %}
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" id="agri-sync-btn" onclick="agriSync()"
+              class="stats-btn stats-btn-primary bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600">
+        同步最新数据
+      </button>
+      <button type="button" id="agri-refresh-btn" onclick="bizClueRefresh()"
+              class="stats-btn stats-btn-secondary border-emerald-200 text-emerald-800 hover:bg-emerald-50">
+        重新分析
+      </button>
+      <a href="/hermes"
+         class="stats-btn stats-btn-secondary border-indigo-200 text-indigo-800 hover:bg-indigo-50">
+        对话查询 →
+      </a>
+    </div>
+  </header>
+
+  {% set sm = summary or {} %}
+
+  <div class="stats-kpi-grid">
+    <div class="stats-kpi-card stats-kpi-card-emerald">
+      <p class="stats-kpi-label">有效线索</p>
+      <p class="stats-kpi-value">{{ sm.new_count or 0 }}</p>
+      <p class="stats-kpi-hint">产品线匹配且通过筛选</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-green">
+      <p class="stats-kpi-label">S/A 级商机</p>
+      <p class="stats-kpi-value">{{ sm.high_value_count or 0 }}</p>
+      <p class="stats-kpi-hint">S {{ sm.s_count or 0 }} · A {{ sm.a_count or 0 }}</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-teal">
+      <p class="stats-kpi-label">待核验</p>
+      <p class="stats-kpi-value">{{ sm.pending_verification_count or 0 }}</p>
+      <p class="stats-kpi-hint">商业来源需回溯官方原文</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-lime">
+      <p class="stats-kpi-label">Agent 状态</p>
+      <p class="stats-kpi-value stats-kpi-value-sm">{{ agent_status or 'ready' }}</p>
+      <p class="stats-kpi-hint">规则引擎</p>
+    </div>
+  </div>
+
+  {% if priority_leads %}
+  <div class="stats-section">
+    <div class="stats-panel border-amber-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-amber-800">优先跟进 · S/A 级</h3>
+        <span class="stats-panel-badge bg-amber-100 text-amber-700">{{ priority_leads|length }} 条</span>
+      </div>
+      <div class="space-y-3">
+        {% for lead in priority_leads %}
+        <div class="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold
+                  {% if lead.opportunity_level == 'S' %}bg-red-100 text-red-700
+                  {% elif lead.opportunity_level == 'A' %}bg-orange-100 text-orange-700
+                  {% else %}bg-slate-100 text-slate-600{% endif %}">
+                  {{ lead.opportunity_level }} · {{ lead.opportunity_score }}分
+                </span>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs">{{ lead.project_stage }}</span>
+                {% if lead.verification_status == 'pending' %}
+                <span class="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs">待核验</span>
+                {% endif %}
+              </div>
+              <h4 class="font-medium text-slate-800 text-sm leading-snug">
+                {% if lead.source_url %}
+                <a href="{{ lead.source_url }}" target="_blank" rel="noopener" class="hover:text-emerald-700 hover:underline">
+                  {{ lead.project_name }}
+                </a>
+                {% else %}{{ lead.project_name }}{% endif %}
+              </h4>
+              <p class="text-xs text-slate-500 mt-1">
+                {{ lead.region_display }} · {{ lead.project_owner or lead.publisher or '—' }}
+                {% if lead.budget_display %} · {{ lead.budget_display }}{% endif %}
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              {% for pl in lead.construction_scope or [] %}
+              <span class="px-2 py-0.5 rounded-md bg-white border border-emerald-200 text-emerald-700 text-xs">{{ pl }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% if lead.evidence_quotes %}
+          <p class="text-xs text-slate-600 mt-2 italic">「{{ lead.evidence_quotes[0] }}」</p>
+          {% endif %}
+          <p class="text-xs text-emerald-700 mt-1">→ {{ lead.recommended_action }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="stats-section">
+    <div class="stats-panel border-emerald-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-emerald-800">线索筛选</h3>
+      </div>
+      <form method="get" class="flex flex-wrap gap-3 items-end text-sm">
+        <input type="hidden" name="days" value="{{ days }}">
+        <div>
+          <label for="filter-stage" class="block text-xs text-slate-500 mb-1">阶段</label>
+          <select id="filter-stage" name="stage" class="app-select app-select-sm">
+            <option value="">全部阶段</option>
+            {% for s in stages or [] %}
+            <option value="{{ s }}" {% if filter_stage == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="filter-product-line" class="block text-xs text-slate-500 mb-1">产品线</label>
+          <select id="filter-product-line" name="product_line" class="app-select app-select-sm">
+            <option value="">全部产品线</option>
+            {% for pl in product_lines or [] %}
+            <option value="{{ pl }}" {% if filter_product_line == pl %}selected{% endif %}>{{ pl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="filter-level" class="block text-xs text-slate-500 mb-1">等级</label>
+          <select id="filter-level" name="level" class="app-select app-select-sm">
+            <option value="">全部等级</option>
+            {% for lv in ['S', 'A', 'B', 'C'] %}
+            <option value="{{ lv }}" {% if filter_level == lv %}selected{% endif %}>{{ lv }}级</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="stats-btn stats-btn-secondary border-emerald-200 text-emerald-800 hover:bg-emerald-50 text-sm px-4 py-1.5">
+          筛选
+        </button>
+        <a href="/?days={{ days }}" class="text-xs text-slate-500 hover:text-emerald-700">清除筛选</a>
+      </form>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <div class="stats-panel border-emerald-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-emerald-800">线索列表</h3>
+        <span class="stats-panel-badge bg-emerald-100 text-emerald-700">{{ (filtered_leads or leads or [])|length }} 条</span>
+      </div>
+      {% set display_leads = filtered_leads if (filter_stage or filter_product_line or filter_level) else (leads or []) %}
+      {% if display_leads %}
+      <div class="space-y-2">
+        {% for lead in display_leads %}
+        <div class="rounded-lg border border-slate-100 bg-white p-3 hover:border-emerald-200 transition">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="px-1.5 py-0.5 rounded text-xs font-semibold
+              {% if lead.opportunity_level == 'S' %}bg-red-50 text-red-600
+              {% elif lead.opportunity_level == 'A' %}bg-orange-50 text-orange-600
+              {% elif lead.opportunity_level == 'B' %}bg-blue-50 text-blue-600
+              {% else %}bg-slate-50 text-slate-500{% endif %}">
+              {{ lead.opportunity_level }} {{ lead.opportunity_score }}
+            </span>
+            <span class="text-xs text-slate-500">{{ lead.project_stage }}</span>
+            <span class="text-xs text-slate-400">{{ lead.region_display }}</span>
+            {% if lead.verification_status == 'pending' %}
+            <span class="text-xs text-yellow-600">⚠ 待核验</span>
+            {% endif %}
+          </div>
+          <p class="text-sm text-slate-800">
+            {% if lead.source_url %}
+            <a href="{{ lead.source_url }}" target="_blank" rel="noopener" class="text-emerald-700 hover:underline">
+              {{ lead.project_name[:70] }}{% if lead.project_name|length > 70 %}…{% endif %}
+            </a>
+            {% else %}{{ lead.project_name[:70] }}{% endif %}
+          </p>
+          <div class="flex flex-wrap gap-1 mt-1">
+            {% for pl in lead.construction_scope or [] %}
+            <span class="text-xs px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded">{{ pl }}</span>
+            {% endfor %}
+            {% if lead.budget_display %}
+            <span class="text-xs text-slate-500">{{ lead.budget_display }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-slate-500 py-6 text-center">暂无匹配线索。可点击「同步最新数据」拉取公告后重新分析。</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if daily_brief_markdown %}
+  <div class="stats-section">
+    <div class="stats-panel border-indigo-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-indigo-800">每日简报</h3>
+        <button type="button" onclick="copyBrief()" class="text-xs text-indigo-600 hover:underline">复制 Markdown</button>
+      </div>
+      <pre id="daily-brief-md" class="hidden">{{ daily_brief_markdown }}</pre>
+      <div id="daily-brief-rendered" class="biz-brief-md text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if sm.by_stage %}
+  <div class="stats-section stats-section-grid">
+    <div class="stats-panel border-emerald-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-emerald-800">阶段分布</h3>
+      </div>
+      <div class="space-y-2">
+        {% for stage_name, cnt in sm.by_stage.items() %}
+        <div class="flex items-center gap-2 text-sm">
+          <span class="w-24 text-slate-600 shrink-0">{{ stage_name }}</span>
+          <div class="flex-1 stats-bar-track"><div class="stats-bar-fill stats-bar-fill-emerald" style="width: {{ (cnt / sm.new_count * 100) if sm.new_count else 0 }}%"></div></div>
+          <span class="text-slate-500 w-8 text-right">{{ cnt }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% if sm.by_product_line %}
+    <div class="stats-panel border-emerald-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-emerald-800">产品线分布</h3>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {% for pl, cnt in sm.by_product_line.items() %}
+        <span class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium">
+          {{ pl }} <span class="text-emerald-400">({{ cnt }})</span>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+<script>
+  function agriSync() {
+    var btn = document.getElementById('agri-sync-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '同步中…'; }
+    fetch('/api/agri/sync', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.ok) {
+          alert(data.error || '同步启动失败');
+          if (btn) { btn.disabled = false; btn.textContent = '同步最新数据'; }
+          return;
+        }
+        var poll = setInterval(function() {
+          fetch('/api/agri/sync/status')
+            .then(function(r) { return r.json(); })
+            .then(function(st) {
+              if (!st.running) {
+                clearInterval(poll);
+                if (btn) { btn.disabled = false; btn.textContent = '同步最新数据'; }
+                var url = new URL(window.location.href);
+                url.searchParams.set('refresh', 'true');
+                window.location.href = url.toString();
+              }
+            });
+        }, 5000);
+      })
+      .catch(function() {
+        alert('请求失败');
+        if (btn) { btn.disabled = false; btn.textContent = '同步最新数据'; }
+      });
+  }
+  function bizClueRefresh() {
+    var url = new URL(window.location.href);
+    url.searchParams.set('refresh', 'true');
+    window.location.href = url.toString();
+  }
+  function copyBrief() {
+    var el = document.getElementById('daily-brief-md');
+    if (el) navigator.clipboard.writeText(el.textContent);
+  }
+  (function() {
+    var md = document.getElementById('daily-brief-md');
+    var target = document.getElementById('daily-brief-rendered');
+    if (md && target && typeof marked !== 'undefined') {
+      target.innerHTML = marked.parse(md.textContent || '');
+    }
+  })();
+</script>
+<style>
+  .biz-brief-md h1 { font-size: 1.1rem; font-weight: 700; color: #065f46; margin-bottom: 0.5rem; }
+  .biz-brief-md h2 { font-size: 0.95rem; font-weight: 600; color: #047857; margin: 1rem 0 0.4rem; }
+  .biz-brief-md ul, .biz-brief-md ol { padding-left: 1.2rem; margin: 0.3rem 0; }
+  .biz-brief-md li { margin: 0.15rem 0; }
+  .biz-brief-md a { color: #059669; }
+</style>
+{% endblock %}

@@ -1,0 +1,30 @@
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.git/
+.gitignore
+.env
+logs/
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# 本地 Chrome / Playwright 缓存（容器内重新安装）
+docs/chrome-mac-arm64/
+docs/ms-playwright/
+docs/*.zip
+
+# 运行时数据（容器内用卷挂载）
+data/notices.jsonl
+data/crawl_logs/
+data/crawl_agent_chats/
+data/crawl_agent_pending.json
+data/crawl_agent_actions.jsonl
+data/generated_scripts/
+data/site_credentials/
+data/backfill_*.log
+data/*.jsonl

@@ -1,0 +1,22 @@
+version: 1
+site_id: bidnews_national
+name: 全国招标信息网
+enabled: false
+# 占位规则：选择器待 WebBridge 可视化配置向导填写
+entry_url: https://bidnews.cn/
+list_page:
+  strategy: dom
+  wait_for: "body"
+  container: "body"
+  item: "a[href]"
+  title: "a"
+  link: "a[href]"
+pagination:
+  type: none
+detail:
+  fetch_detail: false
+limits:
+  max_pages: 1
+  max_items: 5
+  max_depth: 1
+  rate_limit_seconds: 2.0

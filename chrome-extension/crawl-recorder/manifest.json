@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "爬取步骤录制器",
+  "description": "录制浏览器操作，导出 JSON 供 AI 生成 crawl rules YAML",
+  "version": "0.1.0",
+  "permissions": ["activeTab", "storage", "scripting", "tabs", "webNavigation", "clipboardWrite"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "爬取步骤录制器",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["selector.js", "content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

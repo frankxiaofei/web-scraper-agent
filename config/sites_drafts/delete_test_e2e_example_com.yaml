@@ -1,0 +1,9 @@
+id: delete_test_e2e_example_com
+name: E2E删除测试站
+url: https://delete-test-e2e.example.com
+category: draft
+adapter: generic
+enabled: false
+mvp: false
+onboarding: true
+notes: onboarding draft created 2026-07-11T23:21:38.756984+00:00

@@ -1,0 +1,12 @@
+2026-07-12 07:11:10 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [start] 开始爬取 云筑网 url=https://www.yzw.cn
+2026-07-12 07:11:10 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [fetch_list] 开始抓取列表 (max_items=30, detail=False, intelligent=False) url=https://www.yzw.cn
+2026-07-12 07:11:10 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [delay] 请求前等待 2.0s
+2026-07-12 07:11:12 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [fetch_list] 抓取列表页 (尝试 1/3) url=https://jc.yzw.cn/portal/
+2026-07-12 07:11:12 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [fetch_list] 规则驱动抓取列表 (max_items=30) url=https://jc.yzw.cn/portal/
+2026-07-12 07:11:12 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [rule_step] 入口步骤 1/2: navigate url=https://jc.yzw.cn/portal/
+2026-07-12 07:11:12 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [navigate] 打开 https://jc.yzw.cn/portal/ url=https://jc.yzw.cn/portal/
+2026-07-12 07:11:17 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [rule_step] 入口步骤 2/2: wait url=https://jc.yzw.cn/portal/xy
+2026-07-12 07:11:22 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [parse] 解析第 1 页: 0 条 url=https://jc.yzw.cn/portal/xy
+2026-07-12 07:11:22 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [parse] 解析完成: 0 条公告
+2026-07-12 07:11:22 [INFO] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [save] 入库: 新增 0, 更新 0
+2026-07-12 07:11:22 [SUCCESS] run_id=1f44de0e326e435d9c6c89c4fa1096ac site_id=中国建筑集团有限公司_云筑网 [done] 爬取完成: 0 条公告, 新增/更新 0

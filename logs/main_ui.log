@@ -1,0 +1,347 @@
+招标公告 Web UI: http://0.0.0.0:8090/
+数据源: MongoDB（可用时）→ 降级 data/notices.jsonl
+INFO:     Started server process [18987]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 48] error while attempting to bind on address ('0.0.0.0', 8090): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Started server process [30017]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8090 (Press CTRL+C to quit)
+招标公告 Web UI: http://0.0.0.0:8090/
+数据源: MongoDB（可用时）→ 降级 data/notices.jsonl
+INFO:     127.0.0.1:50921 - "GET /stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50921 - "GET /static/style.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:50921 - "GET /static/logo.svg HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:50935 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50936 - "GET /insights HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50922 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50960 - "GET /?q=&site_ids=wechat_agritech HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50960 - "GET /tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50971 - "POST /api/sync/wechat_agritech/trigger HTTP/1.1" 200 OK
+Redis 不可用，使用内存+JSONL 去重: Error 61 connecting to localhost:6380. Connection refused.
+数据库连接失败: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5433 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+INFO:     127.0.0.1:50971 - "GET /api/tasks/sites HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51011 - "GET /tasks/runs/46b80b1cc56148ca9cb6c47d45f6e659 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51011 - "GET /tasks/runs/46b80b1cc56148ca9cb6c47d45f6e659 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51100 - "GET /tasks/runs/46b80b1cc56148ca9cb6c47d45f6e659 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51100 - "GET /insights HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51100 - "GET /static/insights.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:51101 - "GET /tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51101 - "GET /api/tasks/sites HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51101 - "GET /api/tasks/sites HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51101 - "GET /sites HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51101 - "GET /hermes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51101 - "GET /api/crawl-agent/chats?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51101 - "GET /api/crawl-agent/chats/7d829e55-1870-4f5c-9e40-1ddac2b4fda3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51137 - "POST /api/crawl-agent/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51250 - "GET /api/tasks/sites HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51251 - "POST /api/crawl-agent/resolve-site HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51252 - "GET /api/tasks/sites HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51280 - "GET /api/crawl-rules/ggzy_national HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51285 - "GET /api/tasks/sites/ggzy_national HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51288 - "GET /api/schedules/runs?site_id=ggzy_national&limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51342 - "GET /api/tasks/sites/ggzy_national HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51347 - "GET /api/sync/ggzy_national/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51348 - "GET /api/notices?page=1&per_page=5&source=ggzy_national HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51357 - "GET /api/tasks/sites/wechat_agritech HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51361 - "GET /api/sync/wechat_agritech/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51662 - "POST /api/sync/ggzy_national/reset HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:51694 - "POST /api/sync/ggzy_national/trigger HTTP/1.1" 200 OK
+Redis 不可用，使用内存+JSONL 去重: Error 61 connecting to localhost:6380. Connection refused.
+数据库连接失败: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5433 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+INFO:     127.0.0.1:51699 - "POST /api/sync/wechat_agri_remote/trigger HTTP/1.1" 200 OK
+Redis 不可用，使用内存+JSONL 去重: Error 61 connecting to localhost:6380. Connection refused.
+数据库连接失败: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5433 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+INFO:     127.0.0.1:51740 - "GET /api/tasks/sites/ggzy_national HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/gzip.py", line 29, in __call__
+    await responder(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/gzip.py", line 46, in __call__
+    await self.app(scope, receive, self.send_with_compression)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 2683, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 1266, in handle
+    await super().handle(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 150, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 136, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 690, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 344, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/app.py", line 850, in api_tasks_site_detail
+    detail = task_svc.get_site(site_id, runs_limit=runs_limit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/task_service.py", line 195, in get_site
+    data = self.list_sites()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/task_service.py", line 36, in list_sites
+    sync_data = sync_svc.list_status(include_bim_totals=False)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/sync_service.py", line 259, in list_status
+    for r in run_store.list_runs(status="running", limit=100)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/core/crawl_run_store.py", line 210, in list_runs
+    runs.sort(key=lambda r: r.get("created_at", ""), reverse=True)
+TypeError: '<' not supported between instances of 'str' and 'datetime.datetime'
+INFO:     127.0.0.1:51759 - "GET /api/tasks/sites/wechat_agri_remote HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/gzip.py", line 29, in __call__
+    await responder(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/gzip.py", line 46, in __call__
+    await self.app(scope, receive, self.send_with_compression)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 2683, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 1266, in handle
+    await super().handle(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 150, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 136, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 690, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 344, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/app.py", line 850, in api_tasks_site_detail
+    detail = task_svc.get_site(site_id, runs_limit=runs_limit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/task_service.py", line 195, in get_site
+    data = self.list_sites()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/task_service.py", line 36, in list_sites
+    sync_data = sync_svc.list_status(include_bim_totals=False)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/sync_service.py", line 259, in list_status
+    for r in run_store.list_runs(status="running", limit=100)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/core/crawl_run_store.py", line 210, in list_runs
+    runs.sort(key=lambda r: r.get("created_at", ""), reverse=True)
+TypeError: '<' not supported between instances of 'str' and 'datetime.datetime'
+INFO:     127.0.0.1:51781 - "GET /api/tasks/sites/wechat_agritech HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/gzip.py", line 29, in __call__
+    await responder(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/gzip.py", line 46, in __call__
+    await self.app(scope, receive, self.send_with_compression)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 2683, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 1266, in handle
+    await super().handle(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 150, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 136, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 690, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 344, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/app.py", line 850, in api_tasks_site_detail
+    detail = task_svc.get_site(site_id, runs_limit=runs_limit)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/task_service.py", line 195, in get_site
+    data = self.list_sites()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/task_service.py", line 36, in list_sites
+    sync_data = sync_svc.list_status(include_bim_totals=False)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/sync_service.py", line 259, in list_status
+    for r in run_store.list_runs(status="running", limit=100)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/core/crawl_run_store.py", line 210, in list_runs
+    runs.sort(key=lambda r: r.get("created_at", ""), reverse=True)
+TypeError: '<' not supported between instances of 'str' and 'datetime.datetime'
+INFO:     127.0.0.1:51799 - "GET /api/tasks/sites HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/gzip.py", line 29, in __call__
+    await responder(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/gzip.py", line 46, in __call__
+    await self.app(scope, receive, self.send_with_compression)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 2683, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 1266, in handle
+    await super().handle(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 150, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 136, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 690, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 344, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/app.py", line 844, in api_tasks_sites
+    return task_svc.list_sites()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/task_service.py", line 36, in list_sites
+    sync_data = sync_svc.list_status(include_bim_totals=False)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/web/sync_service.py", line 259, in list_status
+    for r in run_store.list_runs(status="running", limit=100)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lixiaofei/Documents/codes/02_cfzn_projects/web_scraper_agent/src/core/crawl_run_store.py", line 210, in list_runs
+    runs.sort(key=lambda r: r.get("created_at", ""), reverse=True)
+TypeError: '<' not supported between instances of 'str' and 'datetime.datetime'
+INFO:     127.0.0.1:51804 - "GET /api/schedules/runs?site_id=ggzy_national&limit=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51806 - "GET /api/schedules/runs?site_id=wechat_agri_remote&limit=1 HTTP/1.1" 200 OK

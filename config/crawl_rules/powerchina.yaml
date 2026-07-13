@@ -1,0 +1,28 @@
+version: 1
+site_id: powerchina
+name: 中国电建阳光采购网
+enabled: true
+entry_url: https://bid.powerchina.cn/consult/notice
+list_page:
+  strategy: dom_after_ajax
+  container: "#app"
+  item: "div.notice-item"
+  title: "a.notice-title"
+  link: "a.notice-title"
+  date: "span.notice-date"
+  wait_network:
+    url_pattern: "/consult/notice"
+    timeout_ms: 15000
+pagination:
+  type: next_button
+  selector: ".el-pagination button.btn-next"
+  wait_after_ms: 2000
+detail:
+  fetch_detail: true
+  url_pattern: "/consult/notice/detail\\?id=\\d+"
+  content_selector: "#app .notice-detail"
+limits:
+  max_pages: 30
+  max_items: 100
+  max_depth: 2
+  rate_limit_seconds: 1.0

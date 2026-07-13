@@ -1,0 +1,38 @@
+version: 1
+site_id: chnenergybidding_national
+name: 国能e招（国家能源集团招标网）
+enabled: true
+entry_url: https://www.chnenergybidding.com.cn/bidweb/001/001002/001002001/moreinfo.html
+entry_steps:
+  - action: navigate
+    url: https://www.chnenergybidding.com.cn/bidweb/001/001002/001002001/moreinfo.html
+    label: 招标公告-货物
+  - action: navigate
+    url: https://www.chnenergybidding.com.cn/bidweb/001/001002/001002002/moreinfo.html
+    label: 招标公告-工程
+  - action: navigate
+    url: https://www.chnenergybidding.com.cn/bidweb/001/001002/001002003/moreinfo.html
+    label: 招标公告-服务
+list_page:
+  strategy: dom
+  container: div.right-bd
+  item: ul.right-items li.right-item
+  title: a.infolink
+  link: a.infolink
+  date: span.r
+pagination:
+  type: page_number
+  page_param: page
+  page_size: 15
+  max_pages: 100
+  stop_when_empty: true
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "/bidweb/001/001002/"
+  content_selector: div.right-bd
+limits:
+  max_pages: 100
+  max_items: 1500
+  max_depth: 2
+  rate_limit_seconds: 1.0

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 数据统计{% endblock %}
+
+{% block content %}
+<section class="stats-page">
+  <header class="stats-page-header">
+    <div>
+      <h2 class="stats-page-title">数据统计</h2>
+      <p class="stats-page-subtitle">{{ crawl_scope_label }} enabled 站点爬取数据的分布与趋势</p>
+    </div>
+    <button type="button" id="stats-refresh-btn" onclick="statsRefresh()"
+            class="stats-btn stats-btn-secondary">
+      <svg class="stats-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      刷新
+    </button>
+  </header>
+
+  {% if not stats.has_data %}
+  <div class="stats-empty">
+    <div class="stats-empty-icon" aria-hidden="true">
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <p class="stats-empty-title">暂无爬取数据</p>
+    <p class="stats-empty-desc">当前数据源中没有可统计的公告记录。请先运行同步或爬取任务。</p>
+    <a href="/tasks" class="stats-btn stats-btn-primary">前往任务状态</a>
+  </div>
+  {% else %}
+
+  <div class="stats-kpi-grid">
+    <div class="stats-kpi-card stats-kpi-card-violet">
+      <p class="stats-kpi-label">总条数</p>
+      <p class="stats-kpi-value">{{ stats.total }}</p>
+      <p class="stats-kpi-hint">{{ crawl_scope_label }} 站点全部记录</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-indigo">
+      <p class="stats-kpi-label">站点数</p>
+      <p class="stats-kpi-value">{{ stats.site_count }}</p>
+      <p class="stats-kpi-hint">有数据的来源站点</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-purple">
+      <p class="stats-kpi-label">公告类型</p>
+      <p class="stats-kpi-value">{{ stats.category_count }}</p>
+      <p class="stats-kpi-hint">category 字段种类</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-slate">
+      <p class="stats-kpi-label">最近更新</p>
+      <p class="stats-kpi-value stats-kpi-value-sm">{{ stats.last_updated_fmt }}</p>
+      <p class="stats-kpi-hint">按抓取/入库时间</p>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <div class="stats-panel stats-panel-chart app-card">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">按站点分布</h3>
+        <span class="stats-panel-badge">{{ stats.by_site|length }} 个站点</span>
+      </div>
+      <div class="stats-pie-wrap">
+        <div class="stats-pie-chart-area">
+          <canvas id="stats-site-pie" aria-label="按站点分布饼图"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <div class="stats-panel">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">按公告类型分布</h3>
+        <span class="stats-panel-badge">{{ stats.by_category|length }} 种类型</span>
+      </div>
+      <div class="stats-distribution-wrap">
+        <table class="stats-distribution-table stats-distribution-table-category">
+          <colgroup>
+            <col class="stats-col-label-full">
+            <col class="stats-col-bar">
+            <col class="stats-col-meta">
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">类型</th>
+              <th scope="col" class="stats-th-bar" aria-hidden="true"></th>
+              <th scope="col" class="stats-th-meta">数量 · 占比</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set cat_max = stats.by_category[0].count if stats.by_category else 1 %}
+            {% for row in stats.by_category %}
+            {% set bar_pct = (row.count / cat_max * 100) if cat_max else 0 %}
+            <tr>
+              <td class="stats-cell-label" title="{{ row.name }}">{{ row.name }}</td>
+              <td class="stats-cell-bar">
+                <div class="stats-bar-track">
+                  <div class="stats-bar-fill stats-bar-fill-{{ loop.index0 % 6 }}"
+                       style="--stats-bar-pct: {{ bar_pct }}%"></div>
+                </div>
+              </td>
+              <td class="stats-cell-meta"><span class="stats-meta-count">{{ row.count }}</span><span class="stats-meta-sep">·</span><span class="stats-meta-pct">{{ row.pct }}%</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-trends">
+    {% for section in [
+      ('daily', '近 30 日新增', stats.by_time.daily),
+      ('weekly', '近 12 周新增', stats.by_time.weekly),
+      ('monthly', '近 12 月新增', stats.by_time.monthly)
+    ] %}
+    {% set trend_max = section[2]|map(attribute='count')|max if section[2] else 1 %}
+    {% if trend_max == 0 %}{% set trend_max = 1 %}{% endif %}
+    <div class="stats-section">
+      <div class="stats-panel">
+        <div class="stats-panel-header">
+          <h3 class="stats-panel-title">{{ section[1] }}</h3>
+          <span class="stats-panel-badge">按抓取时间</span>
+        </div>
+        <div class="stats-trend-chart" role="img" aria-label="{{ section[1] }}趋势图">
+          {% for point in section[2] %}
+          {% set trend_pct = (point.count / trend_max * 100) if trend_max else 0 %}
+          <div class="stats-trend-col" title="{{ point.key }}: {{ point.count }} 条">
+            {% if point.count > 0 %}
+            <span class="stats-trend-count">{{ point.count }}</span>
+            {% else %}
+            <span class="stats-trend-count stats-trend-count-empty" aria-hidden="true">&nbsp;</span>
+            {% endif %}
+            <div class="stats-trend-bar-wrap">
+              <div class="stats-trend-bar{% if point.count == 0 %} stats-trend-bar-zero{% endif %}"
+                   style="--stats-trend-pct: {{ trend_pct }}%"></div>
+            </div>
+            <span class="stats-trend-label">{{ point.label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="stats-trend-legend" aria-hidden="true">
+          <span class="stats-trend-legend-item">
+            <span class="stats-trend-legend-swatch"></span>
+            新增条数
+          </span>
+          <span class="stats-trend-legend-hint">柱高按本周期最大值比例显示</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% endif %}
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/static/stats-pie-chart.js"></script>
+<script>
+  initSitePieChart('stats-site-pie', {{ stats.by_site | tojson }}, { colors: window.BRAND_PIE_COLORS });
+
+  function statsRefresh() {
+    var btn = document.getElementById('stats-refresh-btn');
+    var page = document.querySelector('.stats-page');
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('stats-btn-loading');
+    }
+    if (page) page.classList.add('stats-page-loading');
+    location.reload();
+  }
+</script>
+{% endblock %}

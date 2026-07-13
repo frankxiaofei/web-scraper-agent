@@ -1,0 +1,12 @@
+2026-07-12 07:14:06 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [start] 开始爬取 供应链管理信息系统 url=https://zgjtjs.dlzb.com/
+2026-07-12 07:14:06 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [fetch_list] 开始抓取列表 (max_items=30, detail=False, intelligent=False) url=https://zgjtjs.dlzb.com/
+2026-07-12 07:14:06 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [delay] 请求前等待 2.0s
+2026-07-12 07:14:08 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [fetch_list] 抓取列表页 (尝试 1/3) url=https://zgjtjs.dlzb.com/v1/
+2026-07-12 07:14:08 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [fetch_list] 规则驱动抓取列表 (max_items=30) url=https://zgjtjs.dlzb.com/v1/
+2026-07-12 07:14:08 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [rule_step] 入口步骤 1/1: navigate url=https://zgjtjs.dlzb.com/v1/
+2026-07-12 07:14:08 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [navigate] 打开 https://zgjtjs.dlzb.com/v1/ url=https://zgjtjs.dlzb.com/v1/
+2026-07-12 07:14:22 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [parse] 解析第 1 页: 20 条 url=https://zgjtjs.dlzb.com/v1/
+2026-07-12 07:14:22 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [parse] 规则抓取完成: 20 条
+2026-07-12 07:14:22 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [parse] 解析完成: 20 条公告
+2026-07-12 07:14:22 [INFO] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [save] 入库: 新增 0, 更新 0
+2026-07-12 07:14:22 [SUCCESS] run_id=4cd8dbc9191a489893e3ffce51303c68 site_id=中国交通建设集团有限公司_供应链管理信息系统 [done] 爬取完成: 20 条公告, 新增/更新 0

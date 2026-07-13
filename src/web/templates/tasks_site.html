@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — {{ site.site_name }} — 任务状态{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+    <a href="/tasks" class="hover:text-brand-600">← 任务状态</a>
+    <span>/</span>
+    <span class="text-slate-700">{{ site.site_name }}</span>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-bold text-slate-900">{{ site.site_name }}</h2>
+        <p class="text-xs font-mono text-slate-400 mt-1">{{ site.site_id }}</p>
+        {% if site.site_url %}
+        <a href="{{ site.site_url }}" target="_blank" rel="noopener"
+           class="text-sm text-brand-600 hover:underline mt-1 inline-block">{{ site.site_url }}</a>
+        {% endif %}
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="/crawl-rules/{{ site.site_id }}"
+           class="inline-flex items-center rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium px-4 py-2 transition">
+          规则配置
+        </a>
+        {% set is_running = site.is_running %}
+        {% if is_running and site.active_run_id %}
+        <a href="/tasks/runs/{{ site.active_run_id }}"
+           class="inline-flex items-center rounded-lg border border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-medium px-4 py-2 transition">
+          查看日志
+        </a>
+        <button type="button" onclick="cancelSite('{{ site.site_id }}', this)"
+                class="inline-flex items-center rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 transition">
+          中止
+        </button>
+        {% if site.sync_stale %}
+        <button type="button" onclick="resetSyncStatus('{{ site.site_id }}', this)"
+                class="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-sm font-medium px-4 py-2 transition">
+          重置状态
+        </button>
+        {% endif %}
+        {% elif site.status == 'failed' or site.last_run_status == 'failed' %}
+        <button type="button" onclick="retrySite('{{ site.site_id }}', this)"
+                class="inline-flex items-center rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 transition">
+          重试
+        </button>
+        {% endif %}
+        <button type="button" onclick="triggerSite('{{ site.site_id }}', this)"
+                class="inline-flex items-center rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 transition trigger-btn"
+                {% if is_running %}disabled{% endif %}>
+          立即执行
+        </button>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-sm">
+      <div><span class="text-slate-400">同步状态</span><p class="font-medium" id="site-status-text">{{ site.sync_status_label }}</p></div>
+      <div><span class="text-slate-400">上次同步</span><p class="font-medium">{{ site.last_sync_at_fmt }}</p></div>
+      <div><span class="text-slate-400">下次调度</span><p class="font-medium text-xs">{{ site.next_schedule_hint }}</p></div>
+      <div><span class="text-slate-400">最近 Run</span><p class="font-medium" id="site-run-status-text">{{ site.last_run_status_label }}</p></div>
+    </div>
+    <div id="site-progress-panel" class="mt-4 {% if not is_running %}hidden{% endif %}">
+      <div class="rounded-lg border border-blue-100 bg-blue-50/50 px-4 py-3">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <span class="text-sm font-medium text-blue-800">同步进度</span>
+          <span id="site-progress-percent" class="text-xs text-blue-600">0%</span>
+        </div>
+        <div class="w-full bg-blue-100 rounded-full h-2">
+          <div id="site-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <p id="site-progress-text" class="text-xs text-slate-600 mt-2">—</p>
+      </div>
+    </div>
+    {% if site.sync_stale %}
+    <div class="mt-4 rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800">
+      服务重启后同步任务已丢失，当前为残留「同步中」状态。可点击「中止」或「重置状态」清理；
+      等价 API：<code class="text-xs">POST /api/sync/{{ site.site_id }}/reset</code>。
+      bid.powerchina.cn 等 API 站可改用 <code class="text-xs">scripts/crawl_powerchina_http.py</code>（纯 HTTP，不经 LLM）。
+    </div>
+    {% endif %}
+    {% if site.last_error %}
+    <div class="mt-4 rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-800">
+      {{ site.last_error }}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+  <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+    <h3 class="text-sm font-semibold text-slate-800">最近爬取记录</h3>
+    <span class="text-xs text-slate-400">{{ runs|length }} 条</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left text-xs text-slate-500 uppercase">
+        <tr>
+          <th class="px-4 py-3">Run ID</th>
+          <th class="px-4 py-3">触发</th>
+          <th class="px-4 py-3">状态</th>
+          <th class="px-4 py-3">公告数</th>
+          <th class="px-4 py-3">新增</th>
+          <th class="px-4 py-3">耗时</th>
+          <th class="px-4 py-3">开始时间</th>
+          <th class="px-4 py-3">操作</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for run in runs %}
+        <tr class="hover:bg-slate-50/80">
+          <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ run.run_id[:16] }}…</td>
+          <td class="px-4 py-3 text-slate-500">{{ run.trigger }}</td>
+          <td class="px-4 py-3">
+            <span class="text-xs font-medium
+              {% if run.status == 'success' %}text-emerald-600
+              {% elif run.status == 'failed' %}text-red-600
+              {% elif run.status == 'running' %}text-blue-600
+              {% elif run.status == 'cancelled' %}text-amber-600
+              {% else %}text-slate-500{% endif %}">{{ run.status }}</span>
+          </td>
+          <td class="px-4 py-3">{{ run.notices_count }}</td>
+          <td class="px-4 py-3">{{ run.new_count }}</td>
+          <td class="px-4 py-3">{{ run.duration_seconds }}s</td>
+          <td class="px-4 py-3 text-xs text-slate-500">{{ run.started_at_fmt or '—' }}</td>
+          <td class="px-4 py-3 space-x-2 whitespace-nowrap">
+            <a href="/tasks/runs/{{ run.run_id }}" class="text-brand-600 hover:text-brand-700 text-xs font-medium">详情</a>
+            {% if run.status == 'failed' %}
+            <button type="button"
+                    onclick="retryRun('{{ run.run_id }}', this)"
+                    class="text-red-600 hover:text-red-700 text-xs font-medium disabled:opacity-50">
+              重试
+            </button>
+            {% elif run.status == 'running' %}
+            <button type="button"
+                    onclick="cancelRun('{{ run.run_id }}', this)"
+                    class="text-red-600 hover:text-red-700 text-xs font-medium disabled:opacity-50">
+              中止
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">暂无爬取记录</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const SITE_ID = '{{ site.site_id }}';
+const STEP_LABELS = {
+  fetch_list: '抓取列表',
+  fetch_detail: '抓取详情',
+  parse: '解析列表',
+  paginate: '翻页',
+  rule_step: '规则步骤',
+  navigate: '导航',
+  delay: '等待',
+  save: '入库',
+  intelligent: '智能扩展',
+};
+
+function formatProgressText(progress) {
+  if (!progress) return '—';
+  const items = progress.progress_items || 0;
+  const maxItems = progress.max_items || 0;
+  const step = STEP_LABELS[progress.current_step] || progress.current_step || progress.latest_event_type || '运行中';
+  const elapsed = progress.elapsed_seconds || 0;
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeText = mins > 0 ? `${mins}分${secs}秒` : `${secs}秒`;
+  if (maxItems > 0) {
+    return `已抓取 ${items}/${maxItems} 条 · 当前：${step} · ${timeText}`;
+  }
+  return `当前：${step} · ${timeText}`;
+}
+
+function applySiteProgress(progress) {
+  const panel = document.getElementById('site-progress-panel');
+  const bar = document.getElementById('site-progress-bar');
+  const text = document.getElementById('site-progress-text');
+  const pctEl = document.getElementById('site-progress-percent');
+  if (!panel || !bar || !text) return;
+  panel.classList.remove('hidden');
+  const pct = progress && progress.progress_percent != null ? progress.progress_percent : 0;
+  bar.style.width = `${Math.min(pct, 100)}%`;
+  if (pctEl) pctEl.textContent = `${pct}%`;
+  text.textContent = formatProgressText(progress);
+  text.title = progress?.latest_event_message || '';
+}
+
+async function refreshSiteProgress() {
+  try {
+    const res = await fetch(`/api/sync/${SITE_ID}/status`);
+    const data = await res.json();
+    if (!data.ok) return;
+    const progress = data.progress;
+    const isRunning = data.is_running;
+    if (isRunning && progress) {
+      applySiteProgress(progress);
+    } else if (!isRunning) {
+      clearInterval(window.__sitePollTimer);
+      window.__sitePollTimer = null;
+      setTimeout(() => location.reload(), 1200);
+    }
+  } catch (e) {
+    console.warn('进度刷新失败', e);
+  }
+}
+
+function startSitePolling() {
+  if (window.__sitePollTimer) return;
+  refreshSiteProgress();
+  window.__sitePollTimer = setInterval(refreshSiteProgress, 3000);
+}
+
+async function triggerSite(siteId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '提交中…';
+  try {
+    const res = await fetch(`/api/sync/${siteId}/trigger`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok && data.run_id) {
+      showToast('已加入执行队列', 'success');
+      startSitePolling();
+      setTimeout(() => { window.location.href = `/tasks/runs/${data.run_id}`; }, 800);
+    } else if (data.ok) {
+      showToast('已加入执行队列', 'success');
+      startSitePolling();
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast(data.message || data.detail || '触发失败', 'error');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function resetSyncStatus(siteId, btn) {
+  if (!confirm('确定要重置该站点的同步状态吗？这将清理残留的「同步中」标记。')) return;
+  if (btn) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+  }
+  try {
+    const res = await fetch(`/api/sync/${encodeURIComponent(siteId)}/reset`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      showToast(data.message || '已重置同步状态', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast(data.detail || data.message || '重置失败', 'error');
+      if (btn) btn.disabled = false;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function cancelSite(siteId, btn) {
+  if (!confirm('确定要中止该站点的同步任务吗？')) return;
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '中止中…';
+  try {
+    const res = await fetch(`/api/sync/${encodeURIComponent(siteId)}/cancel`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      showToast(data.stale ? (data.message || '已清理残留同步状态') : '已发送中止信号', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      const msg = data.detail || data.message || '中止失败';
+      showToast(msg, 'error');
+      if (confirm('任务可能已结束或服务已重启。是否重置同步状态？')) {
+        await resetSyncStatus(siteId, null);
+      } else {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function cancelRun(runId, btn) {
+  if (!confirm('确定要中止该 Run 吗？')) return;
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '中止中…';
+  try {
+    const res = await fetch(`/api/schedules/runs/${runId}/cancel`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      showToast('已发送中止信号', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast(data.detail || data.message || '中止失败', 'error');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function retrySite(siteId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '重试中…';
+  try {
+    const res = await fetch(`/api/sync/${siteId}/retry`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.status === 'started') {
+      showToast('重试已启动', 'success');
+      if (data.run_id) {
+        setTimeout(() => { window.location.href = `/tasks/runs/${data.run_id}`; }, 800);
+      } else {
+        setTimeout(() => location.reload(), 2000);
+      }
+    } else {
+      showToast(data.detail || data.message || '重试失败', 'error');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function retryRun(runId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '重试中…';
+  try {
+    const res = await fetch(`/api/schedules/runs/${runId}/retry`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.status === 'started') {
+      showToast('重试已启动', 'success');
+      if (data.run_id) {
+        setTimeout(() => { window.location.href = `/tasks/runs/${data.run_id}`; }, 800);
+      } else {
+        setTimeout(() => location.reload(), 2000);
+      }
+    } else {
+      showToast(data.detail || data.message || '重试失败', 'error');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+{% if site.is_running %}
+startSitePolling();
+{% endif %}
+</script>
+{% endblock %}

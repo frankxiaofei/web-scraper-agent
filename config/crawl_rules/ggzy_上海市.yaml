@@ -1,0 +1,29 @@
+version: 1
+site_id: ggzy_上海市
+name: 上海市公共资源交易平台
+enabled: true
+entry_url: https://www.shggzy.com/
+entry_steps:
+  - action: navigate
+    url: https://www.shggzy.com/jyxx.jhtml
+list_page:
+  strategy: dom
+  container: "#allList"
+  item: "li"
+  title: "span:nth-of-type(2)"
+  link: "a"
+  wait_for: "#allList"
+pagination:
+  type: next_button
+  selector: "a.next"
+  disabled_selector: "a.next.disabled"
+  wait_after_ms: 1000
+detail:
+  fetch_detail: true
+  url_pattern: "/gqcgzbgg/|/jyxx/"
+  content_selector: ".detail-content"
+limits:
+  max_pages: 20
+  max_items: 100
+  max_depth: 2
+  rate_limit_seconds: 1.0

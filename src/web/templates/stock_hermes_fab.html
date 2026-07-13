@@ -1,0 +1,52 @@
+{# 8092 股票 Hermes 悬浮球 — 全站嵌入（/hermes 全页可通过 show_hermes_fab=false 关闭） #}
+{% if show_hermes_fab is not defined or show_hermes_fab %}
+<link rel="stylesheet" href="/static/stock_hermes_fab.css">
+<div id="stockHermesFabRoot" class="stock-hermes-fab-root" aria-live="polite">
+  <button type="button" id="stockHermesFabBtn" class="stock-hermes-fab-btn" aria-label="打开 Hermes 股票问答" aria-expanded="false" title="Hermes 股票问答">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M4.913 2.658c2.075-.35 4.19-.408 6.337-.408 2.147 0 4.262.058 6.337.408 1.922.325 3.422 1.781 3.703 3.723.26 1.867-.626 3.672-2.015 4.971-1.06 1.001-2.4 1.636-3.865 1.903-.386.07-.772.126-1.16.168a.75.75 0 00-.582.405l-1.248 2.49a.75.75 0 01-1.34-.134l-1.03-2.06a.75.75 0 00-.7-.405c-.48-.042-.958-.098-1.432-.168-1.465-.267-2.805-.902-3.865-1.903-1.389-1.299-2.275-3.104-2.015-4.971.281-1.942 1.781-3.398 3.703-3.723z"/>
+      <path d="M12 8.25a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zM12 15a1 1 0 100-2 1 1 0 000 2z"/>
+    </svg>
+  </button>
+
+  <div id="stockHermesBackdrop" class="stock-hermes-backdrop" aria-hidden="true"></div>
+
+  <aside id="stockHermesDrawer" class="stock-hermes-drawer" role="dialog" aria-label="Hermes 股票问答" aria-modal="true">
+    <header class="stock-hermes-drawer-header">
+      <div>
+        <h3>Hermes 股票问答</h3>
+        <p>板块 · 政策 · 产业链 · 洞察</p>
+      </div>
+      <button type="button" id="stockHermesCloseBtn" class="stock-hermes-icon-btn" aria-label="收起">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/></svg>
+      </button>
+    </header>
+
+    <div id="stockHermesFaq" class="stock-hermes-faq" aria-label="常见问题"></div>
+
+    <div id="stockHermesAgentBar" class="stock-hermes-agent-bar">
+      <span class="stock-hermes-agent-dot"></span>
+      <span>Agent 分析中…</span>
+    </div>
+
+    <div id="stockHermesMessages" class="stock-hermes-messages">
+      <div class="stock-hermes-msg-assistant stock-hermes-welcome">
+        <div class="hermes-md">你好，我是 <strong>股票领域 Hermes</strong>。可查询板块涨跌、个股资料、产业链与政策洞察。<br>点击下方快捷问题，或直接输入。</div>
+      </div>
+    </div>
+
+    <div class="stock-hermes-input-area">
+      <form id="stockHermesForm" class="stock-hermes-input-row">
+        <textarea id="stockHermesInput" rows="2" placeholder="问板块、政策、产业链…" autocomplete="off"></textarea>
+        <button type="submit" id="stockHermesSendBtn" class="stock-hermes-send-btn">发送</button>
+      </form>
+      <p class="stock-hermes-input-hint">Enter 发送 · 仅供参考，不构成投资建议</p>
+    </div>
+  </aside>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="/static/markdown-render.js"></script>
+<script src="/static/stock_hermes_fab.js"></script>
+{% endif %}

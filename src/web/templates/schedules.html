@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 定时爬取任务{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">定时爬取任务</h2>
+      <p class="text-sm text-slate-500 mt-1">{{ schedule.full_cycle_human }}</p>
+    </div>
+    <button type="button" onclick="location.reload()"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+      刷新
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">错开间隔</p>
+      <p class="text-2xl font-bold text-brand-600 mt-1">{{ schedule.round_robin_interval_minutes }} 分钟</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">单站周期</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ schedule.per_site_cycle_minutes }} 分钟</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">已启用站点</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ schedule.enabled_site_count }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4 bg-emerald-50/30">
+      <p class="text-xs font-medium text-emerald-700 uppercase">最近成功</p>
+      <p class="text-2xl font-bold text-emerald-600 mt-1">{{ summary.success }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-red-200 shadow-sm p-4 bg-red-50/30">
+      <p class="text-xs font-medium text-red-700 uppercase">最近失败</p>
+      <p class="text-2xl font-bold text-red-600 mt-1">{{ summary.failed }}</p>
+    </div>
+  </div>
+
+  <p class="text-xs text-slate-400 mb-4">日志存储: {{ backend|upper }} · 文件路径 data/crawl_logs/{site_id}/{run_id}.log</p>
+</section>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+  <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+    <h3 class="text-sm font-semibold text-slate-800">站点定时爬取列表</h3>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left text-xs text-slate-500 uppercase">
+        <tr>
+          <th class="px-4 py-3">站点</th>
+          <th class="px-4 py-3">队列序号</th>
+          <th class="px-4 py-3">错开偏移</th>
+          <th class="px-4 py-3">最近状态</th>
+          <th class="px-4 py-3">最近 Run</th>
+          <th class="px-4 py-3">操作</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for job in jobs %}
+        <tr class="hover:bg-slate-50/80">
+          <td class="px-4 py-3">
+            <div class="font-medium text-slate-900">{{ job.site_name }}</div>
+            <div class="text-xs text-slate-400 font-mono">{{ job.site_id }}</div>
+          </td>
+          <td class="px-4 py-3 text-slate-600">#{{ job.schedule_index }}</td>
+          <td class="px-4 py-3 text-slate-600">+{{ job.stagger_offset_minutes }} min</td>
+          <td class="px-4 py-3">
+            {% set st = job.last_status %}
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium
+              {% if st == 'success' %}bg-emerald-50 text-emerald-700
+              {% elif st == 'running' %}bg-blue-50 text-blue-700
+              {% elif st == 'failed' %}bg-red-50 text-red-700
+              {% elif st == 'skipped' %}bg-amber-50 text-amber-700
+              {% else %}bg-slate-100 text-slate-600{% endif %}">
+              {{ st }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-xs text-slate-500 font-mono">
+            {% if job.last_run %}
+              {{ job.last_run.run_id[:12] }}…
+              <span class="text-slate-400">({{ job.last_run.duration_seconds }}s)</span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="px-4 py-3 space-x-2 whitespace-nowrap">
+            <button type="button"
+                    onclick="retryJob('{{ job.site_id }}', this)"
+                    class="inline-flex items-center rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-xs font-medium px-3 py-1.5 transition"
+                    {% if job.last_status == 'running' %}disabled{% endif %}>
+              立即执行
+            </button>
+            {% if job.last_run %}
+            <a href="/schedules/runs/{{ job.last_run.run_id }}"
+               class="text-brand-600 hover:text-brand-700 text-xs font-medium">查看日志</a>
+            {% else %}
+            <span class="text-slate-300 text-xs">暂无</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+  <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+    <h3 class="text-sm font-semibold text-slate-800">最近爬取记录</h3>
+    <span class="text-xs text-slate-400">{{ recent_runs|length }} 条</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left text-xs text-slate-500 uppercase">
+        <tr>
+          <th class="px-4 py-3">Run ID</th>
+          <th class="px-4 py-3">站点</th>
+          <th class="px-4 py-3">触发</th>
+          <th class="px-4 py-3">状态</th>
+          <th class="px-4 py-3">公告数</th>
+          <th class="px-4 py-3">耗时</th>
+          <th class="px-4 py-3">操作</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for run in recent_runs %}
+        <tr class="hover:bg-slate-50/80">
+          <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ run.run_id[:16] }}…</td>
+          <td class="px-4 py-3">{{ run.site_name or run.site_id }}</td>
+          <td class="px-4 py-3 text-slate-500">{{ run.trigger }}</td>
+          <td class="px-4 py-3">
+            <span class="text-xs font-medium
+              {% if run.status == 'success' %}text-emerald-600
+              {% elif run.status == 'failed' %}text-red-600
+              {% elif run.status == 'running' %}text-blue-600
+              {% else %}text-slate-500{% endif %}">{{ run.status }}</span>
+          </td>
+          <td class="px-4 py-3">{{ run.notices_count }}</td>
+          <td class="px-4 py-3">{{ run.duration_seconds }}s</td>
+          <td class="px-4 py-3 space-x-2 whitespace-nowrap">
+            <a href="/schedules/runs/{{ run.run_id }}" class="text-brand-600 hover:text-brand-700 text-xs font-medium">详情</a>
+            {% if run.status == 'failed' %}
+            <button type="button"
+                    onclick="retryRun('{{ run.run_id }}', this)"
+                    class="text-red-600 hover:text-red-700 text-xs font-medium disabled:opacity-50">
+              重试
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">暂无爬取记录，启动调度器后将自动生成</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function retryJob(siteId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '执行中…';
+  try {
+    const res = await fetch(`/api/schedules/jobs/${siteId}/retry`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.status === 'started') {
+      showToast('任务已启动', 'success');
+      if (data.run_id) {
+        setTimeout(() => { window.location.href = `/schedules/runs/${data.run_id}`; }, 800);
+      } else {
+        setTimeout(() => location.reload(), 2000);
+      }
+    } else {
+      showToast(data.detail || data.message || '执行失败', 'error');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function retryRun(runId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '重试中…';
+  try {
+    const res = await fetch(`/api/schedules/runs/${runId}/retry`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.status === 'started') {
+      showToast('重试已启动', 'success');
+      if (data.run_id) {
+        setTimeout(() => { window.location.href = `/schedules/runs/${data.run_id}`; }, 800);
+      } else {
+        setTimeout(() => location.reload(), 2000);
+      }
+    } else {
+      showToast(data.detail || data.message || '重试失败', 'error');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+</script>
+{% endblock %}

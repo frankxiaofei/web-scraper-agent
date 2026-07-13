@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+data/notices.jsonl
+data/*.log
+data/site_credentials/
+data/crawl_agent_pending.json
+data/crawl_agent_actions.jsonl
+data/crawl_agent_chats/
+data/generated_scripts/
+docs/
+data/wechat_*/images/
+data/crawl_logs/
+logs/

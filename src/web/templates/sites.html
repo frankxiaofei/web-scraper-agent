@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 站点列表{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">站点列表</h2>
+      <p class="text-sm text-slate-500 mt-1">
+        已配置爬取任务的站点 · 共 {{ summary.total }} 个
+        （启用 {{ summary.enabled }} · 有规则 {{ summary.with_rules }} · 有调度 {{ summary.with_schedule }}）
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/tasks"
+         class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        任务状态
+      </a>
+      <button type="button" onclick="location.reload()"
+              class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        刷新
+      </button>
+    </div>
+  </div>
+</section>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">站点</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">启用</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">爬取方式</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">调度</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">最后同步</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">规则</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for s in sites %}
+        <tr class="hover:bg-slate-50/80 transition" data-site-id="{{ s.site_id }}">
+          <td class="px-4 py-3">
+            <div class="font-medium text-slate-900">{{ s.site_name }}</div>
+            <div class="text-xs text-slate-400 font-mono">{{ s.site_id }}</div>
+            {% if s.site_url %}
+            <a href="{{ s.site_url }}" target="_blank" rel="noopener"
+               class="text-xs text-brand-600 hover:text-brand-700 mt-0.5 inline-block truncate max-w-[240px]">
+              {{ s.site_url }}
+            </a>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if s.enabled %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">已启用</span>
+            {% else %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">未启用</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-slate-700">{{ s.crawl_method }}</td>
+          <td class="px-4 py-3 text-xs text-slate-600 max-w-[220px]">{{ s.schedule_hint }}</td>
+          <td class="px-4 py-3 text-slate-600 whitespace-nowrap">{{ s.last_sync_at_fmt }}</td>
+          <td class="px-4 py-3">
+            {% if s.has_rule %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-50 text-violet-700">有</span>
+            {% else %}
+            <span class="text-xs text-slate-400">无</span>
+            {% endif %}
+            {% if s.has_crawl_script %}
+            <span class="block text-xs text-slate-400 mt-0.5">脚本 {{ s.crawl_script_type or '—' }}</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+            {% if s.enabled %}
+            <a href="/tasks/{{ s.site_id }}"
+               class="inline-flex items-center rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium px-2.5 py-1.5 transition">
+              详情
+            </a>
+            <button type="button"
+                    onclick="triggerSync('{{ s.site_id }}', this)"
+                    class="inline-flex items-center rounded-lg border border-brand-300 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-medium px-2.5 py-1.5 transition">
+              同步
+            </button>
+            {% endif %}
+            <a href="/crawl-rules/{{ s.site_id }}/workflow"
+               class="inline-flex items-center rounded-lg border border-violet-300 bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-medium px-2.5 py-1.5 transition">
+              工作流
+            </a>
+            <a href="/crawl-rules/{{ s.site_id }}"
+               class="inline-flex items-center rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium px-2.5 py-1.5 transition">
+              规则
+            </a>
+            <button type="button"
+                    class="btn-delete-site inline-flex items-center rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium px-2.5 py-1.5 transition"
+                    data-site-id="{{ s.site_id }}"
+                    data-site-name="{{ s.site_name }}">
+              删除
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="px-4 py-12 text-center text-slate-500">暂无已配置站点</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="delete-site-modal" class="app-modal" hidden>
+  <div class="app-modal-backdrop"></div>
+  <div class="app-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-site-modal-title">
+    <h3 id="delete-site-modal-title">确认删除站点</h3>
+    <p>确定删除站点 <strong id="delete-site-name"></strong>？相关爬取规则也将删除。</p>
+    <p class="app-modal-hint">已爬取的数据将保留。</p>
+    <p id="delete-site-error" class="app-modal-error" hidden></p>
+    <div class="app-modal-actions">
+      <button type="button" class="btn btn-secondary" data-action="cancel">取消</button>
+      <button type="button" class="btn btn-danger" data-action="confirm">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function triggerSync(siteId, btn) {
+    if (!confirm('确认手动触发同步？')) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/sync/${encodeURIComponent(siteId)}/trigger`, { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('同步已启动', 'success');
+        if (data.run_id) {
+          setTimeout(() => { window.location.href = `/tasks/runs/${data.run_id}`; }, 800);
+        }
+      } else {
+        showToast(data.message || '同步失败', 'error');
+        btn.disabled = false;
+      }
+    } catch (e) {
+      showToast('请求失败', 'error');
+      btn.disabled = false;
+    }
+  }
+</script>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+  (function initDeleteSiteUI() {
+    if (typeof window.AppModal === 'undefined') {
+      console.error('AppModal 未加载，站点删除功能不可用');
+      return;
+    }
+
+    function deleteErrorMessage(res, data) {
+      if (res.status === 404 && data && data.detail === 'Not Found') {
+        return '删除接口不可用，请重启 Web UI（8090）后重试';
+      }
+      if (data && data.detail) return String(data.detail);
+      if (data && data.error) return String(data.error);
+      if (data && data.message) return String(data.message);
+      return '删除失败（HTTP ' + res.status + '）';
+    }
+
+    var deleteModal = document.getElementById('delete-site-modal');
+    var deleteSiteNameEl = document.getElementById('delete-site-name');
+    var deleteSiteErrorEl = document.getElementById('delete-site-error');
+    var deleteConfirmBtn = deleteModal && deleteModal.querySelector('[data-action="confirm"]');
+    var pendingDelete = { siteId: '', siteName: '', triggerBtn: null };
+
+    function showDeleteError(message) {
+      if (!deleteSiteErrorEl) {
+        showToast(message, 'error');
+        return;
+      }
+      deleteSiteErrorEl.textContent = message;
+      deleteSiteErrorEl.hidden = false;
+    }
+
+    function clearDeleteError() {
+      if (!deleteSiteErrorEl) return;
+      deleteSiteErrorEl.textContent = '';
+      deleteSiteErrorEl.hidden = true;
+    }
+
+    function openDeleteModal(siteId, siteName, btn) {
+      if (!siteId) {
+        showToast('站点 ID 无效', 'error');
+        return;
+      }
+      pendingDelete.siteId = siteId;
+      pendingDelete.siteName = siteName || siteId;
+      pendingDelete.triggerBtn = btn;
+      clearDeleteError();
+      if (deleteSiteNameEl) deleteSiteNameEl.textContent = pendingDelete.siteName;
+      if (deleteConfirmBtn) {
+        deleteConfirmBtn.disabled = false;
+        deleteConfirmBtn.textContent = '确认删除';
+      }
+      AppModal.open(deleteModal, { focusSelector: '[data-action="cancel"]' });
+    }
+
+    async function executeDeleteSite() {
+      var siteId = pendingDelete.siteId;
+      var btn = pendingDelete.triggerBtn;
+      if (!siteId || !deleteConfirmBtn) return;
+
+      deleteConfirmBtn.disabled = true;
+      deleteConfirmBtn.textContent = '删除中…';
+      clearDeleteError();
+
+      try {
+        const res = await fetch('/api/sites/' + encodeURIComponent(siteId), { method: 'DELETE' });
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = {};
+        }
+        if (res.ok && data.ok) {
+          AppModal.close(deleteModal);
+          showToast('站点已删除', 'success');
+          const row = btn && btn.closest('tr[data-site-id]');
+          if (row) row.remove();
+          else location.reload();
+          return;
+        }
+        var errMsg = deleteErrorMessage(res, data);
+        showDeleteError(errMsg);
+        deleteConfirmBtn.disabled = false;
+        deleteConfirmBtn.textContent = '确认删除';
+      } catch (e) {
+        showDeleteError('请求失败: ' + (e && e.message ? e.message : e));
+        deleteConfirmBtn.disabled = false;
+        deleteConfirmBtn.textContent = '确认删除';
+      }
+    }
+
+    if (deleteModal) {
+      AppModal.bind(deleteModal, { onConfirm: executeDeleteSite });
+    }
+
+    document.querySelectorAll('.btn-delete-site').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        openDeleteModal(btn.dataset.siteId, btn.dataset.siteName || btn.dataset.siteId, btn);
+      });
+    });
+  })();
+</script>
+{% endblock %}

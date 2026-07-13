@@ -1,0 +1,276 @@
+# 数字农业每日线索采集 Agent 主配置（参考 docs/bizclue.md）
+version: "1.0"
+description: 数字农业每日商机线索采集与分析 Agent
+
+# 第2节：产品线定义
+product_lines:
+  农业平台:
+    scope: 数字农业平台、农业大数据、一张图、产业园平台、物联网平台、质量追溯、驾驶舱
+    keywords:
+      - 数字农业
+      - 智慧农业
+      - 农业大数据
+      - 农业一张图
+      - 农业物联网
+      - 产业园数字化
+      - 质量追溯
+      - 农情监测平台
+      - 农业云平台
+      - 农业驾驶舱
+      - 农业信息化
+      - 数字乡村
+  田间作业:
+    scope: 巡田、农事记录、轨迹、地块、语音采集、移动端作业、农机调度、灌溉任务
+    keywords:
+      - 田间助手
+      - 巡田
+      - 农事作业
+      - 农事记录
+      - 轨迹采集
+      - 地块管理
+      - 移动采集
+      - 农机调度
+      - 智能灌溉
+      - 水肥一体化
+      - 智慧种植
+      - 智慧大棚
+  AI能力:
+    scope: 农业知识库、大模型、智能问答、语音转写、病虫害识别、智能决策
+    keywords:
+      - 农业大模型
+      - 农业知识库
+      - 智能问答
+      - 智能体
+      - 语音识别
+      - 病虫害识别
+      - 农情分析
+      - 智能决策
+      - AI识别
+
+# 第5.1节：阶段词库 + 复查周期
+stages:
+  - name: 政策资金
+    order: 1
+    keywords:
+      - 专项资金
+      - 资金下达
+      - 预算安排
+      - 中央预算内投资
+      - 专项债
+      - 转移支付
+    check_days: 30
+  - name: 项目申报
+    order: 2
+    keywords:
+      - 项目申报
+      - 项目储备
+      - 建设名单
+      - 拟支持名单
+      - 实施主体公示
+    check_days: 14
+  - name: 立项审批
+    order: 3
+    keywords:
+      - 项目建议书
+      - 立项批复
+      - 可行性研究
+      - 初步设计
+      - 实施方案
+    check_days: 14
+  - name: 咨询设计
+    order: 4
+    keywords:
+      - 可研编制
+      - 设计服务
+      - 咨询服务
+      - 造价
+      - 监理
+      - 方案征集
+    check_days: 7
+  - name: 采购前置
+    order: 5
+    keywords:
+      - 采购意向
+      - 需求调查
+      - 市场调研
+      - 参数征集
+      - 招标计划
+      - 预公告
+    check_days: 3
+  - name: 正式采购
+    order: 6
+    keywords:
+      - 公开招标
+      - 竞争性磋商
+      - 竞争性谈判
+      - 询价公告
+      - 招标公告
+      - 采购公告
+    check_days: 1
+
+# 第2节：排除词
+exclude_keywords:
+  - 钢材采购
+  - 水泥采购
+  - 办公用品
+  - 桌椅板凳
+  - 纯土建
+  - 纯农资
+  - 普通办公信息化
+
+# 第4节：信息源优先级（域名匹配，站点列表见 biz_clue_sources.yaml）
+source_levels:
+  P0:
+    description: 官方原始来源
+    domains:
+      - gov.cn
+      - ggzy.gov.cn
+      - ccgp.gov.cn
+  P1:
+    description: 权威辅助来源
+    domains:
+      - edu.cn
+      - org.cn
+      - cebpubservice.com
+  P2:
+    description: 商业聚合与新闻来源（须回溯官方原文）
+    domains: []
+
+# 第5.2节：检索查询模板
+search_templates:
+  - name: 业务词×阶段词×区域
+    template: "(业务词) AND (阶段词) AND (省/市/县)"
+  - name: 政采网站内
+    template: "site:gov.cn (业务词) (阶段词)"
+  - name: 公共资源平台
+    template: "site:ggzy.gov.cn (业务词) (地区)"
+  - name: 采购意向专项
+    template: "site:ccgp.gov.cn (业务词) (采购意向 OR 需求调查)"
+  - name: 建设单位追踪
+    template: "(建设单位名称) (可研 OR 采购意向 OR 招标计划)"
+
+# 长尾轮换词（避免只搜「数字农业」造成漏检）
+long_tail_keywords:
+  - 农事记录
+  - 移动采集
+  - 农业知识库
+  - 巡田
+  - 质量追溯
+  - 智能灌溉
+
+# 资金关键词（评分维度：资金确定性）
+funding_keywords:
+  已下达:
+    - 资金下达
+    - 已下达
+    - 批复资金
+  已列预算:
+    - 预算安排
+    - 预算金额
+    - 采购预算
+    - 投资估算
+  正在申报:
+    - 项目申报
+    - 拟申报
+    - 申报指南
+
+# 第7节：商机评分（100分）
+scoring:
+  dimensions:
+    - name: 资金确定性
+      max_score: 20
+      description: 已下达20；已列预算15；正在申报8；无依据0
+    - name: 项目真实性
+      max_score: 15
+      description: 正式批复/采购意向15；官方名单10；新闻线索3
+    - name: 产品匹配度
+      max_score: 20
+      description: 三类产品均匹配20；两类15；一类8
+    - name: 提前介入价值
+      max_score: 15
+      description: 可研/需求形成期15；采购意向10；已招标2
+    - name: 采购时间
+      max_score: 10
+      description: 3个月内10；3—6个月8；6—12个月5；未知1
+    - name: 主体清晰度
+      max_score: 5
+      description: 建设方、使用方清晰5；仅主管单位2
+    - name: 区域与交付
+      max_score: 5
+      description: 重点区且有资源5；重点区3；其他1
+    - name: 信息完整度
+      max_score: 5
+      description: 关键字段≥90%得5；≥70%得3；否则1
+    - name: 竞争态势
+      max_score: 5
+      description: 尚处开放形成期5；竞争未知3；明显锁定0
+  levels:
+    S: 85
+    A: 70
+    B: 50
+    C: 0
+  pending_max_level: B
+
+# 第6.2节：去重规则
+dedup_rules:
+  same_canonical_url: merge
+  same_project_id: merge
+  similar_title_same_region_owner: suspect_same
+  different_stage_same_project: merge_timeline
+  different_package: keep_separate
+  different_owner_or_region: keep_separate
+
+# 第6.3节：有效性门槛
+validity_rules:
+  valid_lead_requires:
+    - official_or_authoritative_source
+    - clear_region
+    - clear_entity
+    - product_line_match
+    - source_url_and_publish_date
+  valid_opportunity_requires_count: 4
+  valid_opportunity_must_include:
+    - project_owner
+  valid_opportunity_fields:
+    - project_owner
+    - construction_requirement
+    - funding_or_budget
+    - planned_procurement_window
+    - trackable_public_entry
+
+# 第12节：人机协作
+human_review:
+  sa_first_occurrence_review: true
+  instant_alert_conditions:
+    - amount_gte_yuan: 5000000
+    - stage_in:
+        - 采购前置
+    - days_to_planned_procurement_lte: 30
+  manual_queue_triggers:
+    - page_unreachable
+    - attachment_parse_failed
+    - entity_conflict
+    - amount_conflict
+  no_change_skip_push_after_cycles: 2
+  downgrade_on_cancel: true
+  no_auto_contact: true
+
+# 第13节：MVP验收指标
+acceptance_metrics:
+  official_source_trace_rate: 0.95
+  key_field_completeness_rate: 0.85
+  duplicate_lead_rate_max: 0.05
+  product_match_accuracy: 0.85
+  sa_false_positive_rate_max: 0.10
+  same_day_ingest_rate: 0.95
+
+# 第3节：工作流时间（与 schedule.yaml 联动）
+workflow:
+  task_generate_cron: "30 6 * * *"
+  crawl_window: "07:00-08:00"
+  brief_output_cron: "30 8 * * *"
+
+# 兼容旧版 keywords 文件引用
+keywords_file: config/biz_clue_keywords.yaml
+prompt_file: config/biz_clue_prompt.txt
+sources_file: config/biz_clue_sources.yaml

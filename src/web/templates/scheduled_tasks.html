@@ -1,0 +1,1225 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 通知任务{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <header class="app-page-header">
+    <div>
+      <h2 class="app-page-title">通知任务</h2>
+      <p class="app-page-subtitle">到点执行 Hermes Agent 提示词或专题报告，并将结果推送到飞书、钉钉、企业微信、邮箱或短信</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" id="open-create-modal-btn"
+              class="app-btn app-btn-primary">
+        新建通知任务
+      </button>
+      <button type="button" onclick="loadTasks()"
+              class="app-btn app-btn-secondary">
+        刷新列表
+      </button>
+    </div>
+  </header>
+
+  {% if feishu_configured %}
+  <div class="app-alert app-alert-success mb-6">
+    <span class="font-medium">飞书 Webhook：</span>已配置全局 FEISHU_WEBHOOK_URL，任务未指定 Webhook 时将使用全局配置。
+  </div>
+  {% else %}
+  <div class="app-alert app-alert-warning mb-6">
+    <span class="font-medium">飞书未配置：</span>请在 .env 设置 <code class="text-xs bg-white/80 px-1 rounded">FEISHU_WEBHOOK_URL</code>，或在任务中填写 Webhook URL。其他渠道见 .env 中 DINGTALK / WECHAT / SMTP / SMS 配置。
+  </div>
+  {% endif %}
+
+</section>
+
+<div class="app-card overflow-hidden mb-8">
+  <div class="app-card-header">
+    <h3 class="app-card-header-title">已配置任务</h3>
+    <span id="task-count" class="text-xs text-slate-400">加载中…</span>
+  </div>
+  <div id="tasks-loading" class="px-4 py-8 text-center text-sm text-slate-400">加载中…</div>
+  <div id="tasks-empty" class="hidden px-4 py-8 text-center text-sm text-slate-400">
+    暂无通知任务。点击「新建通知任务」创建。
+  </div>
+  <div id="tasks-table-wrap" class="hidden overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-left text-xs text-slate-500 uppercase">
+        <tr>
+          <th class="px-4 py-3">任务</th>
+          <th class="px-4 py-3">类型</th>
+          <th class="px-4 py-3">Cron</th>
+          <th class="px-4 py-3">下次执行</th>
+          <th class="px-4 py-3">最近运行</th>
+          <th class="px-4 py-3">启用</th>
+          <th class="px-4 py-3">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tasks-body" class="divide-y divide-slate-100"></tbody>
+    </table>
+  </div>
+  <p id="list-error" class="hidden px-4 py-3 text-xs text-red-600"></p>
+</div>
+
+<div id="create-task-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" aria-modal="true" role="dialog">
+  <div class="app-card shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="app-card-header sticky top-0 z-10">
+      <div>
+        <h3 class="app-card-header-title">新建通知任务</h3>
+        <p class="text-xs text-slate-500 mt-0.5">提示词 → Hermes 执行 → 飞书摘要推送</p>
+      </div>
+      <button type="button" id="create-modal-close" class="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer transition-colors duration-200">&times;</button>
+    </div>
+    <form id="create-task-form" class="p-4 space-y-4">
+        <input type="hidden" name="task_type" id="task-type" value="hermes_summary">
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">从模板开始（可选）</label>
+          <select id="prompt-preset" name="prompt_preset" class="app-select">
+            <option value="">空白提示词</option>
+            {% for preset in prompt_presets %}
+            <option value="{{ preset.id }}" data-name="{{ preset.default_name }}"
+                    data-cron="{{ preset.default_cron }}">
+              {{ preset.label }}
+            </option>
+            {% endfor %}
+          </select>
+          <p id="preset-hint" class="text-xs text-slate-400 mt-1 hidden"></p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">任务名称</label>
+          <input type="text" name="name" id="task-name" required
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+                 placeholder="BIM 日报总结">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">执行时间（Cron）</label>
+          <input type="text" name="cron_expression" id="cron-expression" required
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-xs focus:ring-2 focus:ring-brand-500"
+                 placeholder="0 8 * * *"
+                 value="0 8 * * *">
+          <p class="text-xs text-slate-400 mt-1">五段式：分 时 日 月 周（如 <code class="text-[11px] bg-slate-100 px-1 rounded">0 8 * * *</code> 表示每天 08:00）</p>
+          <div id="cron-preset-buttons" class="flex flex-wrap gap-1.5 mt-2"></div>
+          <p id="cron-description" class="text-xs text-brand-600 mt-1"></p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">提示词</label>
+          <textarea name="hermes_prompt" id="hermes-prompt" required rows="10"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono leading-relaxed focus:ring-2 focus:ring-brand-500"
+                    placeholder="请分析今日（{date}）新增的 BIM 招标公告…"></textarea>
+          <p class="text-xs text-slate-400 mt-1">建议文末要求 Agent 输出「## 飞书摘要」段落，便于群推送。</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">推送模式</label>
+            <select name="push_mode" id="push-mode" class="app-select">
+              {% for mode in push_modes %}
+              <option value="{{ mode.value }}">{{ mode.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">摘要最大字数</label>
+            <input type="number" name="push_excerpt_max" id="push-excerpt-max" value="1500" min="200" max="4000"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-3 space-y-3">
+          <div>
+            <label class="text-xs font-medium text-slate-700 mb-2 block">通知渠道（多选）</label>
+            <div id="create-notification-channels" class="form-checkgroup"></div>
+            <p class="text-xs text-slate-400 mt-1">勾选渠道后下方展开对应配置；留空项将回退到 .env 全局配置。</p>
+          </div>
+          <div id="create-channel-config-panel" class="space-y-3 hidden">
+            <div id="create-cfg-feishu" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+              <h4 class="text-xs font-semibold text-slate-800">飞书</h4>
+              <p class="text-[11px] text-slate-400">全局配置见 .env（FEISHU_WEBHOOK_URL），此处可任务级覆盖</p>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Webhook URL</label>
+                <input type="url" id="create-feishu-webhook_url" data-channel-field="webhook_url"
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+                       placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/...">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">接收用户（可选）</label>
+                <textarea id="create-feishu-receive_users" data-channel-field="receive_users" rows="2"
+                          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                          placeholder="yuan_jp, li_xf10"></textarea>
+                <p class="text-xs text-slate-400 mt-0.5">逗号或换行分隔 user_id；留空则使用 FEISHU_RECEIVE_USERS</p>
+              </div>
+            </div>
+            <div id="create-cfg-dingtalk" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+              <h4 class="text-xs font-semibold text-slate-800">钉钉</h4>
+              <p class="text-[11px] text-slate-400">全局配置见 .env（DINGTALK_WEBHOOK_URL），此处可任务级覆盖</p>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Webhook URL</label>
+                <input type="url" id="create-dingtalk-webhook_url" data-channel-field="webhook_url"
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+                       placeholder="https://oapi.dingtalk.com/robot/send?access_token=...">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">加签 Secret（可选）</label>
+                <input type="text" id="create-dingtalk-secret" data-channel-field="secret"
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                       placeholder="SEC...">
+              </div>
+            </div>
+            <div id="create-cfg-wechat" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+              <h4 class="text-xs font-semibold text-slate-800">企业微信</h4>
+              <p class="text-[11px] text-slate-400">全局配置见 .env（WECHAT_WEBHOOK_URL），此处可任务级覆盖</p>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Webhook URL</label>
+                <input type="url" id="create-wechat-webhook_url" data-channel-field="webhook_url"
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+                       placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...">
+              </div>
+            </div>
+            <div id="create-cfg-email" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+              <h4 class="text-xs font-semibold text-slate-800">邮箱</h4>
+              <p class="text-[11px] text-slate-400">SMTP 在 .env 配置（SMTP_HOST 等），此处填写任务级收件人</p>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">收件人 to</label>
+                <textarea id="create-email-to" data-channel-field="to" rows="2"
+                          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                          placeholder="ops@example.com, alert@example.com"></textarea>
+                <p class="text-xs text-slate-400 mt-0.5">逗号或换行分隔；留空则使用 NOTIFICATION_EMAIL_TO</p>
+              </div>
+            </div>
+            <div id="create-cfg-sms" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+              <h4 class="text-xs font-semibold text-slate-800">短信</h4>
+              <p class="text-[11px] text-slate-400">SMS API 在 .env 配置（SMS_API_URL 等），此处填写任务级手机号</p>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">手机号 to</label>
+                <textarea id="create-sms-to" data-channel-field="to" rows="2"
+                          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                          placeholder="13800138000, 13900139000"></textarea>
+                <p class="text-xs text-slate-400 mt-0.5">逗号或换行分隔；留空则使用 NOTIFICATION_SMS_TO</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <details class="rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2">
+          <summary class="text-xs font-medium text-slate-600 cursor-pointer select-none">高级：固定任务类型 / 个人推送</summary>
+          <div class="mt-3 space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">任务类型</label>
+              <select id="legacy-task-type" class="app-select">
+                <option value="">Hermes 提示词（默认）</option>
+                <option value="engineering_llm_report">{{ task_type_labels.get('engineering_llm_report', '工程大模型应用 · 个人私信') }}</option>
+                <option value="bim_daily_brief">{{ task_type_labels.get('bim_daily_brief', 'BIM 日报') }}</option>
+                <option value="bim_weekly_brief">{{ task_type_labels.get('bim_weekly_brief', 'BIM 周报') }}</option>
+                <option value="bim_daily_analysis">{{ task_type_labels.get('bim_daily_analysis', 'BIM 综合分析') }}</option>
+              </select>
+            </div>
+            <div id="legacy-engineering-wrap" class="hidden space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">报告类型</label>
+                <select id="report-kind" name="report_kind" class="app-select">
+                  {% for kind in report_kinds %}
+                  <option value="{{ kind.value }}">{{ kind.label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">飞书 user_id 列表</label>
+                <textarea name="feishu_user_ids_legacy" id="feishu-user-ids" rows="3"
+                          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                          placeholder="yuan_jp, li_xf10"></textarea>
+                <p class="text-xs text-slate-400 mt-1">工程大模型报告必填；逗号或换行分隔</p>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">统计天数</label>
+                <input type="number" name="days" id="legacy-days" value="1" min="1" max="31"
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+              </div>
+            </div>
+            <div id="legacy-top-n-wrap" class="hidden">
+              <label class="block text-xs font-medium text-slate-600 mb-1">Top 标讯条数</label>
+              <input type="number" name="top_n" id="legacy-top-n" value="10" min="1" max="30"
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+            </div>
+          </div>
+        </details>
+
+        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="enabled" checked
+                 class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+          创建后立即启用
+        </label>
+        <p id="create-error" class="text-xs text-red-600 hidden"></p>
+        <div class="flex gap-2">
+          <button type="button" id="create-cancel-btn"
+                  class="flex-1 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+            取消
+          </button>
+          <button type="submit" id="create-btn"
+                  class="flex-1 inline-flex items-center justify-center rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2.5 transition">
+            创建任务
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="edit-task-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50" aria-modal="true" role="dialog">
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between sticky top-0 z-10">
+      <div>
+        <h3 class="text-sm font-semibold text-slate-800">编辑通知任务</h3>
+        <p id="edit-task-type-label" class="text-xs text-slate-500 mt-0.5"></p>
+      </div>
+      <button type="button" id="edit-modal-close" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+    </div>
+    <form id="edit-task-form" class="p-4 space-y-4">
+      <input type="hidden" id="edit-task-id" name="task_id">
+
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">任务名称</label>
+        <input type="text" name="name" id="edit-task-name" required
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">执行时间（Cron）</label>
+        <input type="text" name="cron_expression" id="edit-cron-expression" required
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-xs focus:ring-2 focus:ring-brand-500"
+               placeholder="0 8 * * *">
+        <p class="text-xs text-slate-400 mt-1">五段式：分 时 日 月 周</p>
+        <div id="edit-cron-preset-buttons" class="flex flex-wrap gap-1.5 mt-2"></div>
+        <p id="edit-cron-description" class="text-xs text-brand-600 mt-1"></p>
+      </div>
+
+      <div id="edit-hermes-wrap" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">提示词</label>
+          <textarea name="hermes_prompt" id="edit-hermes-prompt" rows="8"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono leading-relaxed focus:ring-2 focus:ring-brand-500"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">推送模式</label>
+            <select name="push_mode" id="edit-push-mode" class="app-select">
+              {% for mode in push_modes %}
+              <option value="{{ mode.value }}">{{ mode.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">摘要最大字数</label>
+            <input type="number" name="push_excerpt_max" id="edit-push-excerpt-max" value="1500" min="200" max="4000"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+      </div>
+
+      <div id="edit-engineering-wrap" class="hidden space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">统计天数</label>
+            <input type="number" name="days" id="edit-days" value="1" min="1" max="31"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Top 标讯条数</label>
+            <input type="number" name="top_n" id="edit-top-n" value="10" min="1" max="30"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+      </div>
+
+      <div id="edit-bim-wrap" class="hidden">
+        <label class="block text-xs font-medium text-slate-600 mb-1">Top 标讯条数</label>
+        <input type="number" name="top_n_bim" id="edit-top-n-bim" value="10" min="1" max="30"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+      </div>
+
+      <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-3 space-y-3">
+        <div>
+          <label class="text-xs font-medium text-slate-700 mb-2 block">通知渠道（多选）</label>
+          <div id="edit-notification-channels" class="form-checkgroup"></div>
+          <p class="text-xs text-slate-400 mt-1">勾选渠道后下方展开对应配置；留空项将回退到 .env 全局配置。</p>
+        </div>
+        <p id="edit-channel-env-hint" class="text-xs text-amber-600 hidden"></p>
+        <div id="edit-channel-config-panel" class="space-y-3 hidden">
+          <div id="edit-cfg-feishu" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+            <h4 class="text-xs font-semibold text-slate-800">飞书</h4>
+            <p class="text-[11px] text-slate-400">全局配置见 .env（FEISHU_WEBHOOK_URL），此处可任务级覆盖</p>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Webhook URL</label>
+              <input type="url" id="edit-feishu-webhook_url" data-channel-field="webhook_url"
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+                     placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/...">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">接收用户（可选）</label>
+              <textarea id="edit-feishu-receive_users" data-channel-field="receive_users" rows="2"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                        placeholder="yuan_jp, li_xf10"></textarea>
+            </div>
+          </div>
+          <div id="edit-cfg-dingtalk" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+            <h4 class="text-xs font-semibold text-slate-800">钉钉</h4>
+            <p class="text-[11px] text-slate-400">全局配置见 .env（DINGTALK_WEBHOOK_URL），此处可任务级覆盖</p>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Webhook URL</label>
+              <input type="url" id="edit-dingtalk-webhook_url" data-channel-field="webhook_url"
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+                     placeholder="https://oapi.dingtalk.com/robot/send?access_token=...">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">加签 Secret（可选）</label>
+              <input type="text" id="edit-dingtalk-secret" data-channel-field="secret"
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                     placeholder="SEC...">
+            </div>
+          </div>
+          <div id="edit-cfg-wechat" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+            <h4 class="text-xs font-semibold text-slate-800">企业微信</h4>
+            <p class="text-[11px] text-slate-400">全局配置见 .env（WECHAT_WEBHOOK_URL），此处可任务级覆盖</p>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Webhook URL</label>
+              <input type="url" id="edit-wechat-webhook_url" data-channel-field="webhook_url"
+                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+                     placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...">
+            </div>
+          </div>
+          <div id="edit-cfg-email" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+            <h4 class="text-xs font-semibold text-slate-800">邮箱</h4>
+            <p class="text-[11px] text-slate-400">SMTP 在 .env 配置（SMTP_HOST 等），此处填写任务级收件人</p>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">收件人 to</label>
+              <textarea id="edit-email-to" data-channel-field="to" rows="2"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                        placeholder="ops@example.com"></textarea>
+            </div>
+          </div>
+          <div id="edit-cfg-sms" class="channel-config-block hidden rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+            <h4 class="text-xs font-semibold text-slate-800">短信</h4>
+            <p class="text-[11px] text-slate-400">SMS API 在 .env 配置（SMS_API_URL 等），此处填写任务级手机号</p>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">手机号 to</label>
+              <textarea id="edit-sms-to" data-channel-field="to" rows="2"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-brand-500"
+                        placeholder="13800138000"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="enabled" id="edit-enabled"
+               class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+        启用任务
+      </label>
+      <p id="edit-error" class="text-xs text-red-600 hidden"></p>
+      <div class="flex gap-2">
+        <button type="button" id="edit-cancel-btn"
+                class="flex-1 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+          取消
+        </button>
+        <button type="submit" id="edit-save-btn"
+                class="flex-1 inline-flex items-center justify-center rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2.5 transition">
+          保存修改
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const TASK_TYPE_LABELS = {{ task_type_labels | tojson }};
+const PROMPT_PRESETS = {{ prompt_presets | tojson }};
+const CRON_PRESETS = {{ cron_presets | tojson }};
+let tasksCache = {};
+let notificationChannelsMeta = [];
+const CHANNEL_CONFIG_CHANNELS = ['feishu', 'dingtalk', 'wechat', 'email', 'sms'];
+const CHANNEL_WEBHOOK_CHANNELS = ['feishu', 'dingtalk', 'wechat'];
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function isHermesTaskType(taskType) {
+  return taskType === 'hermes_summary' || taskType === 'hermes_prompt';
+}
+
+function formatPushChannels(task) {
+  const channels = task.push_channels || {};
+  const parts = [];
+  const webhookCount = channels.webhook_count || 0;
+  const userCount = channels.user_count || 0;
+  if (webhookCount) parts.push('群 ' + webhookCount);
+  if (userCount) parts.push('人 ' + userCount);
+  const notifyChannels = task.notification_channels || [];
+  let html = '';
+  if (notifyChannels.length) {
+    html += '<div class="text-xs text-slate-400">渠道: ' + escapeHtml(notifyChannels.join(', ')) + '</div>';
+  }
+  if (!parts.length && !html) return '';
+  if (parts.length) {
+    html += '<div class="text-xs text-slate-400">飞书推送: ' + escapeHtml(parts.join(' + ')) + '</div>';
+  }
+  if (task.feishu_user_ids && task.feishu_user_ids.length) {
+    html += '<div class="text-xs text-slate-400">收件人: ' + escapeHtml(task.feishu_user_ids.join(', ')) +
+      (task.feishu_user_ids_source === 'env' ? ' <span class="text-violet-500">(.env)</span>' : '') + '</div>';
+  }
+  if (task.feishu_webhooks && task.feishu_webhooks.length) {
+    const names = task.feishu_webhooks.map(function(w) { return w.name || w.url; }).join(', ');
+    html += '<div class="text-xs text-slate-400">群机器人: ' + escapeHtml(names) +
+      (task.feishu_webhooks_source === 'env' ? ' <span class="text-violet-500">(.env)</span>' : '') + '</div>';
+  }
+  return html;
+}
+
+function getChannelMeta(channel) {
+  return (notificationChannelsMeta || []).find(function(ch) { return ch.value === channel; }) || null;
+}
+
+function parseListInput(text) {
+  if (!text || !String(text).trim()) return [];
+  return String(text).replace(/\n/g, ',').replace(/;/g, ',').split(',')
+    .map(function(s) { return s.trim(); }).filter(Boolean);
+}
+
+function formatListInput(values) {
+  if (!values || !values.length) return '';
+  return values.join(', ');
+}
+
+function syncChannelConfigPanels(prefix) {
+  const channels = collectNotificationChannels(prefix + '-notification-channels');
+  const panel = document.getElementById(prefix + '-channel-config-panel');
+  if (panel) panel.classList.toggle('hidden', !channels.length);
+  CHANNEL_CONFIG_CHANNELS.forEach(function(ch) {
+    const block = document.getElementById(prefix + '-cfg-' + ch);
+    if (block) block.classList.toggle('hidden', channels.indexOf(ch) === -1);
+  });
+}
+
+function clearChannelConfigForm(prefix) {
+  CHANNEL_CONFIG_CHANNELS.forEach(function(ch) {
+    const block = document.getElementById(prefix + '-cfg-' + ch);
+    if (!block) return;
+    block.querySelectorAll('[data-channel-field]').forEach(function(el) {
+      el.value = '';
+      el.removeAttribute('data-masked');
+    });
+  });
+}
+
+function resolveChannelConfigFromTask(task, channel) {
+  const cfgMap = (task && task.channel_config) || {};
+  const chCfg = (cfgMap[channel] && typeof cfgMap[channel] === 'object') ? Object.assign({}, cfgMap[channel]) : {};
+  if (channel === 'feishu') {
+    if (!chCfg.webhook_url && task.feishu_webhooks && task.feishu_webhooks.length) {
+      chCfg.webhook_url = task.feishu_webhooks[0].url || '';
+    }
+    if (!chCfg.webhook_url && task.feishu_webhook_url) {
+      chCfg.webhook_url = task.feishu_webhook_url;
+    }
+    const users = chCfg.receive_users || chCfg.user_ids;
+    if ((!users || !users.length) && task.feishu_user_ids && task.feishu_user_ids.length) {
+      chCfg.receive_users = task.feishu_user_ids;
+    }
+  }
+  return chCfg;
+}
+
+function populateChannelConfigForm(prefix, task) {
+  clearChannelConfigForm(prefix);
+  if (!task) return;
+  CHANNEL_CONFIG_CHANNELS.forEach(function(ch) {
+    const chCfg = resolveChannelConfigFromTask(task, ch);
+    if (ch === 'feishu') {
+      const urlEl = document.getElementById(prefix + '-feishu-webhook_url');
+      if (urlEl) urlEl.value = chCfg.webhook_url || '';
+      const usersEl = document.getElementById(prefix + '-feishu-receive_users');
+      if (usersEl) usersEl.value = formatListInput(chCfg.receive_users || chCfg.user_ids || []);
+    } else if (ch === 'dingtalk') {
+      const urlEl = document.getElementById(prefix + '-dingtalk-webhook_url');
+      if (urlEl) urlEl.value = chCfg.webhook_url || '';
+      const secretEl = document.getElementById(prefix + '-dingtalk-secret');
+      if (secretEl) {
+        if (chCfg.secret === '***') {
+          secretEl.value = '';
+          secretEl.setAttribute('data-masked', '1');
+          secretEl.placeholder = '已配置（留空不修改）';
+        } else {
+          secretEl.value = chCfg.secret || '';
+        }
+      }
+    } else if (ch === 'wechat') {
+      const urlEl = document.getElementById(prefix + '-wechat-webhook_url');
+      if (urlEl) urlEl.value = chCfg.webhook_url || '';
+    } else if (ch === 'email') {
+      const toEl = document.getElementById(prefix + '-email-to');
+      if (toEl) toEl.value = formatListInput(chCfg.to || chCfg.recipients || []);
+    } else if (ch === 'sms') {
+      const toEl = document.getElementById(prefix + '-sms-to');
+      if (toEl) toEl.value = formatListInput(chCfg.to || chCfg.phones || []);
+    }
+  });
+}
+
+function collectChannelConfig(prefix, selectedChannels) {
+  const cfg = {};
+  (selectedChannels || []).forEach(function(ch) {
+    if (ch === 'feishu') {
+      const entry = {};
+      const url = (document.getElementById(prefix + '-feishu-webhook_url') || {}).value || '';
+      const users = parseListInput((document.getElementById(prefix + '-feishu-receive_users') || {}).value || '');
+      if (url.trim()) entry.webhook_url = url.trim();
+      if (users.length) entry.receive_users = users;
+      if (Object.keys(entry).length) cfg.feishu = entry;
+    } else if (ch === 'dingtalk') {
+      const entry = {};
+      const url = (document.getElementById(prefix + '-dingtalk-webhook_url') || {}).value || '';
+      const secretEl = document.getElementById(prefix + '-dingtalk-secret');
+      const secret = secretEl ? secretEl.value.trim() : '';
+      if (url.trim()) entry.webhook_url = url.trim();
+      if (secret) entry.secret = secret;
+      if (Object.keys(entry).length) cfg.dingtalk = entry;
+    } else if (ch === 'wechat') {
+      const url = ((document.getElementById(prefix + '-wechat-webhook_url') || {}).value || '').trim();
+      if (url) cfg.wechat = { webhook_url: url };
+    } else if (ch === 'email') {
+      const to = parseListInput((document.getElementById(prefix + '-email-to') || {}).value || '');
+      if (to.length) cfg.email = { to: to };
+    } else if (ch === 'sms') {
+      const to = parseListInput((document.getElementById(prefix + '-sms-to') || {}).value || '');
+      if (to.length) cfg.sms = { to: to };
+    }
+  });
+  return cfg;
+}
+
+function validateChannelConfig(prefix, selectedChannels) {
+  for (let i = 0; i < (selectedChannels || []).length; i++) {
+    const ch = selectedChannels[i];
+    const meta = getChannelMeta(ch);
+    const label = (meta && meta.label) || ch;
+    if (CHANNEL_WEBHOOK_CHANNELS.indexOf(ch) !== -1) {
+      const urlEl = document.getElementById(prefix + '-' + ch + '-webhook_url');
+      const url = urlEl ? urlEl.value.trim() : '';
+      if (!url && !(meta && meta.configured)) {
+        return '已勾选「' + label + '」但未填写 Webhook URL，且全局 .env 未配置';
+      }
+    }
+    if (ch === 'email') {
+      const to = parseListInput((document.getElementById(prefix + '-email-to') || {}).value || '');
+      if (!to.length && !(meta && meta.configured)) {
+        return '已勾选「邮箱」但未填写收件人，且全局 .env 未配置 NOTIFICATION_EMAIL_TO';
+      }
+    }
+    if (ch === 'sms') {
+      const to = parseListInput((document.getElementById(prefix + '-sms-to') || {}).value || '');
+      if (!to.length && !(meta && meta.configured)) {
+        return '已勾选「短信」但未填写手机号，且全局 .env 未配置 NOTIFICATION_SMS_TO';
+      }
+    }
+  }
+  return null;
+}
+
+function bindChannelConfigVisibility(prefix) {
+  const container = document.getElementById(prefix + '-notification-channels');
+  if (!container || container.dataset.channelBound === '1') return;
+  container.dataset.channelBound = '1';
+  container.addEventListener('change', function(ev) {
+    if (ev.target && ev.target.classList.contains('notification-channel-cb')) {
+      syncChannelConfigPanels(prefix);
+    }
+  });
+}
+
+function renderNotificationChannelCheckboxes(containerId, selected) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const selectedSet = new Set(selected || ['feishu']);
+  container.innerHTML = (notificationChannelsMeta || []).map(function(ch) {
+    const checked = selectedSet.has(ch.value) ? ' checked' : '';
+    const badge = ch.configured
+      ? '<span class="text-[10px] text-emerald-600 ml-1">已配置</span>'
+      : '<span class="text-[10px] text-slate-400 ml-1">未配置</span>';
+    return '<label class="inline-flex items-center gap-1.5 cursor-pointer">' +
+      '<input type="checkbox" class="notification-channel-cb" value="' +
+      escapeHtml(ch.value) + '"' + checked + '>' +
+      '<span>' + escapeHtml(ch.label) + badge + '</span></label>';
+  }).join('');
+  const prefix = containerId.replace('-notification-channels', '');
+  syncChannelConfigPanels(prefix);
+}
+
+function collectNotificationChannels(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('.notification-channel-cb:checked'))
+    .map(function(el) { return el.value; });
+}
+
+async function loadNotificationChannelsMeta() {
+  try {
+    const resp = await fetch('/api/chat/scheduled-tasks/meta');
+    const data = await resp.json();
+    notificationChannelsMeta = data.notification_channels || [];
+    renderNotificationChannelCheckboxes('create-notification-channels', ['feishu']);
+    renderNotificationChannelCheckboxes('edit-notification-channels', ['feishu']);
+  } catch (e) {
+    console.warn('加载通知渠道元数据失败', e);
+  }
+}
+
+const CRON_DOW_LABELS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+function describeCron(expr) {
+  const text = (expr || '').trim();
+  const parts = text.split(/\s+/);
+  if (parts.length !== 5) return '';
+  const minute = parts[0];
+  const hour = parts[1];
+  const day = parts[2];
+  const month = parts[3];
+  const dow = parts[4];
+  if (/^\d+$/.test(minute) && /^\d+$/.test(hour) && day === '*' && month === '*') {
+    const time = String(parseInt(hour, 10)).padStart(2, '0') + ':' + String(parseInt(minute, 10)).padStart(2, '0');
+    if (dow === '*') return '每天 ' + time;
+    if (/^\d+$/.test(dow)) return '每' + CRON_DOW_LABELS[parseInt(dow, 10) % 7] + ' ' + time;
+  }
+  const preset = CRON_PRESETS.find(function(p) { return p.value === text; });
+  return preset ? preset.label : '';
+}
+
+function updateCronDescription(descId, expr) {
+  const el = document.getElementById(descId);
+  if (!el) return;
+  const desc = describeCron(expr);
+  if (desc) {
+    el.textContent = desc;
+    el.classList.remove('hidden');
+  } else {
+    el.textContent = '';
+    el.classList.add('hidden');
+  }
+}
+
+function renderCronPresetButtons(containerId, inputId, descId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = CRON_PRESETS.filter(function(p) { return p.value !== 'custom'; }).map(function(p) {
+    return '<button type="button" class="cron-preset-btn text-[11px] px-2 py-0.5 rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition" data-cron="' +
+      escapeHtml(p.value) + '">' + escapeHtml(p.label) + '</button>';
+  }).join('');
+  container.querySelectorAll('.cron-preset-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.value = btn.getAttribute('data-cron') || '';
+      updateCronDescription(descId, input.value);
+    });
+  });
+}
+
+function bindCronExpressionInput(inputId, descId) {
+  const input = document.getElementById(inputId);
+  if (!input || input.dataset.cronBound === '1') return;
+  input.dataset.cronBound = '1';
+  input.addEventListener('input', function() {
+    updateCronDescription(descId, input.value);
+  });
+}
+
+function isBimBriefTaskType(taskType) {
+  return taskType === 'bim_daily_brief' || taskType === 'bim_weekly_brief' || taskType === 'bim_daily_analysis';
+}
+
+function syncEditFieldVisibility(taskType) {
+  const hermesWrap = document.getElementById('edit-hermes-wrap');
+  const engWrap = document.getElementById('edit-engineering-wrap');
+  const bimWrap = document.getElementById('edit-bim-wrap');
+  const promptEl = document.getElementById('edit-hermes-prompt');
+  const isHermes = isHermesTaskType(taskType);
+  const isEngineering = taskType === 'engineering_llm_report';
+  const isBim = isBimBriefTaskType(taskType);
+  if (hermesWrap) hermesWrap.classList.toggle('hidden', !isHermes);
+  if (engWrap) engWrap.classList.toggle('hidden', !isEngineering);
+  if (bimWrap) bimWrap.classList.toggle('hidden', !isBim);
+  if (promptEl) promptEl.required = isHermes;
+}
+
+function openEditModal(taskId) {
+  const task = tasksCache[taskId];
+  if (!task) {
+    showToast('任务数据未加载，请刷新列表', 'error');
+    return;
+  }
+  const modal = document.getElementById('edit-task-modal');
+  const typeLabel = document.getElementById('edit-task-type-label');
+  const errEl = document.getElementById('edit-error');
+  if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+
+  document.getElementById('edit-task-id').value = task.id;
+  document.getElementById('edit-task-name').value = task.name || '';
+  const editCronInput = document.getElementById('edit-cron-expression');
+  if (editCronInput) editCronInput.value = task.cron || '';
+  updateCronDescription('edit-cron-description', task.cron || '');
+
+  const taskType = task.task_type || 'hermes_summary';
+  if (typeLabel) typeLabel.textContent = TASK_TYPE_LABELS[taskType] || taskType;
+  syncEditFieldVisibility(taskType);
+
+  if (isHermesTaskType(taskType)) {
+    document.getElementById('edit-hermes-prompt').value = task.hermes_prompt || task.prompt || '';
+    document.getElementById('edit-push-mode').value = task.push_mode || 'excerpt';
+    document.getElementById('edit-push-excerpt-max').value = task.push_excerpt_max || 1500;
+  }
+  if (taskType === 'engineering_llm_report') {
+    document.getElementById('edit-days').value = task.days || 1;
+    document.getElementById('edit-top-n').value = task.top_n || 10;
+  }
+  if (isBimBriefTaskType(taskType)) {
+    document.getElementById('edit-top-n-bim').value = task.top_n || 10;
+  }
+
+  renderNotificationChannelCheckboxes('edit-notification-channels', task.notification_channels || ['feishu']);
+  populateChannelConfigForm('edit', task);
+  const envHint = document.getElementById('edit-channel-env-hint');
+  if (envHint) {
+    const hints = [];
+    if (task.feishu_webhooks_source === 'env') hints.push('飞书 Webhook 来自 .env');
+    if (task.feishu_user_ids_source === 'env') hints.push('飞书收件人来自 .env');
+    if (hints.length) {
+      envHint.textContent = hints.join('；') + '（保存后将写入任务级配置）';
+      envHint.classList.remove('hidden');
+    } else {
+      envHint.classList.add('hidden');
+      envHint.textContent = '';
+    }
+  }
+
+  document.getElementById('edit-enabled').checked = task.enabled !== false;
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('edit-task-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function openCreateModal() {
+  const modal = document.getElementById('create-task-modal');
+  const errEl = document.getElementById('create-error');
+  if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+  clearChannelConfigForm('create');
+  renderNotificationChannelCheckboxes('create-notification-channels', ['feishu']);
+  updateCronDescription('cron-description', (document.getElementById('cron-expression') || {}).value || '');
+  syncLegacyMode();
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeCreateModal() {
+  const modal = document.getElementById('create-task-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function resetCreateForm() {
+  const form = document.getElementById('create-task-form');
+  if (!form) return;
+  form.reset();
+  document.getElementById('task-type').value = 'hermes_summary';
+  document.getElementById('legacy-task-type').value = '';
+  const nameEl = document.getElementById('task-name');
+  if (nameEl) delete nameEl.dataset.userEdited;
+  const hintEl = document.getElementById('preset-hint');
+  if (hintEl) { hintEl.classList.add('hidden'); hintEl.textContent = ''; }
+  clearChannelConfigForm('create');
+  renderNotificationChannelCheckboxes('create-notification-channels', ['feishu']);
+  updateCronDescription('cron-description', (document.getElementById('cron-expression') || {}).value || '');
+  syncLegacyMode();
+}
+
+function applyPromptPreset() {
+  const presetEl = document.getElementById('prompt-preset');
+  const nameEl = document.getElementById('task-name');
+  const promptEl = document.getElementById('hermes-prompt');
+  const cronEl = document.getElementById('cron-expression');
+  const hintEl = document.getElementById('preset-hint');
+  if (!presetEl || !presetEl.value) {
+    if (hintEl) { hintEl.classList.add('hidden'); hintEl.textContent = ''; }
+    return;
+  }
+  const opt = presetEl.selectedOptions[0];
+  if (!opt) return;
+  const preset = PROMPT_PRESETS.find(function(p) { return p.id === presetEl.value; });
+  if (promptEl && preset && preset.prompt) promptEl.value = preset.prompt;
+  if (nameEl && !nameEl.dataset.userEdited && opt.dataset.name) nameEl.value = opt.dataset.name;
+  if (cronEl && opt.dataset.cron) {
+    cronEl.value = opt.dataset.cron;
+    updateCronDescription('cron-description', cronEl.value);
+  }
+  if (hintEl && preset && preset.description) {
+    hintEl.textContent = preset.description;
+    hintEl.classList.remove('hidden');
+  }
+}
+
+function syncLegacyMode() {
+  const legacyType = document.getElementById('legacy-task-type');
+  const taskTypeEl = document.getElementById('task-type');
+  const promptEl = document.getElementById('hermes-prompt');
+  const topWrap = document.getElementById('legacy-top-n-wrap');
+  const engWrap = document.getElementById('legacy-engineering-wrap');
+  const userIdsEl = document.getElementById('feishu-user-ids');
+  const presetEl = document.getElementById('prompt-preset');
+  if (!legacyType || !taskTypeEl) return;
+
+  const legacy = (legacyType.value || '').trim();
+  const isLegacy = !!legacy;
+  const isEngineering = legacy === 'engineering_llm_report';
+  taskTypeEl.value = legacy || 'hermes_summary';
+
+  if (promptEl) {
+    promptEl.required = !isLegacy;
+    promptEl.closest('div').classList.toggle('opacity-50', isLegacy);
+    promptEl.disabled = isLegacy;
+  }
+  if (presetEl) presetEl.disabled = isLegacy;
+  if (topWrap) topWrap.classList.toggle('hidden', !isLegacy);
+  if (engWrap) engWrap.classList.toggle('hidden', !isEngineering);
+  if (userIdsEl) userIdsEl.required = isEngineering;
+}
+
+function formatLastRun(task) {
+  const status = task.last_run_status;
+  const at = task.last_run_at_fmt || task.last_run_at;
+  if (!status && !at) return '—';
+  const cls = status === 'success' ? 'text-emerald-600' : (status === 'failed' ? 'text-red-600' : 'text-slate-500');
+  const label = status === 'success' ? '成功' : (status === 'failed' ? '失败' : (status || '—'));
+  const time = at ? String(at).slice(0, 16) : '';
+  return '<span class="' + cls + ' font-medium">' + escapeHtml(label) + '</span>' +
+    (time ? '<div class="text-xs text-slate-400">' + escapeHtml(time) + '</div>' : '');
+}
+
+function renderTaskRow(task) {
+  const enabled = task.enabled !== false;
+  const typeLabel = TASK_TYPE_LABELS[task.task_type] || task.task_type || '—';
+  const subtitle = isHermesTaskType(task.task_type) && task.hermes_prompt
+    ? '<div class="text-xs text-slate-400 truncate max-w-xs">' + escapeHtml(String(task.hermes_prompt).slice(0, 60)) + '…</div>'
+    : formatPushChannels(task);
+  const cronDesc = task.cron_description || describeCron(task.cron) || '';
+  return '<tr class="hover:bg-slate-50/80" data-task-id="' + escapeHtml(task.id) + '">' +
+    '<td class="px-4 py-3"><div class="font-medium text-slate-900">' + escapeHtml(task.name || task.id) + '</div>' +
+    subtitle +
+    '<div class="text-xs text-slate-400 font-mono">' + escapeHtml(String(task.id).slice(0, 8)) + '…</div></td>' +
+    '<td class="px-4 py-3 text-slate-600">' + escapeHtml(typeLabel) + '</td>' +
+    '<td class="px-4 py-3"><code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">' + escapeHtml(task.cron || '—') + '</code>' +
+    (cronDesc ? '<div class="text-xs text-slate-500 mt-0.5">' + escapeHtml(cronDesc) + '</div>' : '') + '</td>' +
+    '<td class="px-4 py-3 text-slate-600">' + escapeHtml(enabled ? (task.next_run_time_fmt || task.next_run_time || '—') : '已禁用') + '</td>' +
+    '<td class="px-4 py-3">' + formatLastRun(task) + '</td>' +
+    '<td class="px-4 py-3"><input type="checkbox" class="task-toggle rounded border-slate-300 text-brand-600"' +
+    (enabled ? ' checked' : '') + ' data-task-id="' + escapeHtml(task.id) + '"></td>' +
+    '<td class="px-4 py-3 whitespace-nowrap space-x-2">' +
+    '<button type="button" class="task-edit text-xs font-medium text-slate-600 hover:text-slate-800" data-task-id="' + escapeHtml(task.id) + '">编辑</button>' +
+    '<button type="button" class="task-run text-xs font-medium text-brand-600 hover:text-brand-700" data-task-id="' + escapeHtml(task.id) + '">立即执行</button>' +
+    '<button type="button" class="task-run-dry text-xs font-medium text-slate-500 hover:text-slate-700" data-task-id="' + escapeHtml(task.id) + '">Dry-run</button>' +
+    '<button type="button" class="task-delete text-xs font-medium text-red-600 hover:text-red-700" data-task-id="' + escapeHtml(task.id) + '">删除</button>' +
+    '</td></tr>';
+}
+
+async function loadTasks() {
+  const loading = document.getElementById('tasks-loading');
+  const empty = document.getElementById('tasks-empty');
+  const wrap = document.getElementById('tasks-table-wrap');
+  const tbody = document.getElementById('tasks-body');
+  const countEl = document.getElementById('task-count');
+  const errEl = document.getElementById('list-error');
+  if (loading) loading.classList.remove('hidden');
+  if (empty) empty.classList.add('hidden');
+  if (wrap) wrap.classList.add('hidden');
+  if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+  try {
+    const resp = await fetch('/api/chat/scheduled-tasks');
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || data.error || '加载失败');
+    const tasks = data.tasks || [];
+    tasksCache = {};
+    tasks.forEach(function(t) { tasksCache[t.id] = t; });
+    if (countEl) countEl.textContent = tasks.length ? tasks.length + ' 个任务' : '0 个任务';
+    if (loading) loading.classList.add('hidden');
+    if (!tasks.length) {
+      if (empty) empty.classList.remove('hidden');
+    } else {
+      if (wrap) wrap.classList.remove('hidden');
+      if (tbody) tbody.innerHTML = tasks.map(renderTaskRow).join('');
+    }
+  } catch (e) {
+    if (loading) loading.classList.add('hidden');
+    if (errEl) { errEl.textContent = String(e.message || e); errEl.classList.remove('hidden'); }
+  }
+}
+
+async function runTask(taskId, dryRun, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = dryRun ? '测试中…' : '执行中…';
+  try {
+    const resp = await fetch('/api/chat/scheduled-tasks/' + encodeURIComponent(taskId) + '/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dry_run: dryRun }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || data.error || data.message || '执行失败');
+    showToast(data.message || (dryRun ? 'Dry-run 完成' : '执行完成'), data.ok ? 'success' : 'error');
+    await loadTasks();
+  } catch (e) {
+    showToast(String(e.message || e), 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+document.getElementById('prompt-preset').addEventListener('change', applyPromptPreset);
+document.getElementById('legacy-task-type').addEventListener('change', syncLegacyMode);
+document.getElementById('edit-modal-close').addEventListener('click', closeEditModal);
+document.getElementById('edit-cancel-btn').addEventListener('click', closeEditModal);
+document.getElementById('edit-task-modal').addEventListener('click', function(ev) {
+  if (ev.target === ev.currentTarget) closeEditModal();
+});
+document.getElementById('open-create-modal-btn').addEventListener('click', openCreateModal);
+document.getElementById('create-modal-close').addEventListener('click', closeCreateModal);
+document.getElementById('create-cancel-btn').addEventListener('click', closeCreateModal);
+document.getElementById('create-task-modal').addEventListener('click', function(ev) {
+  if (ev.target === ev.currentTarget) closeCreateModal();
+});
+
+document.getElementById('task-name').addEventListener('input', function() {
+  this.dataset.userEdited = '1';
+});
+
+document.getElementById('create-task-form').addEventListener('submit', async function(ev) {
+  ev.preventDefault();
+  const errEl = document.getElementById('create-error');
+  const btn = document.getElementById('create-btn');
+  if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+  const fd = new FormData(ev.target);
+  const cronExpression = (fd.get('cron_expression') || '').trim();
+  const taskType = (fd.get('task_type') || 'hermes_summary').trim();
+  const notifyChannels = collectNotificationChannels('create-notification-channels');
+  const channelConfigErr = validateChannelConfig('create', notifyChannels);
+  if (channelConfigErr) {
+    if (errEl) { errEl.textContent = channelConfigErr; errEl.classList.remove('hidden'); }
+    return;
+  }
+  const payload = {
+    task_type: taskType,
+    name: (fd.get('name') || '').trim(),
+    cron: cronExpression,
+    cron_expression: cronExpression,
+    hermes_prompt: (fd.get('hermes_prompt') || '').trim(),
+    push_mode: (fd.get('push_mode') || 'excerpt').trim(),
+    push_excerpt_max: parseInt(fd.get('push_excerpt_max') || '1500', 10) || 1500,
+    top_n: parseInt(fd.get('top_n') || '10', 10) || 10,
+    days: parseInt(fd.get('days') || '1', 10) || 1,
+    report_kind: (fd.get('report_kind') || 'engineering_llm').trim(),
+    push_target: 'individual',
+    feishu_user_ids: (function() {
+      const legacy = (fd.get('feishu_user_ids_legacy') || '').trim();
+      if (legacy) return legacy;
+      const feishuCfg = collectChannelConfig('create', notifyChannels).feishu || {};
+      const users = feishuCfg.receive_users || [];
+      return users.length ? users.join(', ') : '';
+    })(),
+    notification_channels: notifyChannels,
+    channel_config: collectChannelConfig('create', notifyChannels),
+    enabled: !!fd.get('enabled'),
+    feishu_push: true,
+  };
+  if (!payload.name || !cronExpression) {
+    if (errEl) { errEl.textContent = '请填写任务名称与 Cron 表达式'; errEl.classList.remove('hidden'); }
+    return;
+  }
+  if (isHermesTaskType(taskType) && !payload.hermes_prompt) {
+    if (errEl) { errEl.textContent = '请填写 Hermes 提示词'; errEl.classList.remove('hidden'); }
+    return;
+  }
+  if (taskType === 'engineering_llm_report' && !payload.feishu_user_ids) {
+    if (errEl) { errEl.textContent = '请填写飞书 user_id 列表'; errEl.classList.remove('hidden'); }
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '创建中…';
+  try {
+    const resp = await fetch('/api/chat/scheduled-tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || data.error || '创建失败');
+    showToast(data.message || '任务已创建', 'success');
+    resetCreateForm();
+    closeCreateModal();
+    await loadTasks();
+  } catch (e) {
+    if (errEl) { errEl.textContent = String(e.message || e); errEl.classList.remove('hidden'); }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '创建任务';
+  }
+});
+
+document.getElementById('edit-task-form').addEventListener('submit', async function(ev) {
+  ev.preventDefault();
+  const errEl = document.getElementById('edit-error');
+  const btn = document.getElementById('edit-save-btn');
+  if (errEl) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+
+  const taskId = document.getElementById('edit-task-id').value;
+  const task = tasksCache[taskId];
+  if (!task) {
+    if (errEl) { errEl.textContent = '任务不存在，请刷新列表'; errEl.classList.remove('hidden'); }
+    return;
+  }
+
+  const fd = new FormData(ev.target);
+  const cronExpression = (fd.get('cron_expression') || '').trim();
+  const taskType = task.task_type || 'hermes_summary';
+
+  const payload = {
+    name: (fd.get('name') || '').trim(),
+    cron: cronExpression,
+    cron_expression: cronExpression,
+    enabled: !!fd.get('enabled'),
+  };
+
+  if (isHermesTaskType(taskType)) {
+    payload.hermes_prompt = (fd.get('hermes_prompt') || '').trim();
+    payload.push_mode = (fd.get('push_mode') || 'excerpt').trim();
+    payload.push_excerpt_max = parseInt(fd.get('push_excerpt_max') || '1500', 10) || 1500;
+    if (!payload.hermes_prompt) {
+      if (errEl) { errEl.textContent = '请填写 Hermes 提示词'; errEl.classList.remove('hidden'); }
+      return;
+    }
+  } else if (taskType === 'engineering_llm_report') {
+    payload.days = parseInt(fd.get('days') || '1', 10) || 1;
+    payload.top_n = parseInt(fd.get('top_n') || '10', 10) || 10;
+  } else if (isBimBriefTaskType(taskType)) {
+    payload.top_n = parseInt(fd.get('top_n_bim') || '10', 10) || 10;
+  }
+
+  payload.notification_channels = collectNotificationChannels('edit-notification-channels');
+  const channelConfigErr = validateChannelConfig('edit', payload.notification_channels);
+  if (channelConfigErr) {
+    if (errEl) { errEl.textContent = channelConfigErr; errEl.classList.remove('hidden'); }
+    return;
+  }
+  payload.channel_config = collectChannelConfig('edit', payload.notification_channels);
+  if (taskType === 'engineering_llm_report') {
+    const users = (payload.channel_config.feishu || {}).receive_users || [];
+    payload.feishu_user_ids = users.length ? users.join(', ') : '';
+  }
+
+  if (taskType === 'engineering_llm_report' && !payload.feishu_user_ids) {
+    if (errEl) { errEl.textContent = '请填写飞书 user_id 列表'; errEl.classList.remove('hidden'); }
+    return;
+  }
+
+  if (!payload.name || !cronExpression) {
+    if (errEl) { errEl.textContent = '请填写任务名称与 Cron 表达式'; errEl.classList.remove('hidden'); }
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+  try {
+    const resp = await fetch('/api/chat/scheduled-tasks/' + encodeURIComponent(taskId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || data.error || '更新失败');
+    showToast(data.message || '任务已更新', 'success');
+    closeEditModal();
+    await loadTasks();
+  } catch (e) {
+    if (errEl) { errEl.textContent = String(e.message || e); errEl.classList.remove('hidden'); }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '保存修改';
+  }
+});
+
+document.getElementById('tasks-body').addEventListener('change', async function(ev) {
+  const toggle = ev.target.closest('.task-toggle');
+  if (!toggle) return;
+  const taskId = toggle.getAttribute('data-task-id');
+  toggle.disabled = true;
+  try {
+    const resp = await fetch('/api/chat/scheduled-tasks/' + encodeURIComponent(taskId) + '/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: toggle.checked }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      toggle.checked = !toggle.checked;
+      throw new Error(data.detail || data.error || '切换失败');
+    }
+    showToast(data.message || (toggle.checked ? '已启用' : '已禁用'), 'success');
+    await loadTasks();
+  } catch (e) {
+    showToast(String(e.message || e), 'error');
+  } finally {
+    toggle.disabled = false;
+  }
+});
+
+document.getElementById('tasks-table-wrap').addEventListener('click', async function(ev) {
+  const editBtn = ev.target.closest('.task-edit');
+  const runBtn = ev.target.closest('.task-run');
+  const dryBtn = ev.target.closest('.task-run-dry');
+  const delBtn = ev.target.closest('.task-delete');
+  if (editBtn) return openEditModal(editBtn.getAttribute('data-task-id'));
+  if (runBtn) return runTask(runBtn.getAttribute('data-task-id'), false, runBtn);
+  if (dryBtn) return runTask(dryBtn.getAttribute('data-task-id'), true, dryBtn);
+  if (!delBtn) return;
+  const taskId = delBtn.getAttribute('data-task-id');
+  if (!window.confirm('确定删除该通知任务？')) return;
+  delBtn.disabled = true;
+  try {
+    const resp = await fetch('/api/chat/scheduled-tasks/' + encodeURIComponent(taskId), { method: 'DELETE' });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || data.error || '删除失败');
+    showToast(data.message || '已删除', 'success');
+    await loadTasks();
+  } catch (e) {
+    showToast(String(e.message || e), 'error');
+    delBtn.disabled = false;
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  bindChannelConfigVisibility('create');
+  bindChannelConfigVisibility('edit');
+  renderCronPresetButtons('cron-preset-buttons', 'cron-expression', 'cron-description');
+  renderCronPresetButtons('edit-cron-preset-buttons', 'edit-cron-expression', 'edit-cron-description');
+  bindCronExpressionInput('cron-expression', 'cron-description');
+  bindCronExpressionInput('edit-cron-expression', 'edit-cron-description');
+  updateCronDescription('cron-description', (document.getElementById('cron-expression') || {}).value || '0 8 * * *');
+  syncLegacyMode();
+  loadNotificationChannelsMeta();
+  loadTasks();
+});
+</script>
+{% endblock %}

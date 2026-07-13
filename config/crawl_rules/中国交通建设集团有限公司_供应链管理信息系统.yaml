@@ -1,0 +1,30 @@
+version: 1
+site_id: 中国交通建设集团有限公司_供应链管理信息系统
+name: 供应链管理信息系统
+enabled: true
+# dlzb style-kw 模板（destoon CMS），与 tjbid 共用结构
+entry_url: https://zgjtjs.dlzb.com/v1/
+list_page:
+  strategy: dom
+  wait_for: ".pdbox ul li a[href*='d-zb-']"
+  container: ".pdbox ul"
+  item: "li"
+  title: "a[href*='d-zb-']"
+  link: "a[href*='d-zb-']"
+  date: "span.fr"
+pagination:
+  type: page_number
+  url_style: path_suffix
+  max_pages: 5
+  wait_after_ms: 1500
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "d-zb-"
+  title_selector: "h1, .title"
+  content_selector: ".content, #content, .article-content, body"
+limits:
+  max_pages: 5
+  max_items: 100
+  max_depth: 1
+  rate_limit_seconds: 1.0

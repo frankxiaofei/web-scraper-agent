@@ -1,0 +1,13 @@
+{% extends "stock_base.html" %}
+
+{% block title %}WebScraperAgent — Hermes 对话{% endblock %}
+
+{% set show_hermes_fab = false %}
+
+{% block content %}
+{% set hermes_theme = 'stock' %}
+{% set agent_profile = 'stock' %}
+{% set active_nav = 'hermes' %}
+{% set days = days|default(7) %}
+{% include "crawl_agent_chat_body.html" %}
+{% endblock %}

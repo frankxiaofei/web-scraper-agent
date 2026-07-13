@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — Run 不存在{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto mt-12">
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-50 text-amber-600 text-2xl mb-4">?</div>
+    <h2 class="text-xl font-bold text-slate-900 mb-2">Run 不存在</h2>
+    <p class="text-sm font-mono text-slate-400 mb-4 break-all">run_id={{ run_id }}</p>
+    <p class="text-slate-600 text-sm leading-relaxed mb-6">
+      未在 MongoDB、内存缓存或本地日志中找到该 run。可能原因：
+    </p>
+    <ul class="text-left text-sm text-slate-600 space-y-2 mb-8 max-w-md mx-auto">
+      <li>· run_id 输入错误或已过期被清理</li>
+      <li>· 爬取进程尚未写入元数据（请稍后刷新）</li>
+      <li>· Web UI 启动时 MongoDB 未连接（重启 Web UI 后重试）</li>
+      <li>· 日志文件已被手动删除</li>
+    </ul>
+    <a href="/tasks"
+       class="inline-flex items-center rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 transition">
+      ← 返回任务状态
+    </a>
+  </div>
+</section>
+{% endblock %}

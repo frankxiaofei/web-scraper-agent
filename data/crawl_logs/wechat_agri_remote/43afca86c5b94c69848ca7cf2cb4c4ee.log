@@ -1,0 +1,4 @@
+2026-07-12 11:13:10 [INFO] run_id=43afca86c5b94c69848ca7cf2cb4c4ee site_id=wechat_agri_remote [start] 开始爬取 农业遥感与作物模型（微信公众号） url=https://mp.weixin.qq.com/s/eJkpm49rjUN1j2GGvW0qvw
+2026-07-12 11:13:10 [INFO] run_id=43afca86c5b94c69848ca7cf2cb4c4ee site_id=wechat_agri_remote [fetch_list] 开始抓取列表 (max_items=500, detail=False, intelligent=False) url=https://mp.weixin.qq.com/s/eJkpm49rjUN1j2GGvW0qvw
+2026-07-12 11:13:10 [INFO] run_id=43afca86c5b94c69848ca7cf2cb4c4ee site_id=wechat_agri_remote [delay] 请求前等待 3.0s
+2026-07-12 11:13:13 [INFO] run_id=43afca86c5b94c69848ca7cf2cb4c4ee site_id=wechat_agri_remote [fetch_list] 抓取列表页 (尝试 1/3) url=https://mp.weixin.qq.com/s/eJkpm49rjUN1j2GGvW0qvw

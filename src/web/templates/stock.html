@@ -1,0 +1,752 @@
+{% extends "stock_base.html" %}
+
+{% block title %}WebScraperAgent — 股票领域分析{% endblock %}
+
+{% block content %}
+<section class="stats-page">
+  <header class="stats-page-header">
+    <div>
+      <h2 class="stats-page-title text-blue-900">股票领域分析</h2>
+      <p class="stats-page-subtitle">近 {{ days }} 天 · {{ crawl_scope_label }}</p>
+      <p class="mt-2 text-sm text-blue-800/90 max-w-3xl leading-relaxed">
+        本平台为<strong>股票专题独立入口</strong>，与招标/商机洞察主站（8090 `/insights`）分离。
+        聚合 <strong>AKShare 财经快讯</strong> + <code class="text-xs bg-blue-50 px-1 rounded">bid_notices</code> 公告关键词，
+        生成<strong>产业发展分析</strong>与<strong>中长线投资思路框架</strong>（非具体买卖建议）。
+      </p>
+      <p class="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 inline-block">
+        {{ disclaimer or '本平台内容仅供参考，不构成任何投资建议。投资有风险，决策请谨慎。' }}
+      </p>
+      {% set ins = insights %}
+      {% if ins.data_strategy == 'mock_demo' %}
+      <p class="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 inline-block">
+        当前为演示数据 — 请配置股票数据源或确保 bid_notices 含股票关键词
+      </p>
+      {% elif ins.data_strategy == 'bid_notices_keyword_filter' %}
+      <p class="mt-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 inline-block">
+        数据来源：bid_notices 关键词筛选（{{ ins.real_count or 0 }} 条真实匹配）
+      </p>
+      {% endif %}
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" id="stock-sync-btn" onclick="stockSync()"
+              class="stats-btn stats-btn-primary bg-blue-600 text-white hover:bg-blue-700 border-blue-600">
+        刷新聚合
+      </button>
+      <button type="button" id="stock-refresh-btn" onclick="stockRefresh()"
+              class="stats-btn stats-btn-secondary border-blue-200 text-blue-800 hover:bg-blue-50">
+        刷新页面
+      </button>
+      <button type="button" onclick="stockAnalyze()"
+              class="stats-btn stats-btn-secondary border-amber-200 text-amber-800 hover:bg-amber-50">
+        LLM 重新分析
+      </button>
+      <button type="button" id="stock-news-sync-btn" onclick="stockNewsSync()"
+              class="stats-btn stats-btn-secondary border-blue-200 text-blue-800 hover:bg-blue-50">
+        同步新闻
+      </button>
+      <button type="button" id="policy-sync-btn" onclick="policySync()"
+              class="stats-btn stats-btn-secondary border-emerald-200 text-emerald-800 hover:bg-emerald-50">
+        同步政策
+      </button>
+    </div>
+  </header>
+
+  {% if news_sources %}
+  <p class="mb-4 text-xs text-slate-500">新闻源：{{ news_sources | join(', ') }}</p>
+  {% endif %}
+
+  {% set ms = market_snapshot or {} %}
+  {% set index_items = (ms.indices or {}).get('items') or [] %}
+  <div id="stock-index-section" class="stats-section mb-6 {% if not index_items %}hidden{% endif %}">
+    <div class="stats-panel border-green-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-green-800">A 股指数概览</h3>
+        <span id="stock-index-meta" class="stats-panel-badge bg-green-100 text-green-700">{{ ms.provider or 'akshare' }}</span>
+      </div>
+      <div id="stock-index-cards" class="flex flex-wrap gap-3">
+        {% for idx in index_items %}
+        <div class="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm min-w-[120px]">
+          <span class="font-medium text-slate-800">{{ idx.name }}</span>
+          {% if idx.change_pct is not none %}
+          <span class="ml-2 {% if idx.change_pct >= 0 %}text-red-600{% else %}text-green-600{% endif %}">
+            {% if idx.change_pct >= 0 %}+{% endif %}{{ idx.change_pct|round(2) }}%
+          </span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="text-xs text-red-600 mt-2">{{ disclaimer or '行情仅供参考，不构成投资建议。' }}</p>
+    </div>
+  </div>
+
+  {% set pi = policy_insights or {} %}
+  {% set inv = investment_direction or {} %}
+  <div class="stats-section mb-6">
+    <div class="stats-panel border-emerald-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-emerald-800">政策与十五五</h3>
+        {% if pi.degraded %}<span class="stats-panel-badge bg-amber-100 text-amber-700">降级/mock</span>{% endif %}
+        <span class="stats-panel-badge bg-emerald-100 text-emerald-700">{{ pi.policy_count or 0 }} 条政策</span>
+      </div>
+      <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+        {{ pi.fifteenth_fyp_note or '「十五五」指第十五个五年规划（2026-2030），当前处于规划编制与政策发布阶段。' }}
+        监控源：{{ pi.scope_label or '国务院及部委官网' }}。
+      </p>
+      <p class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+        {{ pi.disclaimer or '政策解读仅供参考，不构成任何投资建议。投资有风险，决策请谨慎。' }}
+      </p>
+
+      {% if inv.summary %}
+      <div class="mb-4 p-4 rounded-lg bg-emerald-50 border border-emerald-100">
+        <p class="font-medium text-emerald-900 mb-2">整体投资方向摘要</p>
+        <p class="text-sm text-slate-700 leading-relaxed mb-3">{{ inv.summary }}</p>
+        <div class="grid md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <p class="font-medium text-emerald-800 mb-2">重点产业</p>
+            <ul class="space-y-1 text-slate-600">
+              {% for s in inv.sectors or [] %}
+              <li>• {{ s.name or s }}{% if s.horizon %} <span class="text-xs text-slate-400">({{ s.horizon }})</span>{% endif %}</li>
+              {% else %}<li class="text-slate-400">暂无</li>{% endfor %}
+            </ul>
+          </div>
+          <div>
+            <p class="font-medium text-emerald-800 mb-2">政策主题</p>
+            <ul class="space-y-1 text-slate-600">
+              {% for t in inv.themes or [] %}
+              <li>• {{ t.name or t }}{% if t.strength %} <span class="text-xs">强度 {{ t.strength }}</span>{% endif %}</li>
+              {% else %}<li class="text-slate-400">暂无</li>{% endfor %}
+            </ul>
+          </div>
+          <div>
+            <p class="font-medium text-emerald-800 mb-2">风险提示</p>
+            <ul class="space-y-1 text-slate-600">
+              {% for r in inv.risks or [] %}
+              <li>• {{ r }}</li>
+              {% else %}<li class="text-slate-400">暂无</li>{% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% if inv.policy_signals %}
+        <div class="mt-3">
+          <p class="text-xs font-medium text-emerald-800 mb-1">政策信号</p>
+          <ul class="text-xs text-slate-600 space-y-1">
+            {% for sig in inv.policy_signals[:5] %}
+            <li>• {{ sig }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if policy_items %}
+      <div class="overflow-x-auto">
+        <table class="stats-distribution-table">
+          <thead>
+            <tr>
+              <th scope="col">标题</th>
+              <th scope="col">来源</th>
+              <th scope="col">主题</th>
+              <th scope="col">时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in policy_items %}
+            <tr>
+              <td>
+                {% if p.origin == 'mock' or (p.url or '').startswith('https://example.com') %}
+                <span class="text-xs text-amber-600 mr-1">[演示]</span>
+                {% endif %}
+                {% if p.url and not (p.url or '').startswith('mock://') %}
+                <a href="{{ p.url }}" target="_blank" rel="noopener" class="text-emerald-700 hover:underline">
+                  {{ p.title[:55] }}{% if p.title|length > 55 %}…{% endif %}
+                </a>
+                {% else %}
+                {{ p.title[:55] }}
+                {% endif %}
+              </td>
+              <td class="text-sm text-slate-600">{{ p.source_name }}</td>
+              <td class="text-xs">
+                {% for t in p.themes or [] %}
+                <span class="text-emerald-700">{{ t }}{% if not loop.last %},{% endif %}</span>
+                {% else %}—{% endfor %}
+              </td>
+              <td class="text-xs text-slate-500 whitespace-nowrap">{{ (p.published_at or '')[:10] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-sm text-slate-500 py-2">暂无政策条目，请点击「同步政策」或等待每日 06:00 自动同步。</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if industries_config %}
+  <div class="stats-section mb-6">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-blue-800">产业筛选</h3>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {% for ind in industries_config %}
+        <a href="/?days={{ days }}&industry={{ ind.name | urlencode }}"
+           class="px-3 py-1.5 rounded-lg text-sm border {% if selected_industry == ind.name %}bg-blue-600 text-white border-blue-600{% else %}bg-white text-blue-700 border-blue-200 hover:bg-blue-50{% endif %}">
+          {{ ind.name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% set counts = ins.counts or {} %}
+
+  <div class="stats-kpi-grid">
+    <div class="stats-kpi-card stats-kpi-card-blue">
+      <p class="stats-kpi-label">近 {{ days }} 天匹配</p>
+      <p class="stats-kpi-value">{{ ins.stock_count_in_window or 0 }}</p>
+      <p class="stats-kpi-hint">关键词/主题命中</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-indigo">
+      <p class="stats-kpi-label">近 7 天趋势</p>
+      <p class="stats-kpi-value">{{ (ins.trend_7d or {}).count or 0 }}</p>
+      <p class="stats-kpi-hint">全库股票相关</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-amber">
+      <p class="stats-kpi-label">近 30 天趋势</p>
+      <p class="stats-kpi-value">{{ (ins.trend_30d or {}).count or 0 }}</p>
+      <p class="stats-kpi-hint">全库股票相关</p>
+    </div>
+    <div class="stats-kpi-card stats-kpi-card-sky">
+      <p class="stats-kpi-label">LLM 分析</p>
+      <p class="stats-kpi-value stats-kpi-value-sm">
+        {% if ins.llm_available %}已启用{% else %}仅统计{% endif %}
+      </p>
+      <p class="stats-kpi-hint">可选智能摘要</p>
+    </div>
+  </div>
+
+  {% if ins.llm_analysis %}
+  <div class="stats-section">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-blue-800">智能分析摘要</h3>
+        {% if ins.llm_cached %}<span class="stats-panel-badge bg-blue-100 text-blue-700">缓存</span>{% endif %}
+      </div>
+      {% if ins.llm_analysis.summary %}
+      <p class="text-slate-700 text-sm leading-relaxed mb-4">{{ ins.llm_analysis.summary }}</p>
+      {% endif %}
+      {% if ins.llm_analysis.data_note %}
+      <p class="text-xs text-amber-700 mb-4">{{ ins.llm_analysis.data_note }}</p>
+      {% endif %}
+      <div class="grid md:grid-cols-3 gap-4 text-sm">
+        <div>
+          <p class="font-medium text-blue-800 mb-2">趋势</p>
+          <ul class="space-y-1 text-slate-600">
+            {% for item in ins.llm_analysis.trends or [] %}
+            <li>• {{ item }}</li>
+            {% else %}
+            <li class="text-slate-400">暂无</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div>
+          <p class="font-medium text-blue-800 mb-2">热点关键词</p>
+          <div class="flex flex-wrap gap-1.5">
+            {% for kw in ins.llm_analysis.hot_keywords or [] %}
+            <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs">{{ kw }}</span>
+            {% else %}
+            <span class="text-slate-400">暂无</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <p class="font-medium text-blue-800 mb-2">重点事件</p>
+          <ul class="space-y-1 text-slate-600">
+            {% for item in ins.llm_analysis.key_events or [] %}
+            <li>• {{ item }}</li>
+            {% else %}
+            <li class="text-slate-400">暂无</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% set ia = industry_analysis or {} %}
+  {% set analysis = ia.analysis or {} %}
+  {% if analysis %}
+  <div class="stats-section">
+    <div class="stats-panel border-amber-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-amber-800">产业发展分析 · {{ ia.industry or selected_industry }}</h3>
+        {% if ia.cached %}<span class="stats-panel-badge bg-amber-100 text-amber-700">缓存</span>{% endif %}
+        {% if analysis.heat_score %}<span class="stats-panel-badge bg-blue-100 text-blue-700">热度 {{ analysis.heat_score }}/10</span>{% endif %}
+      </div>
+      {% if analysis.summary %}
+      <p class="text-slate-700 text-sm leading-relaxed mb-3">{{ analysis.summary }}</p>
+      {% endif %}
+      {% if analysis.policy_wind %}
+      <p class="text-xs text-blue-700 mb-3"><strong>政策风向：</strong>{{ analysis.policy_wind }}</p>
+      {% endif %}
+      <div class="grid md:grid-cols-3 gap-4 text-sm mb-4">
+        <div>
+          <p class="font-medium text-amber-800 mb-2">趋势</p>
+          <ul class="space-y-1 text-slate-600">
+            {% for item in analysis.trends or [] %}<li>• {{ item }}</li>{% else %}<li class="text-slate-400">暂无</li>{% endfor %}
+          </ul>
+        </div>
+        <div>
+          <p class="font-medium text-amber-800 mb-2">驱动因素</p>
+          <ul class="space-y-1 text-slate-600">
+            {% for item in analysis.drivers or [] %}<li>• {{ item }}</li>{% else %}<li class="text-slate-400">暂无</li>{% endfor %}
+          </ul>
+        </div>
+        <div>
+          <p class="font-medium text-amber-800 mb-2">风险</p>
+          <ul class="space-y-1 text-slate-600">
+            {% for item in analysis.risks or [] %}<li>• {{ item }}</li>{% else %}<li class="text-slate-400">暂无</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% if analysis.related_sectors %}
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        {% for s in analysis.related_sectors %}
+        <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-xs">{{ s }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <button type="button" onclick="copyIndustryMarkdown()" class="text-xs text-blue-600 hover:underline">复制分析报告</button>
+      <pre id="industry-markdown" class="hidden">{{ analysis.markdown or '' }}</pre>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="stats-section">
+    <div class="stats-panel border-indigo-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-indigo-800">中长线投资计划</h3>
+        <span class="stats-panel-badge bg-indigo-100 text-indigo-700">思路框架 · 非买卖建议</span>
+      </div>
+      <div class="grid md:grid-cols-4 gap-3 mb-4 text-sm">
+        <label class="block">
+          <span class="text-slate-600 text-xs">周期（月）</span>
+          <select id="plan-horizon" class="app-select mt-1">
+            <option value="6">6</option>
+            <option value="12" selected>12</option>
+            <option value="18">18</option>
+            <option value="24">24</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="text-slate-600 text-xs">风险偏好</span>
+          <select id="plan-risk" class="app-select mt-1">
+            <option value="conservative">保守</option>
+            <option value="balanced" selected>均衡</option>
+            <option value="aggressive">积极</option>
+          </select>
+        </label>
+        <label class="block md:col-span-2">
+          <span class="text-slate-600 text-xs">关注产业（逗号分隔）</span>
+          <input id="plan-industries" type="text" class="mt-1 w-full border rounded-lg px-2 py-1.5"
+                 value="{{ selected_industry or '新能源,半导体' }}" placeholder="新能源,半导体">
+        </label>
+      </div>
+      <button type="button" onclick="generateInvestmentPlan()"
+              class="stats-btn stats-btn-primary bg-indigo-600 text-white hover:bg-indigo-700 border-indigo-600 mb-4">
+        生成投资计划
+      </button>
+      <div id="investment-plan-result" class="text-sm text-slate-700 hidden"></div>
+      <p class="text-xs text-red-600 mt-2">{{ disclaimer or '本平台内容仅供参考，不构成任何投资建议。' }}</p>
+    </div>
+  </div>
+
+  {% if news_items %}
+  <div class="stats-section">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-blue-800">财经新闻资讯</h3>
+        <span class="stats-panel-badge bg-blue-100 text-blue-700">{{ news_total or 0 }} 条</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="stats-distribution-table">
+          <thead>
+            <tr>
+              <th scope="col">标题</th>
+              <th scope="col">来源</th>
+              <th scope="col">产业</th>
+              <th scope="col">时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in news_items %}
+            <tr>
+              <td>
+                {% if n.url and not n.url.startswith('bid://') %}
+                <a href="{{ n.url }}" target="_blank" rel="noopener" class="text-blue-700 hover:underline">
+                  {{ n.title[:55] }}{% if n.title|length > 55 %}…{% endif %}
+                </a>
+                {% else %}
+                {{ n.title[:55] }}
+                {% endif %}
+              </td>
+              <td class="text-sm text-slate-600">{{ n.source_name }}</td>
+              <td class="text-xs">
+                {% for t in n.industries or [] %}
+                <span class="text-amber-700">{{ t }}{% if not loop.last %},{% endif %}</span>
+                {% else %}—{% endfor %}
+              </td>
+              <td class="text-xs text-slate-500 whitespace-nowrap">{{ (n.published_at or '')[:10] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if ins.hot_keywords %}
+  <div class="stats-section">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-blue-800">关键词分布</h3>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {% for row in ins.hot_keywords %}
+        <span class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium">
+          {{ row.keyword }} <span class="text-blue-400">({{ row.count }})</span>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if ins.by_theme %}
+  <div class="stats-section">
+    <div class="stats-panel border-amber-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-amber-800">主题分布</h3>
+        <span class="stats-panel-badge bg-amber-100 text-amber-700">{{ ins.by_theme|length }} 个主题</span>
+      </div>
+      <div class="stats-distribution-wrap">
+        <table class="stats-distribution-table">
+          <thead>
+            <tr>
+              <th scope="col">主题</th>
+              <th scope="col" class="stats-th-bar" aria-hidden="true"></th>
+              <th scope="col" class="stats-th-meta">数量 · 占比</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in ins.by_theme %}
+            <tr>
+              <td>{{ row.name }}</td>
+              <td class="stats-td-bar">
+                <div class="stats-bar-track">
+                  <div class="stats-bar-fill stats-bar-fill-amber" style="width: {{ row.pct }}%"></div>
+                </div>
+              </td>
+              <td class="stats-td-meta">{{ row.count }} · {{ row.pct }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if ins.daily_trend %}
+  <div class="stats-section">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-blue-800">每日趋势</h3>
+      </div>
+      <div class="stats-distribution-wrap">
+        <table class="stats-distribution-table">
+          <thead>
+            <tr>
+              <th scope="col">日期</th>
+              <th scope="col" class="stats-th-bar" aria-hidden="true"></th>
+              <th scope="col" class="stats-th-meta">条数</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set max_day = ins.daily_trend | map(attribute='count') | max %}
+            {% for row in ins.daily_trend %}
+            <tr>
+              <td class="text-sm">{{ row.date }}</td>
+              <td class="stats-td-bar">
+                <div class="stats-bar-track">
+                  <div class="stats-bar-fill stats-bar-fill-blue"
+                       style="width: {{ (row.count / max_day * 100) if max_day else 0 }}%"></div>
+                </div>
+              </td>
+              <td class="stats-td-meta">{{ row.count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="stats-section">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-blue-800">最新相关资讯</h3>
+        <span class="stats-panel-badge bg-blue-100 text-blue-700">{{ latest_total or 0 }} 条在窗口内</span>
+      </div>
+      {% if latest_notices %}
+      <div class="overflow-x-auto">
+        <table class="stats-distribution-table">
+          <thead>
+            <tr>
+              <th scope="col">标题</th>
+              <th scope="col">来源</th>
+              <th scope="col">主题</th>
+              <th scope="col">关键词</th>
+              <th scope="col">时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in latest_notices %}
+            <tr>
+              <td>
+                {% if n.is_mock %}
+                <span class="text-xs text-amber-600 mr-1">[演示]</span>
+                {% endif %}
+                {% if n.url %}
+                <a href="{{ n.url }}" target="_blank" rel="noopener"
+                   class="text-blue-700 hover:text-blue-900 hover:underline">
+                  {{ n.title[:60] }}{% if n.title|length > 60 %}…{% endif %}
+                </a>
+                {% else %}
+                {{ n.title[:60] }}
+                {% endif %}
+              </td>
+              <td class="text-slate-600 text-sm">{{ n.source_site_name }}</td>
+              <td class="text-xs">
+                {% for t in n.stock_themes or [] %}
+                <span class="text-amber-700">{{ t }}{% if not loop.last %},{% endif %}</span>
+                {% else %}—{% endfor %}
+              </td>
+              <td class="text-xs">
+                {% for kw in n.stock_keywords or [] %}
+                <span class="text-blue-600">{{ kw[:8] }}{% if not loop.last %},{% endif %}</span>
+                {% else %}—{% endfor %}
+              </td>
+              <td class="text-slate-500 text-sm whitespace-nowrap">{{ n.scraped_at_fmt }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-sm text-slate-500 py-4">窗口内暂无股票相关资讯。</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if watch_symbols %}
+  <div class="stats-section">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-blue-800">关注代码（示例）</h3>
+        <span class="stats-panel-badge bg-blue-100 text-blue-700">AKShare / 配置源</span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {% for s in watch_symbols %}
+        <span class="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+          <span class="font-mono text-blue-700">{{ s.code }}</span>
+          <span class="text-slate-600 ml-1">{{ s.name }}</span>
+          <span class="text-xs text-slate-400 ml-1">{{ s.market }}</span>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<script>
+  function loadStockIndices() {
+    var section = document.getElementById('stock-index-section');
+    var cards = document.getElementById('stock-index-cards');
+    var meta = document.getElementById('stock-index-meta');
+    if (!section || !cards) return;
+    fetch('/api/stock/market')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var items = ((data.indices || {}).items) || [];
+        if (!items.length) return;
+        cards.innerHTML = '';
+        items.forEach(function(idx) {
+          var div = document.createElement('div');
+          div.className = 'px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-sm min-w-[120px]';
+          var pct = idx.change_pct;
+          var cls = (pct != null && pct >= 0) ? 'text-red-600' : 'text-green-600';
+          var pctHtml = (pct == null || isNaN(pct)) ? '' :
+            '<span class="ml-2 ' + cls + '">' + (pct >= 0 ? '+' : '') + Number(pct).toFixed(2) + '%</span>';
+          div.innerHTML = '<span class="font-medium text-slate-800">' + (idx.name || '') + '</span>' + pctHtml;
+          cards.appendChild(div);
+        });
+        section.classList.remove('hidden');
+        if (meta) {
+          meta.textContent = (data.degraded ? '降级 · ' : '') + (data.provider || 'akshare');
+        }
+      })
+      .catch(function() { /* 行情可选 */ });
+  }
+  loadStockIndices();
+
+  function stockSync() {
+    var btn = document.getElementById('stock-sync-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '刷新中…'; }
+    fetch('/api/stock/sync', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.ok) {
+          alert(data.error || '刷新启动失败');
+          if (btn) { btn.disabled = false; btn.textContent = '刷新聚合'; }
+          return;
+        }
+        var poll = setInterval(function() {
+          fetch('/api/stock/sync/status')
+            .then(function(r) { return r.json(); })
+            .then(function(st) {
+              if (!st.running) {
+                clearInterval(poll);
+                if (btn) { btn.disabled = false; btn.textContent = '刷新聚合'; }
+                location.reload();
+              }
+            });
+        }, 2000);
+      })
+      .catch(function() {
+        alert('请求失败');
+        if (btn) { btn.disabled = false; btn.textContent = '刷新聚合'; }
+      });
+  }
+  function stockRefresh() {
+    location.reload();
+  }
+  function stockAnalyze() {
+    var url = new URL(window.location.href);
+    url.searchParams.set('refresh_llm', 'true');
+    url.searchParams.set('use_llm', 'true');
+    window.location.href = url.toString();
+  }
+  function policySync() {
+    var btn = document.getElementById('policy-sync-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '同步中…'; }
+    fetch('/api/stock/policy/sync', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.ok) {
+          alert(data.error || '政策同步启动失败');
+          if (btn) { btn.disabled = false; btn.textContent = '同步政策'; }
+          return;
+        }
+        var poll = setInterval(function() {
+          fetch('/api/stock/policy/sync/status')
+            .then(function(r) { return r.json(); })
+            .then(function(st) {
+              if (!st.running) {
+                clearInterval(poll);
+                if (btn) { btn.disabled = false; btn.textContent = '同步政策'; }
+                location.reload();
+              }
+            });
+        }, 2000);
+      })
+      .catch(function() {
+        alert('请求失败');
+        if (btn) { btn.disabled = false; btn.textContent = '同步政策'; }
+      });
+  }
+  function stockNewsSync() {
+    var btn = document.getElementById('stock-news-sync-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '同步中…'; }
+    fetch('/api/stock/news/sync', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.ok) {
+          alert(data.error || '同步启动失败');
+          if (btn) { btn.disabled = false; btn.textContent = '同步新闻'; }
+          return;
+        }
+        var poll = setInterval(function() {
+          fetch('/api/stock/news/sync/status')
+            .then(function(r) { return r.json(); })
+            .then(function(st) {
+              if (!st.running) {
+                clearInterval(poll);
+                if (btn) { btn.disabled = false; btn.textContent = '同步新闻'; }
+                location.reload();
+              }
+            });
+        }, 2000);
+      })
+      .catch(function() {
+        alert('请求失败');
+        if (btn) { btn.disabled = false; btn.textContent = '同步新闻'; }
+      });
+  }
+  function copyIndustryMarkdown() {
+    var el = document.getElementById('industry-markdown');
+    if (!el || !el.textContent) return;
+    navigator.clipboard.writeText(el.textContent).then(function() {
+      alert('产业发展分析已复制');
+    });
+  }
+  function generateInvestmentPlan() {
+    var industries = (document.getElementById('plan-industries').value || '')
+      .split(/[,，]/).map(function(s) { return s.trim(); }).filter(Boolean);
+    var body = {
+      industries: industries,
+      risk_profile: document.getElementById('plan-risk').value,
+      horizon_months: parseInt(document.getElementById('plan-horizon').value, 10) || 12,
+      days: {{ days }},
+      use_llm: true
+    };
+    var box = document.getElementById('investment-plan-result');
+    box.classList.remove('hidden');
+    box.innerHTML = '<p class="text-slate-500">生成中…</p>';
+    fetch('/api/stock/investment-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var plan = data.plan || {};
+        var html = '';
+        if (plan.overview) html += '<p class="mb-2">' + plan.overview + '</p>';
+        if (plan.phases && plan.phases.length) {
+          html += '<ul class="space-y-1 mb-2">';
+          plan.phases.forEach(function(p) {
+            html += '<li>• <strong>' + (p.phase || '') + '</strong>（' + (p.months || '') + '）：' + (p.action || '') + ' — ' + (p.logic || '') + '</li>';
+          });
+          html += '</ul>';
+        }
+        if (plan.markdown) {
+          html += '<pre class="mt-2 p-3 bg-slate-50 rounded-lg text-xs whitespace-pre-wrap overflow-x-auto">' + plan.markdown + '</pre>';
+          html += '<button type="button" onclick="navigator.clipboard.writeText(' + JSON.stringify(plan.markdown) + ')" class="text-xs text-indigo-600 hover:underline mt-2">复制计划</button>';
+        }
+        html += '<p class="text-xs text-red-600 mt-2">' + (data.disclaimer || '') + '</p>';
+        box.innerHTML = html || '<p class="text-slate-500">未生成内容</p>';
+      })
+      .catch(function() {
+        box.innerHTML = '<p class="text-red-600">请求失败</p>';
+      });
+  }
+</script>
+{% endblock %}

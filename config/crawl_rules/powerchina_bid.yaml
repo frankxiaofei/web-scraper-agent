@@ -1,0 +1,34 @@
+version: 1
+site_id: powerchina_bid
+name: 中国电建阳光采购网
+enabled: true
+entry_url: https://bid.powerchina.cn/consult/notice
+list_page:
+  strategy: api
+  api:
+    url: https://bid.powerchina.cn/api/notice/list
+    method: GET
+    params:
+      page: 1
+      size: 20
+    page_param: page
+    items_path: data
+    total_path: total
+    fields:
+      title: title
+      url: url
+      date: publishDate
+    url_template: "https://bid.powerchina.cn/consult/notice/detail?id={id}"
+pagination:
+  type: ajax_param
+  page_param: page
+  page_size: 20
+  max_pages: 20
+  stop_when_empty: true
+detail:
+  fetch_detail: false
+limits:
+  max_pages: 20
+  max_items: 100
+  max_depth: 2
+  rate_limit_seconds: 1.0

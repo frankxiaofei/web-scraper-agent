@@ -1,0 +1,51 @@
+# bid.powerchina.cn — 列表/详情均走 REST API，零 browser。
+# 入口改为 search 页面（https://bid.powerchina.cn/search），
+# 搜索页底层同样调用 allList API 并带 keyWords: "BIM" 参数。
+# 详情页 SPA 用 iframe 展示正文，但 getInfo 已返回 announcementContent（完整 HTML），
+# 无需 Playwright/WebBridge 进入 iframe。仅当 API 失效且改 strategy=dom 时才需 iframe_selector。
+version: 1
+site_id: 中国电力建设集团有限公司_公共资源交易服务平台
+name: 公共资源交易服务平台
+enabled: true
+entry_url: https://bid.powerchina.cn/search
+list_page:
+  strategy: api
+  api:
+    url: https://bid.powerchina.cn/newcbs/recpro-newmember/BidAnnouncementSummary/allList
+    method: POST
+    body_format: json
+    params:
+      pageNum: 1
+      pageSize: 20
+      announcementType: 招采公告
+      companyType: "3"
+      keyWords: "BIM"
+    page_param: pageNum
+    items_path: rows
+    total_path: total
+    fields:
+      title: title
+      id: id
+      date: publishTime
+    url_template: "https://bid.powerchina.cn/notice/detail?id={id}&type=招采公告&typeName=招采公告&index=0-3&path=/search&companyType=3&bidType=1&keyWords=BIM"
+pagination:
+  type: ajax_param
+  page_param: pageNum
+  page_size: 20
+  max_pages: 5
+  stop_when_empty: true
+detail:
+  fetch_detail: true
+  strategy: api
+  url_pattern: "/notice/detail"
+  api_base_url: https://bid.powerchina.cn/newcbs/recpro-newmember
+  api_path_template: "/BidAnnouncementSummary/getInfo/{id}"
+  api_content_field: announcementContent|content
+  api_title_field: title
+  api_id_param: id
+  # DOM 回退（当前不需要）：iframe_selector: "iframe"
+limits:
+  max_pages: 5
+  max_items: 100
+  max_depth: 3
+  rate_limit_seconds: 3.0

@@ -1,0 +1,112 @@
+{
+  "cache_key": "analysis:30:all",
+  "generated_at": "2026-07-12T01:24:39.506063+08:00",
+  "llm_analysis": {
+    "summary": "近一月测试"
+  },
+  "summary": {
+    "days": 30,
+    "bim_count_in_window": 2,
+    "counts": {
+      "total": 3,
+      "bim_true": 2,
+      "bim_false": 1,
+      "bim_unclassified": 0,
+      "bim_classified": 3
+    },
+    "by_site": [
+      {
+        "id": "中国电力建设集团有限公司_公共资源交易服务平台",
+        "name": "电建平台",
+        "company_name": "中国电力建设集团有限公司",
+        "count": 1,
+        "pct": 50.0
+      },
+      {
+        "id": "crec_bidding",
+        "name": "鲁班商务网",
+        "company_name": "中国铁路工程集团有限公司",
+        "count": 1,
+        "pct": 50.0
+      }
+    ],
+    "by_category": [
+      {
+        "name": "招标公告",
+        "count": 2,
+        "pct": 100.0
+      }
+    ],
+    "hot_tags": [
+      {
+        "tag": "数字孪生",
+        "count": 1
+      },
+      {
+        "tag": "BIM咨询",
+        "count": 1
+      },
+      {
+        "tag": "Revit",
+        "count": 1
+      }
+    ],
+    "daily_trend": [
+      {
+        "date": "2026-07-12",
+        "count": 1
+      },
+      {
+        "date": "2026-07-11",
+        "count": 1
+      }
+    ],
+    "generated_at": "2026-07-12T01:24:39.441374+08:00",
+    "structured": {
+      "total": 2,
+      "with_price": 1,
+      "with_tender_party": 1,
+      "with_requirements": 1,
+      "price_buckets": [
+        {
+          "bucket": "未披露",
+          "count": 1
+        },
+        {
+          "bucket": "100万-500万",
+          "count": 1
+        }
+      ],
+      "top_tender_parties": [
+        {
+          "name": "中铁某局集团有限公司",
+          "count": 1
+        }
+      ],
+      "requirement_keywords": [
+        {
+          "keyword": "数字孪生",
+          "count": 1
+        },
+        {
+          "keyword": "BIM",
+          "count": 1
+        }
+      ],
+      "top_locations": [
+        {
+          "location": "成都市",
+          "count": 1
+        }
+      ],
+      "deadline_samples": [],
+      "amount_stats": {
+        "min_yuan": 2800000.0,
+        "max_yuan": 2800000.0,
+        "median_yuan": 2800000.0,
+        "avg_yuan": 2800000.0,
+        "count": 1
+      }
+    }
+  }
+}

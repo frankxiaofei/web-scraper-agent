@@ -1,0 +1,24 @@
+{
+  "site_id": "delete_test_e2e_example_com",
+  "name": "E2E删除测试站",
+  "url": "https://delete-test-e2e.example.com",
+  "current_stage": "probe",
+  "stages": {
+    "register": "completed",
+    "probe": "in_progress",
+    "analyze": "pending",
+    "toolchain": "pending",
+    "schedule": "pending"
+  },
+  "registered_at": "2026-07-11T23:21:38.757362+00:00",
+  "draft": true,
+  "probe_report": {
+    "site_id": "delete_test_e2e_example_com",
+    "url": "https://delete-test-e2e.example.com",
+    "status": "pending",
+    "probed_at": null,
+    "summary": null,
+    "page_title": null,
+    "hints": {}
+  }
+}

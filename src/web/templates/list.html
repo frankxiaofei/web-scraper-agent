@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 数据列表{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <header class="app-page-header">
+    <div>
+      <h2 class="app-page-title">数据列表</h2>
+      <p class="app-page-subtitle">共 {{ pagination.total }} 条记录{% if pagination.total > 0 %}，当前第 {{ pagination.page }} / {{ pagination.pages }} 页{% endif %}</p>
+    </div>
+  </header>
+
+  <form method="get" action="/" id="list-search-form" class="app-card p-4 sm:p-5 mb-6">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <div class="flex-1 min-w-0">
+        <label for="q" class="sr-only">关键词搜索</label>
+        <input type="search" id="q" name="q" value="{{ keyword }}" placeholder="搜索标题、正文、标签、地区、采购人…"
+               class="app-input w-full px-3 py-2.5 text-sm">
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button type="button" id="advanced-search-toggle"
+                class="app-btn app-btn-secondary px-3 py-2.5 inline-flex items-center gap-1.5"
+                aria-expanded="{{ 'true' if advanced_open else 'false' }}"
+                aria-controls="advanced-search-panel"
+                title="高级搜索">
+          <svg id="advanced-search-icon" class="w-4 h-4 transition-transform duration-200 {% if advanced_open %}rotate-180{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+          <span class="hidden sm:inline">高级搜索</span>
+        </button>
+        <button type="submit" class="app-btn app-btn-primary px-5 py-2.5">
+          搜索
+        </button>
+      </div>
+    </div>
+
+    <div id="advanced-search-panel"
+         class="advanced-search-panel mt-4 pt-4 border-t border-slate-200/80 {% if not advanced_open %}hidden{% endif %}"
+         aria-hidden="{{ 'false' if advanced_open else 'true' }}">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <fieldset class="min-w-0">
+          <legend class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">来源站点（可多选）</legend>
+          <div class="advanced-search-options form-checkgroup form-checkgroup--stack max-h-44 overflow-y-auto">
+            {% if sources %}
+            <div class="flex flex-col gap-2">
+              {% for s in sources %}
+              <label class="inline-flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                <input type="checkbox" name="site_ids" value="{{ s.id }}"
+                       {% if s.id in current_site_ids %}checked{% endif %}>
+                <span class="truncate" title="{{ s.name }}">{{ s.name }}</span>
+              </label>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-slate-400">暂无可用站点</p>
+            {% endif %}
+          </div>
+        </fieldset>
+        <fieldset class="min-w-0">
+          <legend class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">标签（可多选）</legend>
+          <div class="advanced-search-options form-checkgroup form-checkgroup--stack max-h-44 overflow-y-auto">
+            {% if tags %}
+            <div class="flex flex-col gap-2">
+              {% for t in tags %}
+              <label class="inline-flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                <input type="checkbox" name="tags" value="{{ t }}"
+                       {% if t in current_tags %}checked{% endif %}>
+                <span class="truncate" title="{{ t }}">{{ t }}</span>
+              </label>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-slate-400">暂无可用标签</p>
+            {% endif %}
+          </div>
+        </fieldset>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <button type="submit" class="app-btn app-btn-primary px-4 py-2 text-sm">应用筛选</button>
+        <a href="/" class="app-btn app-btn-secondary px-4 py-2 text-sm">重置</a>
+      </div>
+    </div>
+  </form>
+</section>
+
+{% if notices %}
+<div class="app-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="notice-table min-w-full text-sm">
+      <thead>
+        <tr class="border-b border-slate-200 text-left uppercase tracking-wide">
+          <th scope="col" class="px-4 py-3 min-w-[220px]">标题</th>
+          <th scope="col" class="px-4 py-3 min-w-[120px]">标签</th>
+          <th scope="col" class="px-4 py-3 whitespace-nowrap">来源站点</th>
+          <th scope="col" class="px-4 py-3 whitespace-nowrap">发布日期</th>
+          <th scope="col" class="px-4 py-3 min-w-[120px]">招标方 / 采购人</th>
+          <th scope="col" class="px-4 py-3 whitespace-nowrap">预算 / 金额</th>
+          <th scope="col" class="px-4 py-3 min-w-[180px]">摘要</th>
+          <th scope="col" class="px-4 py-3 text-center whitespace-nowrap">正文</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for n in notices %}
+        <tr class="notice-row-clickable"
+            data-href="/notices/{{ n.id }}"
+            tabindex="0"
+            role="link"
+            aria-label="点击查看公告：{{ n.title }}">
+          <td class="px-4 py-3 align-top">
+            <div class="flex items-start gap-1.5">
+              <span class="font-medium text-slate-900 line-clamp-2 leading-snug" title="{{ n.title }}">
+                {{ n.title }}
+              </span>
+              {% if n.detail_url %}
+              <a href="{{ n.detail_url }}" target="_blank" rel="noopener noreferrer"
+                 class="shrink-0 mt-0.5 text-slate-400 hover:text-brand-600" title="打开原始链接" aria-label="打开原始链接">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              {% endif %}
+            </div>
+          </td>
+          <td class="px-4 py-3 align-top" onclick="event.stopPropagation()">
+            {% if n.tags %}
+            <div class="flex flex-wrap gap-1 max-w-[140px]">
+              {% for tag in n.tags %}
+              <a href="/?tags={{ tag | urlencode }}"
+                 class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-xs font-medium border border-amber-200/70 hover:bg-amber-100 transition"
+                 title="按标签筛选：{{ tag }}">{{ tag }}</a>
+              {% endfor %}
+            </div>
+            {% else %}
+            <span class="text-slate-300 text-xs">—</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 align-top whitespace-nowrap">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-brand-50 text-brand-700 text-xs font-medium">{{ n.source_site_name }}</span>
+          </td>
+          <td class="px-4 py-3 align-top whitespace-nowrap text-slate-600 tabular-nums">{{ n.publish_date_fmt }}</td>
+          <td class="px-4 py-3 align-top text-slate-700 max-w-[160px]">
+            {% if n.tender_party != '—' %}
+            <span class="line-clamp-2" title="{{ n.tender_party }}">{{ n.tender_party }}</span>
+            {% else %}
+            <span class="text-slate-300">—</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 align-top whitespace-nowrap text-slate-700">
+            {% if n.budget_amount != '—' %}
+            <span class="font-medium text-slate-900">{{ n.budget_amount }}</span>
+            {% else %}
+            <span class="text-slate-300">—</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 align-top text-slate-500 max-w-[240px]">
+            {% if n.summary != '—' %}
+            <span class="line-clamp-2" title="{{ n.summary }}">{{ n.summary }}</span>
+            {% else %}
+            <span class="text-slate-300">—</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 align-top text-center whitespace-nowrap">
+            {% if n.has_content %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">有</span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">无</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<nav class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4" aria-label="分页">
+  <p class="text-sm text-slate-500">
+    显示第 {{ (pagination.page - 1) * pagination.per_page + 1 }}–{% if pagination.page * pagination.per_page > pagination.total %}{{ pagination.total }}{% else %}{{ pagination.page * pagination.per_page }}{% endif %} 条，共 {{ pagination.total }} 条
+  </p>
+  <div class="flex items-center gap-2">
+    {% if pagination.has_prev %}
+    <a href="/?page={{ pagination.page - 1 }}&per_page={{ pagination.per_page }}{% if keyword %}&q={{ keyword | urlencode }}{% endif %}{% for sid in current_site_ids %}&site_ids={{ sid | urlencode }}{% endfor %}{% for t in current_tags %}&tags={{ t | urlencode }}{% endfor %}"
+       class="app-btn app-btn-secondary px-4 py-2 cursor-pointer">上一页</a>
+    {% else %}
+    <span class="px-4 py-2 rounded-lg border border-slate-100 bg-slate-50 text-sm text-slate-300 cursor-not-allowed">上一页</span>
+    {% endif %}
+    <span class="px-3 py-2 text-sm text-slate-600 tabular-nums">{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="/?page={{ pagination.page + 1 }}&per_page={{ pagination.per_page }}{% if keyword %}&q={{ keyword | urlencode }}{% endif %}{% for sid in current_site_ids %}&site_ids={{ sid | urlencode }}{% endfor %}{% for t in current_tags %}&tags={{ t | urlencode }}{% endfor %}"
+       class="app-btn app-btn-secondary px-4 py-2 cursor-pointer">下一页</a>
+    {% else %}
+    <span class="px-4 py-2 rounded-lg border border-slate-100 bg-slate-50 text-sm text-slate-300 cursor-not-allowed">下一页</span>
+    {% endif %}
+  </div>
+</nav>
+{% else %}
+<div class="app-card border-dashed p-12 text-center">
+  <div class="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+  </div>
+  <p class="text-slate-600 font-medium">暂无匹配的数据</p>
+  <p class="text-sm text-slate-400 mt-2">请调整筛选条件，或先运行爬虫写入数据</p>
+  <a href="/" class="inline-block mt-4 text-sm text-brand-600 hover:underline">清除筛选</a>
+</div>
+{% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.getElementById('advanced-search-toggle');
+    var panel = document.getElementById('advanced-search-panel');
+    var icon = document.getElementById('advanced-search-icon');
+    if (!toggle || !panel) return;
+
+    toggle.addEventListener('click', function() {
+      var expanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      panel.setAttribute('aria-hidden', expanded ? 'true' : 'false');
+      panel.classList.toggle('hidden', expanded);
+      if (icon) icon.classList.toggle('rotate-180', !expanded);
+    });
+  });
+</script>
+{% endblock %}

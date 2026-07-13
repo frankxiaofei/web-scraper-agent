@@ -1,0 +1,2638 @@
+{% set hermes_theme = hermes_theme|default('violet') %}
+{% set agent_profile = agent_profile|default('default') %}
+<div class="hermes-chat-root {% if hermes_theme == 'agri' %}hermes-theme-agri{% elif hermes_theme == 'stock' %}hermes-theme-stock{% else %}hermes-theme-violet{% endif %}">
+<style>
+  /* Hermes Agent 科技感交互 — violet(8090) / emerald(8091)，尊重 prefers-reduced-motion */
+  .hermes-agent-bar {
+    border-bottom: 1px solid #e9d5ff;
+    background: linear-gradient(90deg, #faf5ff 0%, #eef2ff 50%, #faf5ff 100%);
+    background-size: 200% 100%;
+    animation: hermes-bar-bg 4s ease-in-out infinite;
+    padding: 0.5rem 1rem;
+  }
+  .hermes-agent-bar-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #5b21b6;
+    letter-spacing: 0.02em;
+  }
+  .hermes-agent-bar-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: #7c3aed;
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.45);
+    animation: hermes-dot-pulse 1.8s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  .hermes-agent-bar-sub {
+    margin-left: auto;
+    font-weight: 400;
+    color: #7c3aed;
+    opacity: 0.85;
+    font-size: 0.6875rem;
+  }
+  .hermes-agent-bar-track {
+    margin-top: 0.375rem;
+    height: 2px;
+    border-radius: 9999px;
+    background: #e9d5ff;
+    overflow: hidden;
+  }
+  .hermes-agent-bar-fill {
+    height: 100%;
+    width: 35%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #8b5cf6, #6366f1, #8b5cf6);
+    background-size: 200% 100%;
+    animation: hermes-bar-slide 1.6s ease-in-out infinite, hermes-border-shift 2.4s linear infinite;
+  }
+
+  .hermes-block {
+    position: relative;
+    overflow: hidden;
+  }
+  .hermes-block-thinking.is-active {
+    background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%) !important;
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.25), 0 4px 14px rgba(124, 58, 237, 0.12);
+    animation: hermes-thinking-glow 2.2s ease-in-out infinite;
+  }
+  .hermes-block-thinking.is-active::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(139, 92, 246, 0.07) 50%, transparent 60%);
+    animation: hermes-scan 2.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .hermes-block-thinking.is-active::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid transparent;
+    background: linear-gradient(90deg, #a78bfa, #818cf8, #a78bfa) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    background-size: 200% 100%;
+    animation: hermes-border-shift 3s linear infinite;
+    pointer-events: none;
+    opacity: 0.65;
+  }
+  .hermes-block-thinking.is-settled {
+    opacity: 0.92;
+  }
+
+  .hermes-turn-process:not(.hidden) {
+    margin-bottom: 0.625rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px dashed rgba(139, 92, 246, 0.22);
+  }
+  .hermes-theme-agri .hermes-turn-process:not(.hidden) {
+    border-bottom-color: rgba(16, 185, 129, 0.25);
+  }
+  .hermes-theme-stock .hermes-turn-process:not(.hidden) {
+    border-bottom-color: rgba(37, 99, 235, 0.22);
+  }
+  .hermes-turn-message:not(:empty) {
+    margin-top: 0.125rem;
+  }
+  .hermes-turn-process-body {
+    margin-top: 0.375rem;
+    padding-left: 0.25rem;
+  }
+  .hermes-turn-process-body > .hermes-block-thinking + .hermes-block-tool,
+  .hermes-turn-process-body > .hermes-block-tool + .hermes-block-thinking,
+  .hermes-turn-process-body > .hermes-block-tool + .hermes-block-tool,
+  .hermes-turn-process-body > .hermes-block-thinking + .hermes-block-thinking,
+  .hermes-turn-process-body > .hermes-block + .hermes-block {
+    margin-top: 0.5rem;
+  }
+  .hermes-turn-process-body .hermes-block-thinking .hermes-thinking-content {
+    padding-left: 0.75rem;
+    border-left: 2px solid rgba(139, 92, 246, 0.25);
+  }
+  .hermes-theme-agri .hermes-turn-process-body .hermes-block-thinking .hermes-thinking-content {
+    border-left-color: rgba(16, 185, 129, 0.3);
+  }
+  .hermes-theme-stock .hermes-turn-process-body .hermes-block-thinking .hermes-thinking-content {
+    border-left-color: rgba(37, 99, 235, 0.28);
+  }
+
+  .hermes-block-tool.is-active {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3);
+  }
+  .hermes-block-tool.is-active::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.22), transparent);
+    animation: hermes-shimmer 1.7s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .hermes-block-tool.is-active .hermes-tool-progress {
+    display: block;
+  }
+  .hermes-tool-progress {
+    display: none;
+    margin-top: 0.5rem;
+    height: 3px;
+    border-radius: 9999px;
+    background: #fde68a;
+    overflow: hidden;
+  }
+  .hermes-tool-progress span {
+    display: block;
+    height: 100%;
+    width: 40%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    animation: hermes-bar-slide 1.4s ease-in-out infinite;
+  }
+
+  .hermes-tool-toggle {
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    line-height: 1.4;
+  }
+  .hermes-tool-toggle:hover { opacity: 0.88; }
+  .hermes-tool-toggle:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+  .hermes-block-tool.is-collapsed .hermes-tool-details { display: none; }
+  .hermes-block-tool.is-expanded .hermes-tool-details { display: block; }
+
+  .hermes-turn-process-details > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: rgba(91, 33, 182, 0.85);
+    user-select: none;
+  }
+  .hermes-turn-process-details > summary::-webkit-details-marker { display: none; }
+  .hermes-turn-process-details > summary::marker { content: ""; }
+  .hermes-turn-process-details > summary:hover { opacity: 0.88; }
+  .hermes-turn-process-details > summary:focus-visible {
+    outline: 2px solid #8b5cf6;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+  .hermes-turn-process-chevron {
+    font-size: 0.625rem;
+    color: rgba(91, 33, 182, 0.65);
+    flex-shrink: 0;
+  }
+  .hermes-turn-process-details[open] .hermes-turn-process-chevron::before { content: "▼"; }
+  .hermes-turn-process-details:not([open]) .hermes-turn-process-chevron::before { content: "▶"; }
+  .hermes-turn-process-details.is-active > summary {
+    color: #5b21b6;
+  }
+  .hermes-theme-agri .hermes-turn-process-details > summary { color: rgba(6, 95, 70, 0.9); }
+  .hermes-theme-agri .hermes-turn-process-details.is-active > summary { color: #047857; }
+  .hermes-theme-stock .hermes-turn-process-details > summary { color: rgba(29, 78, 216, 0.88); }
+  .hermes-theme-stock .hermes-turn-process-details.is-active > summary { color: #1d4ed8; }
+
+  .hermes-reconnect-retry {
+    margin-top: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid #fbbf24;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.375rem 0.75rem;
+    cursor: pointer;
+  }
+  .hermes-reconnect-retry:hover { background: #fef3c7; }
+  .hermes-reconnect-retry:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+  }
+
+  .hermes-block-header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.25rem;
+  }
+  .hermes-block-label {
+    font-weight: 600;
+  }
+  .hermes-typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 0.125rem;
+  }
+  .hermes-typing-dots span {
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.45;
+    animation: hermes-dot-bounce 1.2s ease-in-out infinite;
+  }
+  .hermes-typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .hermes-typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+  .hermes-stream-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    background: #7c3aed;
+    animation: hermes-cursor-blink 1s step-end infinite;
+  }
+
+  @keyframes hermes-bar-bg {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes hermes-dot-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(124, 58, 237, 0); }
+  }
+  @keyframes hermes-bar-slide {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(320%); }
+  }
+  @keyframes hermes-border-shift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  @keyframes hermes-thinking-glow {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 4px 12px rgba(124, 58, 237, 0.1); }
+    50% { box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35), 0 4px 18px rgba(124, 58, 237, 0.18); }
+  }
+  @keyframes hermes-scan {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  @keyframes hermes-shimmer {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(280%); }
+  }
+  @keyframes hermes-dot-bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+    40% { transform: translateY(-3px); opacity: 1; }
+  }
+  @keyframes hermes-cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hermes-agent-bar,
+    .hermes-agent-bar-fill,
+    .hermes-agent-bar-dot,
+    .hermes-block-thinking.is-active,
+    .hermes-block-thinking.is-active::before,
+    .hermes-block-thinking.is-active::after,
+    .hermes-block-tool.is-active::after,
+    .hermes-tool-progress span,
+    .hermes-typing-dots span,
+    .hermes-stream-cursor {
+      animation: none !important;
+    }
+    .hermes-block-thinking.is-active::before,
+    .hermes-block-thinking.is-active::after,
+    .hermes-block-tool.is-active::after {
+      display: none;
+    }
+    .hermes-stream-cursor { opacity: 0.6; }
+  }
+
+  .session-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.125rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s ease;
+  }
+  .session-row:hover {
+    background: #f8fafc;
+  }
+  .session-row.is-active {
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 1px #bfdbfe;
+  }
+  .session-row.is-active:hover {
+    background: #dbeafe;
+  }
+  .session-delete-btn {
+    flex-shrink: 0;
+    align-self: center;
+    margin-right: 0.25rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    color: #94a3b8;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  }
+  .session-row:hover .session-delete-btn,
+  .session-row:focus-within .session-delete-btn {
+    opacity: 1;
+  }
+  .session-delete-btn:hover {
+    color: #dc2626;
+    background: #fef2f2;
+  }
+  .session-delete-btn:focus-visible {
+    opacity: 1;
+    outline: 2px solid #93c5fd;
+    outline-offset: 1px;
+  }
+
+  .hermes-cancel-btn {
+    margin-left: 0.75rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .hermes-cancel-btn:hover:not(:disabled) {
+    background: #fee2e2;
+    border-color: #f87171;
+  }
+  .hermes-cancel-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .hermes-block-cancelled {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #991b1b !important;
+  }
+
+  /* ── 8091 农业绿色主题覆盖 ── */
+  .hermes-theme-agri .hermes-agent-bar {
+    border-bottom-color: #a7f3d0;
+    background: linear-gradient(90deg, #ecfdf5 0%, #d1fae5 50%, #ecfdf5 100%);
+  }
+  .hermes-theme-agri .hermes-agent-bar-inner { color: #065f46; }
+  .hermes-theme-agri .hermes-agent-bar-dot {
+    background: #10b981;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+  }
+  .hermes-theme-agri .hermes-agent-bar-sub { color: #059669; }
+  .hermes-theme-agri .hermes-agent-bar-track { background: #a7f3d0; }
+  .hermes-theme-agri .hermes-agent-bar-fill {
+    background: linear-gradient(90deg, #34d399, #10b981, #34d399);
+  }
+  .hermes-theme-agri .hermes-block-thinking.is-active {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.25), 0 4px 14px rgba(5, 150, 105, 0.12);
+  }
+  .hermes-theme-agri .hermes-block-thinking.is-active::before {
+    background: linear-gradient(105deg, transparent 40%, rgba(16, 185, 129, 0.08) 50%, transparent 60%);
+  }
+  .hermes-theme-agri .hermes-block-thinking.is-active::after {
+    background: linear-gradient(90deg, #6ee7b7, #34d399, #6ee7b7) border-box;
+  }
+  .hermes-theme-agri .hermes-stream-cursor { background: #059669; }
+  .hermes-theme-agri .session-row.is-active {
+    background: #ecfdf5;
+    box-shadow: inset 0 0 0 1px #a7f3d0;
+  }
+  .hermes-theme-agri .session-row.is-active:hover { background: #d1fae5; }
+  .hermes-theme-agri .session-delete-btn:focus-visible { outline-color: #6ee7b7; }
+  .hermes-theme-agri .hermes-accent-btn {
+    background-color: #059669 !important;
+  }
+  .hermes-theme-agri .hermes-accent-btn:hover {
+    background-color: #047857 !important;
+  }
+  .hermes-theme-agri .hermes-accent-text { color: #047857; }
+  .hermes-theme-agri .hermes-accent-ring:focus {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 1px #10b981;
+  }
+  .hermes-theme-agri .hermes-skill-badge {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+  }
+
+  /* ── 8092 股票蓝/琥珀主题覆盖 ── */
+  .hermes-theme-stock .hermes-agent-bar {
+    border-bottom-color: #bfdbfe;
+    background: linear-gradient(90deg, #eff6ff 0%, #dbeafe 50%, #fffbeb 100%);
+  }
+  .hermes-theme-stock .hermes-agent-bar-inner { color: #1e40af; }
+  .hermes-theme-stock .hermes-agent-bar-dot {
+    background: #2563eb;
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45);
+  }
+  .hermes-theme-stock .hermes-agent-bar-sub { color: #1d4ed8; }
+  .hermes-theme-stock .hermes-agent-bar-track { background: #bfdbfe; }
+  .hermes-theme-stock .hermes-agent-bar-fill {
+    background: linear-gradient(90deg, #60a5fa, #2563eb, #f59e0b);
+  }
+  .hermes-theme-stock .hermes-block-thinking.is-active {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25), 0 4px 14px rgba(29, 78, 216, 0.12);
+  }
+  .hermes-theme-stock .hermes-stream-cursor { background: #2563eb; }
+  .hermes-theme-stock .session-row.is-active {
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 1px #bfdbfe;
+  }
+  .hermes-theme-stock .session-row.is-active:hover { background: #dbeafe; }
+  .hermes-theme-stock .hermes-accent-btn {
+    background-color: #2563eb !important;
+  }
+  .hermes-theme-stock .hermes-accent-btn:hover {
+    background-color: #1d4ed8 !important;
+  }
+  .hermes-theme-stock .hermes-accent-text { color: #1d4ed8; }
+  .hermes-theme-stock .hermes-accent-ring:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 1px #3b82f6;
+  }
+  .hermes-theme-stock .hermes-skill-badge {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e40af;
+  }
+</style>
+
+<section class="mb-4">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-4">
+    <div>
+      {% if hermes_theme == 'agri' %}
+      <h2 class="text-2xl font-bold text-emerald-900">商机分析 Agent</h2>
+      <p class="text-sm text-emerald-700/80 mt-1">
+        基于已采集数据对话查询线索、追问证据、生成简报 · 与 <a href="{{ insights_home|default('/', true) }}" class="text-emerald-800 hover:underline font-medium">Agent 分析首页</a> 联动
+      </p>
+      {% elif hermes_theme == 'stock' %}
+      <h2 class="text-2xl font-bold text-blue-900">股票领域 Hermes 对话</h2>
+      <p class="text-sm text-blue-700/80 mt-1">
+        股票相关资讯关键词筛选与洞察 · 与 <a href="/" class="text-blue-800 hover:underline font-medium">洞察首页</a> 联动
+      </p>
+      {% else %}
+      <h2 class="text-2xl font-bold text-slate-900">智能采集</h2>
+      <p class="text-sm text-slate-500 mt-1">
+        与 Crawl Agent 对话完成巡检、触发爬取与故障处理 · 非 <a href="/agent" class="text-brand-600 hover:underline">CrawlPlan 探索</a>
+      </p>
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      {% if hermes_theme == 'agri' %}
+      <a href="{{ insights_home|default('/', true) }}"
+         class="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 transition">
+        洞察首页
+      </a>
+      <a href="/hermes"
+         class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        主站 Hermes
+      </a>
+      {% elif hermes_theme == 'stock' %}
+      <a href="/"
+         class="inline-flex items-center rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 transition">
+        洞察首页
+      </a>
+      <a href="http://127.0.0.1:{{ main_ui_port or 8090 }}/" target="_blank" rel="noopener"
+         class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        主站 ↗
+      </a>
+      <a href="http://127.0.0.1:{{ main_ui_port or 8090 }}/insights"
+         class="inline-flex items-center rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50 transition">
+        商机洞察
+      </a>
+      {% else %}
+      <a href="/tasks"
+         class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        任务状态
+      </a>
+      <a href="/crawl-agent/pending"
+         class="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 transition">
+        Agent 待办
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if llm_configured %}
+  <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
+    Hermes Agent 已配置{% if hermes_agent_chat_url %} ({{ hermes_agent_chat_url }}){% endif %} · 对话经 /v1/runs 委托 hermes-agent 执行工具
+  </div>
+  {% else %}
+  <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
+    未配置 <code class="text-xs bg-white/80 px-1 rounded">HERMES_AGENT_CHAT_URL</code> / <code class="text-xs bg-white/80 px-1 rounded">HERMES_AGENT_URL</code> · 请启动 hermes-agent（API Server :8642），web_scraper 不再使用内置 LLM 循环
+  </div>
+  {% endif %}
+</section>
+
+<div class="flex flex-col lg:flex-row gap-4">
+  <aside class="lg:w-64 shrink-0 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col" style="max-height: calc(100vh - 16rem);">
+    <div class="p-3 border-b border-slate-200 flex items-center justify-between gap-2">
+      <span class="text-sm font-semibold text-slate-700">历史对话</span>
+      <div class="flex items-center gap-1.5">
+        <button type="button" id="clear-all-btn"
+                class="hidden inline-flex items-center rounded-lg border border-slate-300 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-700 text-slate-600 text-xs font-medium px-2.5 py-1.5 transition"
+                title="清空全部历史">
+          清空
+        </button>
+        <button type="button" id="new-chat-btn"
+                class="inline-flex items-center rounded-lg hermes-accent-btn bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 transition">
+          新对话
+        </button>
+      </div>
+    </div>
+    <div id="session-list" class="flex-1 overflow-y-auto p-2 space-y-1 text-sm min-h-0">
+      <p class="text-xs text-slate-400 px-2 py-3">加载中…</p>
+    </div>
+    <div id="skills-mcp-panel" class="border-t border-slate-200 p-3 shrink-0 max-h-64 overflow-y-auto">
+      <div class="text-sm font-semibold text-slate-700 mb-2">技能与 MCP</div>
+      <div class="mb-3">
+        <div class="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1">本会话已调用工具</div>
+        <div id="session-tools-list" class="flex flex-wrap gap-1">
+          <span class="text-xs text-slate-400">暂无</span>
+        </div>
+      </div>
+      <div class="mb-3">
+        <div class="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1">项目 Skill 文档</div>
+        <ul class="space-y-1">
+          {% for skill in project_skills %}
+          <li>
+            <span class="inline-flex items-center rounded-md hermes-skill-badge bg-violet-50 border border-violet-100 px-2 py-0.5 text-[11px] font-mono text-violet-800" title="{{ skill.path }}">{{ skill.id }}</span>
+          </li>
+          {% else %}
+          <li class="text-xs text-slate-400">skills/ 目录暂无 SKILL.md</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <div class="text-[10px] font-medium uppercase tracking-wide text-slate-400 mb-1">MCP</div>
+        {% if mcp_enabled %}
+        <p class="text-xs text-emerald-700">已启用外部 MCP 服务器</p>
+        {% else %}
+        <p class="text-xs text-slate-500 leading-relaxed">当前 Web UI Agent 未启用 MCP，工具通过 <code class="text-[10px] bg-slate-100 px-1 rounded">crawl_agent_tools</code> 提供（DEFAULT {{ default_tool_count }} 个）。外部 Hermes Gateway 可接 <code class="text-[10px] bg-slate-100 px-1 rounded">crawl</code> toolset。</p>
+        {% endif %}
+      </div>
+    </div>
+  </aside>
+
+  <div class="flex-1 min-w-0 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col" style="min-height: 28rem; max-height: calc(100vh - 16rem);">
+  <div id="hermes-agent-bar" class="hermes-agent-bar hidden" role="status" aria-live="polite" aria-label="Agent 工作中">
+    <div class="hermes-agent-bar-inner">
+      <span class="hermes-agent-bar-dot" aria-hidden="true"></span>
+      <span class="hermes-agent-bar-text">Agent 工作中</span>
+      <span class="hermes-typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+      <button type="button" id="cancel-crawl-btn" class="hermes-cancel-btn hidden" title="中止当前爬取">
+        中止爬取
+      </button>
+      <span id="hermes-agent-bar-sub" class="hermes-agent-bar-sub hidden">长任务连接保持活跃</span>
+    </div>
+    <div class="hermes-agent-bar-track" aria-hidden="true"><div class="hermes-agent-bar-fill"></div></div>
+  </div>
+  <div id="chat-messages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+    <div class="flex justify-start welcome-msg">
+      <div class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 text-slate-800 px-4 py-3 text-sm leading-relaxed">
+        {% if hermes_theme == 'agri' %}
+        你好，我是商机分析 Agent，可基于已采集公告数据查询线索、分析评分、生成简报。你可以说：<br>
+        <span class="hermes-accent-text text-brand-700">「分析近 30 天 S/A 级商机线索」</span> 或
+        <span class="hermes-accent-text text-brand-700">「查看采购意向阶段的农业平台项目」</span><br>
+        也可说 <span class="hermes-accent-text text-brand-700">「同步全部监测站点」</span> 拉取最新数据后分析。
+      {% elif hermes_theme == 'stock' %}
+      你好，我是 **股票领域 Hermes Agent**。你可以说：<br>
+      <span class="hermes-accent-text text-brand-700">「查询申万一级行业涨跌排行」</span> 或
+      <span class="hermes-accent-text text-brand-700">「解读新能源产业链」</span><br>
+      支持板块数据、政策洞察、个股资料与 Markdown 表格展示。
+      {% else %}
+      你好，我是 Hermes 爬虫运维 Agent。你可以说：<br>
+      <span class="text-brand-700">「帮我把铁建物资采购网 tjbid 全部爬下来」</span><br>
+      或 <span class="text-brand-700">「添加站点 / 接入新 URL」</span> 在对话内完成站点注册与探查。
+      {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="border-t border-slate-200 p-4">
+    <form id="chat-form" class="flex gap-2 items-end">
+      <textarea id="chat-input" rows="2" placeholder="{% if hermes_theme == 'agri' %}输入商机爬取/同步指令…{% elif hermes_theme == 'stock' %}问板块、政策、产业链…{% else %}输入运维指令…{% endif %}"
+                class="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm resize-none hermes-accent-ring focus:border-brand-500 focus:ring-1 focus:ring-brand-500"></textarea>
+      <button type="submit" id="send-btn"
+              class="inline-flex items-center justify-center rounded-xl hermes-accent-btn bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-medium px-5 py-3 text-sm transition shrink-0">
+        发送
+      </button>
+    </form>
+    <p class="text-xs text-slate-400 mt-2">Enter 发送 · Shift+Enter 换行</p>
+  </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="/static/markdown-render.js"></script>
+<script>
+(function() {
+  const HERMES_THEME = {{ hermes_theme|tojson }};
+  const AGENT_PROFILE = {{ agent_profile|tojson }};
+  const LS_KEY = 'crawl_agent_last_session_id_' + (AGENT_PROFILE || 'default');
+  const IS_AGRI = HERMES_THEME === 'agri' || AGENT_PROFILE === 'agri';
+  const IS_STOCK = HERMES_THEME === 'stock' || AGENT_PROFILE === 'stock';
+  const messagesEl = document.getElementById('chat-messages');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
+  const sessionListEl = document.getElementById('session-list');
+  const newChatBtn = document.getElementById('new-chat-btn');
+  const clearAllBtn = document.getElementById('clear-all-btn');
+
+  let history = [];
+  let streaming = false;
+  let sessionId = null;
+  let sessions = [];
+  let streamCompleted = false;
+  let lastPingAt = 0;
+  let agentBarEl = null;
+  let agentBarSubEl = null;
+  let activeThinkingBlock = null;
+  let activeToolBlock = null;
+  let pendingToolBlockEl = null;
+  let activeMessageStreamBlock = null;
+  let messageStreamText = '';
+  let streamAbortController = null;
+  let userCancelled = false;
+  let sessionMessages = [];
+  let sessionToolsUsed = new Set();
+  let streamAfter = 0;
+  let reconnectAttempts = 0;
+  let composing = false;
+
+  const BUFFERED_EVENT_TYPES = new Set([
+    'thinking', 'plan', 'tool', 'result', 'error', 'url_crawl', 'cancelled', 'message', 'message_delta', 'ui', 'done',
+  ]);
+  const SSE_RECONNECT_MAX = {{ sse_reconnect_max|default(10) }};
+  const SSE_RECONNECT_BASE_MS = 1500;
+
+  const WELCOME_HTML = IS_AGRI
+    ? `<div class="flex justify-start welcome-msg">
+    <div class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 text-slate-800 px-4 py-3 text-sm leading-relaxed">
+      你好，我是商机分析 Agent。你可以说：<br>
+      <span class="hermes-accent-text text-brand-700">「分析近 30 天 S/A 级商机线索」</span> 或查询采购意向阶段项目。
+    </div>
+  </div>`
+    : IS_STOCK
+    ? `<div class="flex justify-start welcome-msg">
+    <div class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 text-slate-800 px-4 py-3 text-sm leading-relaxed">
+      你好，我是股票领域 Hermes Agent。你可以说：<br>
+      <span class="hermes-accent-text text-brand-700">「查询申万一级行业涨跌」</span> 或解读产业链与政策洞察。
+    </div>
+  </div>`
+    : `<div class="flex justify-start welcome-msg">
+    <div class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 text-slate-800 px-4 py-3 text-sm leading-relaxed">
+      你好，我是 Hermes 爬虫运维 Agent。你可以说：<br>
+      <span class="text-brand-700">「帮我把铁建物资采购网 tjbid 全部爬下来」</span><br>
+      或 <span class="text-brand-700">「添加站点 / 接入新 URL」</span> 在对话内完成站点注册与探查。
+    </div>
+  </div>`;
+
+  const STAGE_LABELS = { register: '录入', probe: '探查', analyze: '分析', toolchain: '工具链', schedule: '调度' };
+  const STAGE_ORDER = ['register', 'probe', 'analyze', 'toolchain', 'schedule'];
+
+  function stagesFromStatus(data) {
+    const stagesMap = data.stages || {};
+    return STAGE_ORDER.map(function(k) {
+      return { key: k, label: STAGE_LABELS[k] || k, status: stagesMap[k] || 'pending' };
+    });
+  }
+
+  const BLOCK_STYLES = {
+    thinking: {
+      icon: '🧠',
+      label: '思考',
+      bg: IS_AGRI ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-violet-50 border-violet-200 text-violet-900',
+    },
+    plan: { icon: '📋', label: '计划', bg: 'bg-blue-50 border-blue-200 text-blue-900' },
+    tool: { icon: '🔧', label: '工具', bg: 'bg-amber-50 border-amber-200 text-amber-900' },
+    result: { icon: '📊', label: '结果', bg: 'bg-slate-50 border-slate-200 text-slate-800' },
+    error: { icon: '❌', label: '错误', bg: 'bg-red-50 border-red-200 text-red-900' },
+    cancelled: { icon: '⏹', label: '已中止', bg: 'hermes-block-cancelled border-red-200' },
+    ui: { icon: '🧩', label: '交互', bg: 'bg-violet-50 border-violet-200 text-violet-900' },
+  };
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function renderMarkdown(text) {
+    if (typeof renderAgentMarkdown === 'function') return renderAgentMarkdown(text);
+    return escapeHtml(text || '').replace(/\n/g, '<br>');
+  }
+
+  function formatPathTree(pathTree) {
+    if (!pathTree || typeof pathTree !== 'object') return '';
+    const entry = pathTree.entry || '?';
+    let html = `<div class="mt-2 font-mono text-xs space-y-1">
+      <div><span class="text-blue-700">entry</span> → ${escapeHtml(entry)}</div>`;
+    (pathTree.pages || []).forEach(p => {
+      const label = p.label || `第 ${p.page_num} 页`;
+      html += `<div class="pl-3 border-l-2 border-blue-200 ml-1">
+        <span class="text-blue-600">page ${p.page_num || '?'}</span> ${escapeHtml(label)}
+        <span class="text-slate-500"> → items[] → detail? → save</span>
+      </div>`;
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function toolDisplayName(name) {
+    if (!name) return '';
+    if (name.startsWith('skill_')) return name;
+    return name;
+  }
+
+  function formatToolCommandLine(event) {
+    if (!event) return '';
+    if (event.data && event.data.executed_command) return String(event.data.executed_command);
+    if (event.content && event.type === 'tool') return String(event.content);
+    if (event.name) {
+      const args = event.args || (event.data && event.data.arguments) || {};
+      const keys = Object.keys(args);
+      if (!keys.length) return event.name + '()';
+      const parts = keys.filter(function(k) {
+        const v = args[k];
+        return v !== null && v !== undefined && v !== '';
+      }).map(function(k) {
+        const v = args[k];
+        if (typeof v === 'string') {
+          const s = v.length > 80 ? v.slice(0, 77) + '...' : v;
+          return k + '=' + JSON.stringify(s);
+        }
+        if (typeof v === 'object') {
+          let s = JSON.stringify(v);
+          if (s.length > 64) s = s.slice(0, 61) + '...';
+          return k + '=' + s;
+        }
+        return k + '=' + JSON.stringify(v);
+      });
+      return event.name + '(' + parts.join(', ') + ')';
+    }
+    return '';
+  }
+
+  function renderOnboardingStepperHtml(data) {
+    const stages = data.stages || [];
+    if (!stages.length) return '';
+    let html = '<ol class="flex flex-wrap gap-2 mt-3">';
+    stages.forEach(function(stage, idx) {
+      const st = stage.status || 'pending';
+      const cls = st === 'completed'
+        ? 'bg-emerald-600 text-white'
+        : st === 'in_progress'
+          ? 'bg-brand-600 text-white ring-2 ring-brand-100'
+          : 'bg-slate-200 text-slate-600';
+      html += '<li class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ' + cls + '">' +
+        '<span>' + (idx + 1) + '</span>' + escapeHtml(stage.label || stage.key || '') + '</li>';
+    });
+    html += '</ol>';
+    if (data.site_id) {
+      html += '<p class="mt-2 text-xs text-slate-600">site_id: <code class="bg-white/80 px-1 rounded">' +
+        escapeHtml(data.site_id) + '</code></p>';
+    }
+    return html;
+  }
+
+  function bindSiteRegisterForm(formEl, blockEl) {
+    if (!formEl || formEl.dataset.bound === '1') return;
+    formEl.dataset.bound = '1';
+    formEl.addEventListener('submit', async function(ev) {
+      ev.preventDefault();
+      const btn = formEl.querySelector('[type="submit"]');
+      const nameInput = formEl.querySelector('[name="name"]');
+      const urlInput = formEl.querySelector('[name="url"]');
+      const name = (nameInput && nameInput.value || '').trim();
+      const url = (urlInput && urlInput.value || '').trim();
+      if (!name || !url) return;
+      if (btn) { btn.disabled = true; btn.textContent = '注册中…'; }
+      try {
+        const resp = await fetch('/api/sites/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, url: url }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          const errEl = blockEl.querySelector('.hermes-ui-error');
+          if (errEl) errEl.textContent = data.detail || '注册失败';
+          if (btn) { btn.disabled = false; btn.textContent = '注册并进入探查'; }
+          return;
+        }
+        formEl.classList.add('hidden');
+        const successEl = blockEl.querySelector('.hermes-ui-success');
+        if (successEl) {
+          successEl.classList.remove('hidden');
+          successEl.innerHTML = renderOnboardingStepperHtml({
+            site_id: data.site_id,
+            name: data.name,
+            url: data.url,
+            stages: stagesFromStatus(data),
+          }) + '<p class="mt-2 text-xs text-emerald-800">注册成功。发送「探查 ' +
+            escapeHtml(data.site_id) + '」或「skill_plan_crawl_path」继续。</p>' +
+            '<button type="button" class="hermes-probe-btn mt-2 inline-flex rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700">继续探查</button>';
+          const probeBtn = successEl.querySelector('.hermes-probe-btn');
+          if (probeBtn) {
+            probeBtn.addEventListener('click', function() {
+              input.value = '探查站点 ' + data.site_id + '，skill_plan_crawl_path';
+              form.dispatchEvent(new Event('submit'));
+            });
+          }
+        }
+        if (typeof showToast === 'function') showToast('已注册 ' + data.site_id, 'success');
+      } catch (e) {
+        const errEl = blockEl.querySelector('.hermes-ui-error');
+        if (errEl) errEl.textContent = '网络错误';
+        if (btn) { btn.disabled = false; btn.textContent = '注册并进入探查'; }
+      }
+    });
+  }
+
+  function bindBimAnalysisScheduleForm(formEl, blockEl) {
+    if (!formEl || formEl.dataset.bound === '1') return;
+    formEl.dataset.bound = '1';
+    const presetEl = formEl.querySelector('[name="cron_preset"]');
+    const customWrap = formEl.querySelector('.hermes-bim-cron-custom');
+    function syncCronCustomVisibility() {
+      if (!presetEl || !customWrap) return;
+      customWrap.classList.toggle('hidden', presetEl.value !== 'custom');
+    }
+    if (presetEl) {
+      presetEl.addEventListener('change', syncCronCustomVisibility);
+      syncCronCustomVisibility();
+    }
+    const cancelBtn = formEl.querySelector('.hermes-bim-schedule-cancel');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function() {
+        blockEl.classList.add('opacity-60');
+        formEl.classList.add('hidden');
+        const successEl = blockEl.querySelector('.hermes-ui-success');
+        if (successEl) {
+          successEl.classList.remove('hidden');
+          successEl.innerHTML = '<p class="text-xs text-slate-500">已取消配置</p>';
+        }
+      });
+    }
+    formEl.addEventListener('submit', async function(ev) {
+      ev.preventDefault();
+      const btn = formEl.querySelector('[type="submit"]');
+      const name = (formEl.querySelector('[name="name"]') || {}).value || '';
+      const cronPreset = presetEl ? presetEl.value : '';
+      const cronCustom = (formEl.querySelector('[name="cron_custom"]') || {}).value || '';
+      const cron = cronPreset === 'custom' ? cronCustom.trim() : cronPreset;
+      const webhookUrl = ((formEl.querySelector('[name="feishu_webhook_url"]') || {}).value || '').trim();
+      const topN = parseInt((formEl.querySelector('[name="top_n"]') || {}).value || '10', 10) || 10;
+      const enabledEl = formEl.querySelector('[name="enabled"]');
+      const enabled = enabledEl ? enabledEl.checked : true;
+      if (!name.trim() || !cron) {
+        const errEl = blockEl.querySelector('.hermes-ui-error');
+        if (errEl) errEl.textContent = '请填写任务名称与执行时间';
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = '创建中…'; }
+      try {
+        const resp = await fetch('/api/chat/scheduled-tasks/bim-analysis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            cron: cron,
+            cron_preset: cronPreset,
+            cron_custom: cronCustom.trim(),
+            feishu_webhook_url: webhookUrl || null,
+            top_n: topN,
+            enabled: enabled,
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          const errEl = blockEl.querySelector('.hermes-ui-error');
+          if (errEl) errEl.textContent = data.detail || data.error || '创建失败';
+          if (btn) { btn.disabled = false; btn.textContent = '创建任务'; }
+          return;
+        }
+        formEl.classList.add('hidden');
+        const task = data.task || {};
+        const successEl = blockEl.querySelector('.hermes-ui-success');
+        if (successEl) {
+          successEl.classList.remove('hidden');
+          successEl.innerHTML = '<p class="text-xs text-emerald-800 font-medium">通知任务已创建</p>' +
+            '<ul class="mt-2 text-xs text-slate-700 space-y-1">' +
+            '<li>任务 ID：<code class="bg-white/80 px-1 rounded">' + escapeHtml(task.id || '—') + '</code></li>' +
+            '<li>Cron：<code class="bg-white/80 px-1 rounded">' + escapeHtml(task.cron || cron) + '</code></li>' +
+            '<li>下次执行：' + escapeHtml(task.next_run_time || '—') + '</li>' +
+            '</ul><p class="mt-2 text-xs text-slate-500">run_scheduler 约 60 秒内自动加载。</p>';
+        }
+        if (typeof showToast === 'function') showToast('BIM 分析通知任务已创建', 'success');
+      } catch (e) {
+        const errEl = blockEl.querySelector('.hermes-ui-error');
+        if (errEl) errEl.textContent = '网络错误';
+        if (btn) { btn.disabled = false; btn.textContent = '创建任务'; }
+      }
+    });
+  }
+
+  function formatTaskTypeLabel(taskType, labels) {
+    labels = labels || {};
+    return labels[taskType] || taskType || '—';
+  }
+
+  function formatLastRunStatus(task) {
+    const status = task.last_run_status;
+    const at = task.last_run_at;
+    if (!status && !at) return '—';
+    const statusText = status === 'success' ? '成功' : (status === 'failed' ? '失败' : (status || '—'));
+    const cls = status === 'success' ? 'text-emerald-700' : (status === 'failed' ? 'text-red-600' : 'text-slate-600');
+    return '<span class="' + cls + '">' + escapeHtml(statusText) + '</span>' +
+      (at ? ' <span class="text-slate-400">' + escapeHtml(String(at).slice(0, 19)) + '</span>' : '');
+  }
+
+  function renderScheduledTaskRow(task, labels) {
+    const enabled = task.enabled !== false;
+    const webhook = task.feishu_webhook_url || '—';
+    const nameHtml = escapeHtml(task.name || task.id || '—');
+    const idShort = task.id ? ('<div class="text-slate-400 font-mono text-[10px] mt-0.5">' + escapeHtml(String(task.id).slice(0, 8)) + '…</div>') : '';
+    return '<tr class="border-b border-slate-100 hover:bg-white/60" data-task-id="' + escapeHtml(task.id) + '">' +
+      '<td class="py-2 pr-2 align-top"><div class="font-medium text-slate-800">' + nameHtml + '</div>' + idShort + '</td>' +
+      '<td class="py-2 pr-2 align-top text-slate-600">' + escapeHtml(formatTaskTypeLabel(task.task_type, labels)) + '</td>' +
+      '<td class="py-2 pr-2 align-top"><code class="bg-white/80 px-1 rounded text-[11px]">' + escapeHtml(task.cron || '—') + '</code></td>' +
+      '<td class="py-2 pr-2 align-top text-slate-600">' + escapeHtml(enabled ? (task.next_run_time || '—') : '已禁用') + '</td>' +
+      '<td class="py-2 pr-2 align-top">' + formatLastRunStatus(task) + '</td>' +
+      '<td class="py-2 pr-2 align-top"><code class="text-[10px] text-slate-500 break-all">' + escapeHtml(webhook) + '</code></td>' +
+      '<td class="py-2 pr-2 align-top">' +
+      '<label class="inline-flex items-center cursor-pointer">' +
+      '<input type="checkbox" class="hermes-task-toggle rounded border-slate-300 text-brand-600 focus:ring-brand-500"' +
+      (enabled ? ' checked' : '') + ' data-task-id="' + escapeHtml(task.id) + '">' +
+      '</label></td>' +
+      '<td class="py-2 align-top">' +
+      '<button type="button" class="hermes-task-delete text-[11px] text-red-600 hover:text-red-800" data-task-id="' + escapeHtml(task.id) + '">删除</button>' +
+      '</td></tr>';
+  }
+
+  async function loadScheduledTasksPanel(panelEl, data) {
+    const loadingEl = panelEl.querySelector('.hermes-scheduled-tasks-loading');
+    const emptyEl = panelEl.querySelector('.hermes-scheduled-tasks-empty');
+    const tableWrap = panelEl.querySelector('.hermes-scheduled-tasks-table-wrap');
+    const tbody = panelEl.querySelector('.hermes-scheduled-tasks-body');
+    const errEl = panelEl.querySelector('.hermes-ui-error');
+    if (errEl) errEl.textContent = '';
+    try {
+      const resp = await fetch('/api/chat/scheduled-tasks');
+      const result = await resp.json();
+      if (!resp.ok) {
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (errEl) errEl.textContent = result.detail || result.error || '加载失败';
+        return;
+      }
+      const tasks = result.tasks || [];
+      if (loadingEl) loadingEl.classList.add('hidden');
+      if (!tasks.length) {
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        if (tableWrap) tableWrap.classList.add('hidden');
+        return;
+      }
+      if (emptyEl) emptyEl.classList.add('hidden');
+      if (tableWrap) tableWrap.classList.remove('hidden');
+      const labels = (data && data.task_type_labels) || {};
+      if (tbody) tbody.innerHTML = tasks.map(function(t) { return renderScheduledTaskRow(t, labels); }).join('');
+    } catch (e) {
+      if (loadingEl) loadingEl.classList.add('hidden');
+      if (errEl) errEl.textContent = '网络错误';
+    }
+  }
+
+  function bindScheduledTasksPanel(panelEl, blockEl, data) {
+    loadScheduledTasksPanel(panelEl, data);
+    panelEl.addEventListener('change', async function(ev) {
+      const toggle = ev.target.closest('.hermes-task-toggle');
+      if (!toggle) return;
+      const taskId = toggle.getAttribute('data-task-id');
+      if (!taskId) return;
+      toggle.disabled = true;
+      const errEl = panelEl.querySelector('.hermes-ui-error');
+      if (errEl) errEl.textContent = '';
+      try {
+        const resp = await fetch('/api/chat/scheduled-tasks/' + encodeURIComponent(taskId) + '/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: toggle.checked }),
+        });
+        const result = await resp.json();
+        if (!resp.ok) {
+          toggle.checked = !toggle.checked;
+          if (errEl) errEl.textContent = result.detail || result.error || '切换失败';
+        } else if (typeof showToast === 'function') {
+          showToast(result.message || (toggle.checked ? '已启用' : '已禁用'), 'success');
+        }
+        await loadScheduledTasksPanel(panelEl, data);
+      } catch (e) {
+        toggle.checked = !toggle.checked;
+        if (errEl) errEl.textContent = '网络错误';
+      } finally {
+        toggle.disabled = false;
+      }
+    });
+    panelEl.addEventListener('click', async function(ev) {
+      const btn = ev.target.closest('.hermes-task-delete');
+      if (!btn) return;
+      const taskId = btn.getAttribute('data-task-id');
+      if (!taskId) return;
+      if (!window.confirm('确定删除该通知任务？删除后 run_scheduler 约 60 秒内卸载。')) return;
+      btn.disabled = true;
+      const errEl = panelEl.querySelector('.hermes-ui-error');
+      if (errEl) errEl.textContent = '';
+      try {
+        const resp = await fetch('/api/chat/scheduled-tasks/' + encodeURIComponent(taskId), { method: 'DELETE' });
+        const result = await resp.json();
+        if (!resp.ok) {
+          if (errEl) errEl.textContent = result.detail || result.error || '删除失败';
+          btn.disabled = false;
+          return;
+        }
+        if (typeof showToast === 'function') showToast('通知任务已删除', 'success');
+        await loadScheduledTasksPanel(panelEl, data);
+      } catch (e) {
+        if (errEl) errEl.textContent = '网络错误';
+        btn.disabled = false;
+      }
+    });
+  }
+
+  function renderGenerativeUiBody(data, content) {
+    const component = (data && data.component) || '';
+    if (component === 'site_register_form') {
+      const fields = data.fields || [];
+      let fieldsHtml = fields.map(function(f) {
+        return '<div><label class="block text-xs font-medium text-slate-700 mb-1" for="hermes-ui-' +
+          escapeHtml(f.name) + '">' + escapeHtml(f.label || f.name) +
+          '</label><input id="hermes-ui-' + escapeHtml(f.name) + '" name="' + escapeHtml(f.name) +
+          '" type="' + escapeHtml(f.type || 'text') + '" ' +
+          (f.required ? 'required ' : '') +
+          'placeholder="' + escapeHtml(f.placeholder || '') +
+          '" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"></div>';
+      }).join('');
+      return '<p class="text-sm text-slate-700 mb-3">' + escapeHtml(content || data.title || '') +
+        '</p><form class="hermes-site-register-form space-y-3">' + fieldsHtml +
+        '<p class="hermes-ui-error text-xs text-red-600"></p>' +
+        '<button type="submit" class="inline-flex rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">注册并进入探查</button>' +
+        '</form><div class="hermes-ui-success hidden mt-2"></div>';
+    }
+    if (component === 'onboarding_stepper') {
+      return renderOnboardingStepperHtml(data);
+    }
+    if (component === 'bim_analysis_schedule_form') {
+      const fields = (data.fields || []).filter(function(f) { return f.name !== 'cron_custom'; });
+      let fieldsHtml = fields.map(function(f) {
+        if (f.type === 'select') {
+          const opts = (f.options || []).map(function(opt) {
+            const selected = String(opt.value) === String(f.default) ? ' selected' : '';
+            return '<option value="' + escapeHtml(String(opt.value)) + '"' + selected + '>' +
+              escapeHtml(opt.label || opt.value) + '</option>';
+          }).join('');
+          return '<div><label class="block text-xs font-medium text-slate-700 mb-1">' +
+            escapeHtml(f.label || f.name) + '</label>' +
+            '<select name="' + escapeHtml(f.name) + '" class="app-select hermes-bim-cron-preset">' +
+            opts + '</select></div>';
+        }
+        if (f.type === 'checkbox') {
+          const checked = f.default ? ' checked' : '';
+          return '<div class="flex items-center gap-2"><input id="hermes-ui-' + escapeHtml(f.name) +
+            '" name="' + escapeHtml(f.name) + '" type="checkbox"' + checked +
+            ' class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">' +
+            '<label for="hermes-ui-' + escapeHtml(f.name) + '" class="text-xs font-medium text-slate-700">' +
+            escapeHtml(f.label || f.name) + '</label></div>';
+        }
+        const inputType = f.type === 'password' ? 'password' : (f.type === 'number' ? 'number' : (f.type || 'text'));
+        const extra = f.type === 'number' && f.min != null ? ' min="' + f.min + '" max="' + (f.max || 30) + '"' : '';
+        return '<div><label class="block text-xs font-medium text-slate-700 mb-1" for="hermes-ui-' +
+          escapeHtml(f.name) + '">' + escapeHtml(f.label || f.name) +
+          (f.hint ? ' <span class="text-slate-400 font-normal">(' + escapeHtml(f.hint) + ')</span>' : '') +
+          '</label><input id="hermes-ui-' + escapeHtml(f.name) + '" name="' + escapeHtml(f.name) +
+          '" type="' + escapeHtml(inputType) + '" value="' + escapeHtml(String(f.default != null ? f.default : '')) + '"' +
+          extra + (f.required ? ' required' : '') +
+          ' placeholder="' + escapeHtml(f.placeholder || '') +
+          '" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"></div>';
+      }).join('');
+      const cronCustomDef = (data.fields || []).find(function(f) { return f.name === 'cron_custom'; }) || {};
+      return '<p class="text-sm text-slate-700 mb-1 font-medium">' + escapeHtml(data.title || 'BIM 分析通知任务') + '</p>' +
+        (data.description ? '<p class="text-xs text-slate-500 mb-3">' + escapeHtml(data.description) + '</p>' : '') +
+        '<form class="hermes-bim-analysis-schedule-form space-y-3">' + fieldsHtml +
+        '<div class="hermes-bim-cron-custom hidden"><label class="block text-xs font-medium text-slate-700 mb-1">自定义 Cron</label>' +
+        '<input name="cron_custom" type="text" placeholder="' + escapeHtml(cronCustomDef.placeholder || '0 8 * * *') +
+        '" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"></div>' +
+        '<p class="hermes-ui-error text-xs text-red-600"></p>' +
+        '<div class="flex flex-wrap gap-2 pt-1">' +
+        '<button type="submit" class="inline-flex rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">' +
+        escapeHtml(data.submit_label || '创建任务') + '</button>' +
+        '<button type="button" class="hermes-bim-schedule-cancel inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">' +
+        escapeHtml(data.cancel_label || '取消') + '</button></div></form>' +
+        '<div class="hermes-ui-success hidden mt-2"></div>';
+    }
+    if (component === 'scheduled_tasks_panel') {
+      return '<div class="hermes-scheduled-tasks-panel">' +
+        '<p class="text-sm text-slate-700 mb-1 font-medium">' + escapeHtml(data.title || '通知任务管理') + '</p>' +
+        (data.description ? '<p class="text-xs text-slate-500 mb-3">' + escapeHtml(data.description) + '</p>' : '') +
+        '<div class="hermes-scheduled-tasks-loading text-xs text-slate-500 py-4 text-center">加载中…</div>' +
+        '<div class="hermes-scheduled-tasks-empty hidden text-xs text-slate-500 py-4">' +
+        escapeHtml(data.empty_hint || '暂无通知任务') + '</div>' +
+        '<div class="hermes-scheduled-tasks-table-wrap hidden overflow-x-auto">' +
+        '<table class="hermes-scheduled-tasks-table w-full text-xs border-collapse">' +
+        '<thead><tr class="text-left text-slate-500 border-b border-slate-200">' +
+        '<th class="py-2 pr-2 font-medium">任务</th>' +
+        '<th class="py-2 pr-2 font-medium">类型</th>' +
+        '<th class="py-2 pr-2 font-medium">Cron</th>' +
+        '<th class="py-2 pr-2 font-medium">下次执行</th>' +
+        '<th class="py-2 pr-2 font-medium">上次执行</th>' +
+        '<th class="py-2 pr-2 font-medium">Webhook</th>' +
+        '<th class="py-2 pr-2 font-medium">启用</th>' +
+        '<th class="py-2 font-medium">操作</th>' +
+        '</tr></thead><tbody class="hermes-scheduled-tasks-body"></tbody></table></div>' +
+        '<p class="hermes-ui-error text-xs text-red-600 mt-2"></p>' +
+        '</div>';
+    }
+    return content ? '<div class="hermes-md">' + renderMarkdown(content) + '</div>' : '';
+  }
+
+  function appendGenerativeUiBlock(event, options) {
+    options = options || {};
+    const container = getTurnZone('message');
+    const style = BLOCK_STYLES.ui;
+    const block = document.createElement('div');
+    block.dataset.blockType = 'ui';
+    block.className = 'hermes-block hermes-block-ui rounded-xl border px-3 py-2 text-xs sm:text-sm ' + style.bg;
+    const data = event.data || {};
+    block.innerHTML = blockHeaderHtml(style, false) + renderGenerativeUiBody(data, event.content);
+    container.appendChild(block);
+    const formEl = block.querySelector('.hermes-site-register-form');
+    if (formEl) bindSiteRegisterForm(formEl, block);
+    const bimFormEl = block.querySelector('.hermes-bim-analysis-schedule-form');
+    if (bimFormEl) bindBimAnalysisScheduleForm(bimFormEl, block);
+    const tasksPanelEl = block.querySelector('.hermes-scheduled-tasks-panel');
+    if (tasksPanelEl) bindScheduledTasksPanel(tasksPanelEl, block, data);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return block;
+  }
+
+  function showOnboardIntentUi() {
+    if (IS_AGRI || IS_STOCK) return;
+    const welcome = messagesEl.querySelector('.welcome-msg');
+    if (welcome) welcome.remove();
+    getOrCreateTurnContainer();
+    appendGenerativeUiBlock({
+      type: 'ui',
+      content: '请在下方表单填写站点信息，注册后将进入探查阶段。',
+      data: {
+        component: 'site_register_form',
+        title: '录入新站点',
+        fields: [
+          { name: 'name', label: '站点名称', type: 'text', placeholder: '例如：电建公共资源交易服务平台', required: true },
+          { name: 'url', label: '入口 URL', type: 'url', placeholder: 'https://bid.powerchina.cn', required: true },
+        ],
+      },
+    });
+  }
+
+  function showTasksIntentUi() {
+    if (IS_AGRI || IS_STOCK) return;
+    const welcome = messagesEl.querySelector('.welcome-msg');
+    if (welcome) welcome.remove();
+    getOrCreateTurnContainer();
+    appendGenerativeUiBlock({
+      type: 'ui',
+      content: '以下为已配置的通知任务，可直接启用/禁用或删除。',
+      data: {
+        component: 'scheduled_tasks_panel',
+        title: '通知任务管理',
+        description: '查看已配置的通知任务，可启用/禁用或删除。禁用后 run_scheduler 约 60 秒内自动卸载该 job。',
+        empty_hint: '暂无通知任务。可说「创建 BIM 每日分析通知任务」或「每天8点爬取电建增量并发飞书」来创建。',
+        task_type_labels: {
+          incremental_sync: '增量同步 + 飞书',
+          hermes_prompt: 'Hermes Prompt + 飞书',
+          bim_daily_analysis: 'BIM 每日综合分析',
+        },
+      },
+    });
+  }
+
+  function renderExecutedCommandHtml(commandText, tone) {
+    if (!commandText) return '';
+    const isResult = tone === 'result';
+    const labelCls = isResult ? 'text-slate-600 font-medium' : 'text-amber-800/80 font-medium';
+    const codeCls = isResult ? 'font-mono text-slate-800 break-all' : 'font-mono text-amber-950 break-all';
+    return '<div class="mt-1 text-xs leading-relaxed">' +
+      '<span class="' + labelCls + '">执行命令</span> ' +
+      '<code class="' + codeCls + '">' + escapeHtml(commandText) + '</code>' +
+      '</div>';
+  }
+
+  function collectSessionTools(messages) {
+    const tools = new Set();
+    for (const msg of messages || []) {
+      if (msg.role !== 'assistant') continue;
+      for (const block of msg.blocks || []) {
+        if (block.type === 'tool' && block.name) tools.add(block.name);
+      }
+    }
+    return [...tools].sort();
+  }
+
+  function renderSessionToolsList(tools) {
+    const el = document.getElementById('session-tools-list');
+    if (!el) return;
+    if (!tools.length) {
+      el.innerHTML = '<span class="text-xs text-slate-400">暂无</span>';
+      return;
+    }
+    el.innerHTML = tools.map(name =>
+      `<span class="inline-flex rounded-md bg-amber-50 border border-amber-100 px-1.5 py-0.5 text-[10px] font-mono text-amber-900" title="${escapeHtml(name)}">${escapeHtml(toolDisplayName(name))}</span>`
+    ).join('');
+  }
+
+  function syncSessionToolsFromMessages(messages) {
+    sessionMessages = messages || [];
+    sessionToolsUsed = new Set(collectSessionTools(sessionMessages));
+    renderSessionToolsList([...sessionToolsUsed]);
+  }
+
+  function trackSessionTool(name) {
+    if (!name) return;
+    sessionToolsUsed.add(name);
+    renderSessionToolsList([...sessionToolsUsed].sort());
+  }
+
+  function ensureAgentBar() {
+    if (!agentBarEl || !agentBarEl.isConnected) {
+      agentBarEl = document.getElementById('hermes-agent-bar');
+      agentBarSubEl = document.getElementById('hermes-agent-bar-sub');
+    }
+    return agentBarEl;
+  }
+
+  function setAgentWorking(active, pingActive) {
+    const bar = ensureAgentBar();
+    const cancelBtn = document.getElementById('cancel-crawl-btn');
+    if (!bar) return;
+    if (active) {
+      bar.classList.remove('hidden');
+      if (cancelBtn) cancelBtn.classList.remove('hidden');
+      if (agentBarSubEl) {
+        if (pingActive) agentBarSubEl.classList.remove('hidden');
+        else agentBarSubEl.classList.add('hidden');
+      }
+    } else {
+      bar.classList.add('hidden');
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+      if (agentBarSubEl) agentBarSubEl.classList.add('hidden');
+    }
+  }
+
+  function setCancelButtonBusy(busy) {
+    const cancelBtn = document.getElementById('cancel-crawl-btn');
+    if (!cancelBtn) return;
+    cancelBtn.disabled = !!busy;
+    cancelBtn.textContent = busy ? '中止中…' : '中止爬取';
+  }
+
+  async function cancelActiveCrawl() {
+    if (!streaming || userCancelled) return;
+    userCancelled = true;
+    setCancelButtonBusy(true);
+    const sid = sessionId;
+    if (sid) {
+      try {
+        await fetch(`/api/crawl-agent/chat/${encodeURIComponent(sid)}/cancel`, { method: 'POST' });
+      } catch (e) {
+        console.warn('cancel crawl', e);
+      }
+    }
+    if (streamAbortController) {
+      try { streamAbortController.abort(); } catch (_) {}
+    }
+  }
+
+  function settleThinkingBlock() {
+    if (!activeThinkingBlock) return;
+    activeThinkingBlock.classList.remove('is-active');
+    activeThinkingBlock.classList.add('is-settled');
+    const cursor = activeThinkingBlock.querySelector('.hermes-stream-cursor');
+    if (cursor) cursor.remove();
+    const dots = activeThinkingBlock.querySelector('.hermes-header-dots');
+    if (dots) dots.remove();
+    activeThinkingBlock = null;
+    refreshProcessDetailsState();
+  }
+
+  function settleToolBlock() {
+    if (!activeToolBlock) return;
+    activeToolBlock.classList.remove('is-active');
+    activeToolBlock = null;
+    refreshProcessDetailsState();
+  }
+
+  function toolStatusInfo(event, isRunning) {
+    if (isRunning) return { label: '执行中', cls: 'bg-sky-100 text-sky-800' };
+    const isError = !!(event && event.data && event.data.error);
+    if (isError) return { label: '失败', cls: 'bg-red-100 text-red-800' };
+    if (event && event.type === 'result') return { label: '成功', cls: 'bg-emerald-100 text-emerald-800' };
+    return { label: '已调用', cls: 'bg-slate-200 text-slate-700' };
+  }
+
+  function toolBriefSummary(toolEvent, resultEvent, isRunning) {
+    if (isRunning) {
+      const cmd = formatToolCommandLine(toolEvent);
+      if (cmd) return cmd.length > 96 ? cmd.slice(0, 93) + '…' : cmd;
+      return '正在调用工具…';
+    }
+    const ev = resultEvent || toolEvent || {};
+    if (ev.summary) {
+      return String(ev.summary).replace(/^(完成|失败):\s*/, '');
+    }
+    return toolDisplayName(ev.name || '') || '—';
+  }
+
+  function renderToolDetailsHtml(toolEvent, resultEvent) {
+    let html = '';
+    const inputLine = formatToolCommandLine(toolEvent || resultEvent);
+    if (inputLine) {
+      html += '<div class="mt-1"><div class="text-[10px] font-medium text-amber-800/80 mb-0.5">输入</div>' +
+        renderExecutedCommandHtml(inputLine) + '</div>';
+    } else if (toolEvent && toolEvent.args && Object.keys(toolEvent.args).length) {
+      html += '<div class="mt-1"><div class="text-[10px] font-medium text-amber-800/80 mb-0.5">输入</div>' +
+        '<pre class="text-xs opacity-80 overflow-x-auto">' +
+        escapeHtml(JSON.stringify(toolEvent.args, null, 2)) + '</pre></div>';
+    }
+    if (resultEvent) {
+      const resultPayload = resultEvent.data && resultEvent.data.result;
+      if (resultEvent.summary) {
+        html += '<div class="mt-2"><div class="text-[10px] font-medium text-slate-600 mb-0.5">输出</div>' +
+          '<div class="hermes-md">' + renderMarkdown(resultEvent.summary) + '</div></div>';
+      }
+      if (resultEvent.name === 'skill_plan_crawl_path' && resultEvent.data && resultEvent.data.path_tree) {
+        html += formatPathTree(resultEvent.data.path_tree);
+      }
+      if (resultPayload) {
+        html += '<pre class="mt-1 text-xs opacity-80 overflow-x-auto max-h-48">' +
+          escapeHtml(JSON.stringify(resultPayload, null, 2)) + '</pre>';
+      }
+    }
+    return html || '<p class="text-xs text-slate-500 mt-1">暂无详情</p>';
+  }
+
+  function renderToolToggleHtml(toolEvent, resultEvent, isRunning, expanded) {
+    const ev = toolEvent || resultEvent || {};
+    const name = toolDisplayName(ev.name || '未知工具');
+    const status = toolStatusInfo(resultEvent || toolEvent, isRunning);
+    const summary = toolBriefSummary(toolEvent, resultEvent, isRunning);
+    const chevron = expanded ? '▼' : '▶';
+    const dots = isRunning
+      ? '<span class="hermes-typing-dots hermes-header-dots shrink-0" aria-hidden="true"><span></span><span></span><span></span></span>'
+      : '';
+    return '<button type="button" class="hermes-tool-toggle w-full text-left flex items-center gap-1.5 flex-wrap"' +
+      ' aria-expanded="' + (expanded ? 'true' : 'false') + '">' +
+      '<span class="hermes-tool-chevron text-[10px] text-amber-700/70 shrink-0" aria-hidden="true">' + chevron + '</span>' +
+      '<span aria-hidden="true">🔧</span>' +
+      '<span class="font-mono text-xs font-semibold">' + escapeHtml(name) + '</span>' +
+      '<span class="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium ' + status.cls + '">' +
+      escapeHtml(status.label) + '</span>' +
+      '<span class="hermes-tool-summary text-xs opacity-75 truncate flex-1 min-w-0">' +
+      escapeHtml(summary) + '</span>' + dots + '</button>';
+  }
+
+  function setToolBlockExpanded(block, expanded) {
+    if (!block) return;
+    block.classList.toggle('is-expanded', expanded);
+    block.classList.toggle('is-collapsed', !expanded);
+    const btn = block.querySelector('.hermes-tool-toggle');
+    const details = block.querySelector('.hermes-tool-details');
+    if (btn) {
+      btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      const chev = btn.querySelector('.hermes-tool-chevron');
+      if (chev) chev.textContent = expanded ? '▼' : '▶';
+    }
+    if (details) details.classList.toggle('hidden', !expanded);
+  }
+
+  function bindToolToggle(block) {
+    const btn = block.querySelector('.hermes-tool-toggle');
+    if (!btn || btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', function() {
+      setToolBlockExpanded(block, !block.classList.contains('is-expanded'));
+    });
+  }
+
+  function createToolBlock(toolEvent, options) {
+    options = options || {};
+    const isLive = !!options.live;
+    const expanded = false;
+    const style = BLOCK_STYLES.tool;
+    const block = document.createElement('div');
+    block.dataset.blockType = 'tool';
+    block._toolEvent = toolEvent;
+    block.className = 'hermes-block hermes-block-tool rounded-xl border px-3 py-2 text-xs sm:text-sm ' + style.bg;
+    block.classList.add(expanded ? 'is-expanded' : 'is-collapsed');
+    if (isLive) {
+      block.classList.add('is-active');
+      activeToolBlock = block;
+    }
+    pendingToolBlockEl = block;
+    let body = renderToolToggleHtml(toolEvent, null, isLive, expanded);
+    body += '<div class="hermes-tool-details mt-1 pl-3 border-l-2 border-amber-200/60' +
+      (expanded ? '' : ' hidden') + '">' + renderToolDetailsHtml(toolEvent, null) + '</div>';
+    if (isLive) {
+      body += '<div class="hermes-tool-progress" aria-hidden="true"><span></span></div>';
+    }
+    block.innerHTML = body;
+    bindToolToggle(block);
+    return block;
+  }
+
+  function updateToolBlockWithResult(block, resultEvent) {
+    if (!block || !resultEvent) return;
+    block.classList.remove('is-active');
+    block.dataset.hasResult = '1';
+    const toolEvent = block._toolEvent || { name: resultEvent.name, args: resultEvent.args };
+    const toggleHtml = renderToolToggleHtml(toolEvent, resultEvent, false, false);
+    const oldBtn = block.querySelector('.hermes-tool-toggle');
+    if (oldBtn) oldBtn.outerHTML = toggleHtml;
+    bindToolToggle(block);
+    const details = block.querySelector('.hermes-tool-details');
+    if (details) {
+      details.innerHTML = renderToolDetailsHtml(toolEvent, resultEvent);
+      details.classList.add('hidden');
+    }
+    setToolBlockExpanded(block, false);
+    const progress = block.querySelector('.hermes-tool-progress');
+    if (progress) progress.remove();
+    if (activeToolBlock === block) activeToolBlock = null;
+    pendingToolBlockEl = null;
+  }
+
+  function appendOrphanResultBlock(event, container) {
+    const block = createToolBlock({ name: event.name, args: event.args }, { live: false });
+    updateToolBlockWithResult(block, event);
+    container.appendChild(block);
+    refreshProcessDetailsState();
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function settleMessageStreamBlock() {
+    if (!activeMessageStreamBlock) return;
+    activeMessageStreamBlock.classList.remove('is-active');
+    const cursor = activeMessageStreamBlock.querySelector('.hermes-stream-cursor');
+    if (cursor) cursor.remove();
+    activeMessageStreamBlock = null;
+    messageStreamText = '';
+  }
+
+  function settleAllActiveBlocks() {
+    settleThinkingBlock();
+    settleToolBlock();
+    settleMessageStreamBlock();
+  }
+
+  function appendTurnFinalMessage(content, messageZone) {
+    if (!content || !String(content).trim() || !messageZone) return;
+    const block = document.createElement('div');
+    block.dataset.blockType = 'message';
+    block.className = 'hermes-block hermes-block-message rounded-xl border px-3 py-2 text-xs sm:text-sm bg-slate-50 border-slate-200 text-slate-800';
+    block.innerHTML = blockHeaderHtml({ icon: '💬', label: '回复' }, false)
+      + '<div class="hermes-md hermes-message-stream">' + renderMarkdown(content) + '</div>';
+    messageZone.appendChild(block);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendMessageDelta(delta) {
+    if (!delta) return;
+    messageStreamText += delta;
+    const container = getTurnZone('message');
+    if (!activeMessageStreamBlock) {
+      const block = document.createElement('div');
+      block.dataset.blockType = 'message_delta';
+      block.className = 'hermes-block hermes-block-message rounded-xl border px-3 py-2 text-xs sm:text-sm bg-slate-50 border-slate-200 text-slate-800 is-active';
+      block.innerHTML = blockHeaderHtml({ icon: '💬', label: '回复' }, true)
+        + '<div class="hermes-md hermes-message-stream"></div>';
+      container.appendChild(block);
+      activeMessageStreamBlock = block;
+    } else if (!activeMessageStreamBlock.isConnected) {
+      container.appendChild(activeMessageStreamBlock);
+    }
+    const body = activeMessageStreamBlock.querySelector('.hermes-message-stream');
+    if (body) {
+      body.innerHTML = renderMarkdown(messageStreamText) + '<span class="hermes-stream-cursor" aria-hidden="true"></span>';
+    }
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function blockHeaderHtml(style, active) {
+    const dots = active
+      ? '<span class="hermes-typing-dots hermes-header-dots" aria-hidden="true"><span></span><span></span><span></span></span>'
+      : '';
+    return `<div class="hermes-block-header font-semibold mb-1">
+      <span aria-hidden="true">${style.icon}</span>
+      <span class="hermes-block-label">${style.label}</span>${dots}
+    </div>`;
+  }
+
+  function thinkingContentHtml(content, active) {
+    if (!content) return '';
+    const cursor = active ? '<span class="hermes-stream-cursor" aria-hidden="true"></span>' : '';
+    return `<div class="hermes-md hermes-thinking-content">${renderMarkdown(content)}${cursor}</div>`;
+  }
+
+  function thinkingBlockHtml(style, content, active) {
+    let html = '';
+    if (style.label === '回复预览') {
+      html += '<div class="hermes-thinking-subhead text-[10px] font-medium text-violet-700/80 mb-0.5">回复预览</div>';
+    }
+    const dots = active
+      ? '<span class="hermes-typing-dots hermes-header-dots shrink-0 mb-1" aria-hidden="true"><span></span><span></span><span></span></span>'
+      : '';
+    html += dots + thinkingContentHtml(content, active);
+    return html;
+  }
+
+  function appendReconnectRetryButton() {
+    const wrap = document.createElement('div');
+    wrap.className = 'flex justify-start';
+    wrap.innerHTML =
+      '<div class="max-w-[90%] rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 text-sm leading-relaxed">' +
+      '<div class="font-semibold mb-1">连接中断</div>' +
+      '<div class="text-amber-800">对话进度已保存。可点击下方按钮重试连接，或刷新页面从历史对话继续。</div>' +
+      '<button type="button" class="hermes-reconnect-retry" id="hermes-reconnect-retry-btn">重新连接</button>' +
+      '</div>';
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    const btn = wrap.querySelector('#hermes-reconnect-retry-btn');
+    if (btn) {
+      btn.addEventListener('click', async function() {
+        if (!sessionId || streaming) return;
+        btn.disabled = true;
+        btn.textContent = '重连中…';
+        resetStreamTracking();
+        const result = await reconnectStream(sessionId, streamAfter, { skipUiSetup: false });
+        if (!result.ok) {
+          btn.disabled = false;
+          btn.textContent = '重新连接';
+        }
+      });
+    }
+  }
+
+  function formatStreamError(err, attempts) {
+    const msg = String(err || '');
+    const tried = attempts || reconnectAttempts || 0;
+    if (/abort/i.test(msg)) {
+      return { text: '请求已取消。', recoverable: true };
+    }
+    if (/network error|Failed to fetch|Load failed|ECONNRESET|connection/i.test(msg)) {
+      if (tried >= SSE_RECONNECT_MAX) {
+        return {
+          text: `连接多次中断（已自动重试 ${SSE_RECONNECT_MAX} 次）。对话进度已保存，请刷新页面后从历史对话继续。`,
+          recoverable: true,
+        };
+      }
+      return {
+        text: '连接被中断，正在自动重连…',
+        recoverable: true,
+        retrying: true,
+      };
+    }
+    return { text: msg, recoverable: false };
+  }
+
+  function isNetworkLikeError(err) {
+    const msg = String(err || '');
+    return /network error|Failed to fetch|Load failed|ECONNRESET|connection/i.test(msg);
+  }
+
+  function bumpStreamAfter(event) {
+    if (event && BUFFERED_EVENT_TYPES.has(event.type)) {
+      streamAfter += 1;
+    }
+  }
+
+  function resetStreamTracking() {
+    streamAfter = 0;
+    reconnectAttempts = 0;
+  }
+
+  function sleep(ms) {
+    return new Promise(function(resolve) { setTimeout(resolve, ms); });
+  }
+
+  function setReconnectStatus(text) {
+    const bar = ensureAgentBar();
+    if (!bar) return;
+    bar.classList.remove('hidden');
+    if (agentBarSubEl) {
+      agentBarSubEl.textContent = text || '长任务连接保持活跃';
+      agentBarSubEl.classList.remove('hidden');
+    }
+  }
+
+  function saveLastSession(id) {
+    if (id) localStorage.setItem(LS_KEY, id);
+    else localStorage.removeItem(LS_KEY);
+  }
+
+  function formatTime(iso) {
+    if (!iso) return '';
+    return iso.replace('T', ' ').slice(0, 16);
+  }
+
+  function updateClearAllVisibility() {
+    if (!clearAllBtn) return;
+    if (sessions.length > 0) clearAllBtn.classList.remove('hidden');
+    else clearAllBtn.classList.add('hidden');
+  }
+
+  const DELETE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4" aria-hidden="true"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 9.252A2.75 2.75 0 007.596 18h4.807a2.75 2.75 0 002.742-2.975l.841-9.252.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75a1.25 1.25 0 00-1.25-1.25h-2.5A1.25 1.25 0 007.5 3.75v1.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" /></svg>';
+
+  function renderSessionList() {
+    updateClearAllVisibility();
+    if (!sessions.length) {
+      sessionListEl.innerHTML = '<p class="text-xs text-slate-400 px-2 py-3">暂无历史对话</p>';
+      return;
+    }
+    sessionListEl.innerHTML = sessions.map(s => {
+      const active = s.session_id === sessionId;
+      return `<div class="session-row ${active ? 'is-active' : ''}" data-session-id="${escapeHtml(s.session_id)}">
+        <button type="button" data-session-id="${escapeHtml(s.session_id)}"
+          class="session-item flex-1 min-w-0 text-left rounded-lg px-3 py-2 transition ${active ? 'text-brand-900' : 'text-slate-700'}">
+          <div class="font-medium truncate text-sm">${escapeHtml(s.title || '新对话')}</div>
+          <div class="text-[10px] text-slate-400 mt-0.5">${formatTime(s.updated_at)} · ${s.message_count || 0} 条</div>
+        </button>
+        <button type="button" class="session-delete-btn" data-session-id="${escapeHtml(s.session_id)}" title="删除此对话" aria-label="删除此对话">
+          ${DELETE_ICON}
+        </button>
+      </div>`;
+    }).join('');
+    sessionListEl.querySelectorAll('.session-item').forEach(btn => {
+      btn.addEventListener('click', () => loadSession(btn.dataset.sessionId));
+    });
+    sessionListEl.querySelectorAll('.session-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteSession(btn.dataset.sessionId);
+      });
+    });
+  }
+
+  async function fetchSessions() {
+    try {
+      const resp = await fetch('/api/crawl-agent/chats?limit=50');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      sessions = data.items || [];
+      renderSessionList();
+    } catch (e) {
+      console.warn('fetch sessions', e);
+    }
+  }
+
+  async function afterSessionRemoved(wasCurrent) {
+    await fetchSessions();
+    if (!wasCurrent) {
+      renderSessionList();
+      return;
+    }
+    saveLastSession(null);
+    sessionId = null;
+    if (sessions.length) {
+      await loadSession(sessions[0].session_id);
+      return;
+    }
+    await startNewChat();
+  }
+
+  async function deleteSession(id) {
+    if (streaming || !id) return;
+    const item = sessions.find(s => s.session_id === id);
+    const label = item && item.title ? item.title : '此对话';
+    if (!confirm(`确定删除「${label}」？此操作不可恢复。`)) return;
+    try {
+      const resp = await fetch(`/api/crawl-agent/chats/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!resp.ok) {
+        console.warn('delete session', resp.status);
+        await fetchSessions();
+        return;
+      }
+      await afterSessionRemoved(id === sessionId);
+    } catch (e) {
+      console.warn('delete session', e);
+    }
+  }
+
+  async function clearAllSessions() {
+    if (streaming || !sessions.length) return;
+    if (!confirm(`确定清空全部 ${sessions.length} 条历史对话？此操作不可恢复。`)) return;
+    try {
+      const resp = await fetch('/api/crawl-agent/chats', { method: 'DELETE' });
+      if (!resp.ok) {
+        console.warn('clear all sessions', resp.status);
+        return;
+      }
+      sessions = [];
+      sessionId = null;
+      saveLastSession(null);
+      clearMessages();
+      renderSessionList();
+      await startNewChat();
+    } catch (e) {
+      console.warn('clear all sessions', e);
+    }
+  }
+
+  function clearMessages() {
+    messagesEl.innerHTML = WELCOME_HTML;
+    history = [];
+    sessionMessages = [];
+    sessionToolsUsed = new Set();
+    renderSessionToolsList([]);
+    pendingToolBlockEl = null;
+  }
+
+  function appendUserBubble(text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'flex justify-end';
+    wrap.innerHTML = `<div class="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-600 text-white px-4 py-3 text-sm whitespace-pre-wrap">${escapeHtml(text)}</div>`;
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendAssistantBubble(content, options) {
+    options = options || {};
+    const inner = options.markdown ? renderMarkdown(content) : content;
+    const bodyClass = options.markdown
+      ? 'leading-relaxed'
+      : 'leading-relaxed whitespace-pre-wrap';
+    const wrap = document.createElement('div');
+    wrap.className = 'flex justify-start';
+    wrap.innerHTML = `<div class="max-w-[90%] rounded-2xl rounded-tl-sm bg-slate-100 text-slate-800 px-4 py-3 text-sm ${bodyClass}">
+      <div class="${options.markdown ? 'hermes-md' : ''}">${inner}</div>
+    </div>`;
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return wrap;
+  }
+
+  function appendContinueHint(turnsUsed, maxTurns) {
+    const wrap = document.createElement('div');
+    wrap.className = 'flex justify-start';
+    const detail = (turnsUsed && maxTurns) ? `（已用 ${turnsUsed}/${maxTurns} 轮）` : '';
+    wrap.innerHTML = `<div class="max-w-[90%] rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 text-sm leading-relaxed">
+      <div class="font-semibold mb-1">可继续爬取${escapeHtml(detail)}</div>
+      <div class="text-amber-800">直接发送 <strong>继续</strong> 或「从第 N 页接着爬」，会话上下文会自动带上。</div>
+    </div>`;
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function countBufferedBlocksFromSession(session) {
+    if (!session || !Array.isArray(session.messages) || !session.messages.length) return 0;
+    const last = session.messages[session.messages.length - 1];
+    if (!last || last.role !== 'assistant') return 0;
+    const blocks = last.blocks || [];
+    return blocks.filter(function(b) {
+      return b && BUFFERED_EVENT_TYPES.has(b.type);
+    }).length;
+  }
+
+  function appendInterruptedHint(options) {
+    options = options || {};
+    if (messagesEl.querySelector('.hermes-interrupted-hint')) return;
+    const canResume = options.canResume !== false;
+    const detail = canResume
+      ? '页面刷新或服务重启后未能恢复进行中的任务，上方内容为已保存进度。'
+      : (options.reason || '任务已结束或无法恢复，上方内容为已保存进度。');
+    const wrap = document.createElement('div');
+    wrap.className = 'flex justify-start hermes-interrupted-hint';
+    wrap.innerHTML =
+      '<div class="max-w-[90%] rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 text-sm leading-relaxed">' +
+      '<div class="font-semibold mb-1">流式连接已中断</div>' +
+      '<div class="text-amber-800 mb-2">' + escapeHtml(detail) + '</div>' +
+      '<div class="flex flex-wrap gap-2">' +
+      (canResume
+        ? '<button type="button" class="hermes-reconnect-retry" id="hermes-resume-stream-btn">继续接收</button>'
+        : '') +
+      '<button type="button" class="hermes-reconnect-retry" id="hermes-interrupted-new-msg-btn">发送新消息</button>' +
+      '</div></div>';
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    const resumeBtn = wrap.querySelector('#hermes-resume-stream-btn');
+    if (resumeBtn) {
+      resumeBtn.addEventListener('click', async function() {
+        if (!sessionId || streaming) return;
+        resumeBtn.disabled = true;
+        resumeBtn.textContent = '连接中…';
+        wrap.remove();
+        try {
+          const resp = await fetch(`/api/crawl-agent/chats/${encodeURIComponent(sessionId)}`);
+          let after = streamAfter || 0;
+          if (resp.ok) {
+            const session = await resp.json();
+            const runInfo = session.run || {};
+            after = runInfo.event_count || countBufferedBlocksFromSession(session) || 0;
+            if (!session.streaming) {
+              await loadSession(sessionId, { skipAutoReconnect: true });
+              return;
+            }
+          }
+          streamAfter = after;
+          reconnectAttempts = 0;
+          const result = await reconnectStream(sessionId, streamAfter, { skipUiSetup: false });
+          if (result.ok) return;
+          const reloaded = await loadSession(sessionId, { skipAutoReconnect: true });
+          if (reloaded && !reloaded.streaming) return;
+        } catch (e) {
+          console.warn('resume stream', e);
+        }
+        appendInterruptedHint({ canResume: false, reason: '无法继续接收流式输出，请发送新消息继续对话。' });
+      });
+    }
+    const newMsgBtn = wrap.querySelector('#hermes-interrupted-new-msg-btn');
+    if (newMsgBtn) {
+      newMsgBtn.addEventListener('click', function() {
+        wrap.remove();
+        input.focus();
+      });
+    }
+  }
+
+  function getOrCreateTurnContainer() {
+    let el = document.getElementById('agent-turn-active');
+    if (!el) {
+      const wrap = document.createElement('div');
+      wrap.className = 'flex justify-start';
+      wrap.innerHTML =
+        '<div id="agent-turn-active" class="max-w-[95%] w-full space-y-2">' +
+        '<div class="hermes-turn-process hidden">' +
+        '<details class="hermes-turn-process-details">' +
+        '<summary class="hermes-turn-process-toggle">' +
+        '<span class="hermes-turn-process-chevron" aria-hidden="true"></span>' +
+        '<span aria-hidden="true">🧠</span>' +
+        '<span class="hermes-turn-process-label">思考过程</span>' +
+        '</summary>' +
+        '<div class="hermes-turn-process-body space-y-2"></div>' +
+        '</details></div>' +
+        '<div class="hermes-turn-message space-y-2"></div></div>';
+      messagesEl.appendChild(wrap);
+      el = document.getElementById('agent-turn-active');
+    }
+    return el;
+  }
+
+  function getTurnProcessZone() {
+    return getOrCreateTurnContainer().querySelector('.hermes-turn-process');
+  }
+
+  function getTurnProcessDetails() {
+    return getOrCreateTurnContainer().querySelector('.hermes-turn-process-details');
+  }
+
+  function getTurnZone(zone) {
+    const container = getOrCreateTurnContainer();
+    if (zone === 'message') return container.querySelector('.hermes-turn-message');
+    return container.querySelector('.hermes-turn-process-body');
+  }
+
+  function syncProcessZoneVisibility() {
+    const body = getTurnZone('process');
+    const zone = getTurnProcessZone();
+    if (!zone || !body) return;
+    zone.classList.toggle('hidden', body.children.length === 0);
+  }
+
+  function setProcessActive(active) {
+    const details = getTurnProcessDetails();
+    if (!details) return;
+    details.classList.toggle('is-active', !!active);
+    const label = details.querySelector('.hermes-turn-process-label');
+    let dots = details.querySelector('.hermes-header-dots');
+    if (active) {
+      if (label) label.textContent = '思考中…';
+      if (!dots) {
+        const summary = details.querySelector('summary');
+        if (summary) {
+          summary.insertAdjacentHTML(
+            'beforeend',
+            '<span class="hermes-typing-dots hermes-header-dots shrink-0" aria-hidden="true"><span></span><span></span><span></span></span>'
+          );
+        }
+      }
+      details.setAttribute('open', '');
+    } else {
+      if (label) label.textContent = '思考过程';
+      if (dots) dots.remove();
+      details.removeAttribute('open');
+    }
+  }
+
+  function refreshProcessDetailsState() {
+    syncProcessZoneVisibility();
+    setProcessActive(!!(activeThinkingBlock || activeToolBlock));
+  }
+
+  const STATUS_BADGE = {
+    fetching: 'bg-sky-100 text-sky-800',
+    saved: 'bg-emerald-100 text-emerald-800',
+    skipped: 'bg-slate-200 text-slate-700',
+    failed: 'bg-red-100 text-red-800',
+  };
+
+  const STATUS_LABEL = {
+    fetching: '抓取中',
+    saved: '已入库',
+    skipped: '跳过',
+    failed: '失败',
+  };
+
+  function getOrCreateCrawlFeed() {
+    const container = getTurnZone('process');
+    let feed = document.getElementById('crawl-url-feed');
+    if (!feed) {
+      feed = document.createElement('div');
+      feed.id = 'crawl-url-feed';
+      feed.className = 'rounded-xl border px-3 py-2 text-xs sm:text-sm bg-teal-50 border-teal-200 text-teal-950';
+      feed.innerHTML = '<div class="font-semibold mb-2">🔗 爬取明细</div><div id="crawl-url-list" class="space-y-1 max-h-56 overflow-y-auto font-mono text-xs"></div>';
+      container.appendChild(feed);
+    }
+    return document.getElementById('crawl-url-list');
+  }
+
+  function appendUrlCrawl(event) {
+    const list = getOrCreateCrawlFeed();
+    const d = event.data || {};
+    const url = d.url || '';
+    if (!url) return;
+
+    const status = d.status || 'fetching';
+    const badgeCls = STATUS_BADGE[status] || 'bg-slate-100 text-slate-700';
+    const badgeLabel = STATUS_LABEL[status] || status;
+    const title = d.title || url;
+    const idx = d.index != null ? d.index : '?';
+    const time = d.time || '';
+    const pageInfo = d.page && d.total ? ` (${d.page}/${d.total})` : '';
+
+    let row = list.querySelector(`[data-crawl-url="${CSS.escape(url)}"]`);
+    if (!row) {
+      row = document.createElement('div');
+      row.dataset.crawlUrl = url;
+      row.className = 'flex items-start gap-2 py-0.5 border-b border-teal-100/80 last:border-0';
+      list.appendChild(row);
+    }
+
+    row.innerHTML = `
+      <span class="shrink-0 text-teal-600 w-6 text-right">${idx}</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium ${badgeCls}">${badgeLabel}${pageInfo}</span>
+          ${time ? `<span class="text-[10px] text-teal-700/70">${escapeHtml(time)}</span>` : ''}
+        </div>
+        <div class="truncate text-teal-900" title="${escapeHtml(title)}">${escapeHtml(title)}</div>
+        <a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="text-[10px] text-brand-600 hover:underline truncate block">${escapeHtml(url)}</a>
+      </div>`;
+
+    list.scrollTop = list.scrollHeight;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendBlock(event, options) {
+    options = options || {};
+    const isLive = !!options.live;
+    if (event.type === 'url_crawl') {
+      appendUrlCrawl(event);
+      return;
+    }
+    if (event.type === 'ui') {
+      appendGenerativeUiBlock(event, options);
+      return;
+    }
+    const style = BLOCK_STYLES[event.type] || BLOCK_STYLES.result;
+
+    if (event.type === 'thinking') {
+      settleThinkingBlock();
+      const block = document.createElement('div');
+      block.dataset.blockType = 'thinking';
+      const thinkingStyle = Object.assign({}, BLOCK_STYLES.thinking);
+      if (event.data && event.data.reasoning_summary) {
+        thinkingStyle.label = '回复预览';
+      }
+      block.className = `hermes-block hermes-block-thinking rounded-xl border px-3 py-2 text-xs sm:text-sm ${thinkingStyle.bg}`;
+      if (isLive) {
+        block.classList.add('is-active');
+        activeThinkingBlock = block;
+      }
+      block.innerHTML = thinkingBlockHtml(thinkingStyle, event.content || '', isLive);
+      getTurnZone('process').appendChild(block);
+      refreshProcessDetailsState();
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return;
+    }
+
+    if (event.type === 'message_delta') {
+      appendMessageDelta(event.content || '');
+      return;
+    }
+
+    const processZone = getTurnZone('process');
+
+    if (event.type === 'tool') {
+      trackSessionTool(event.name);
+      settleThinkingBlock();
+      settleToolBlock();
+      const block = createToolBlock(event, { live: isLive });
+      processZone.appendChild(block);
+      refreshProcessDetailsState();
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return;
+    }
+
+    if (event.type === 'result') {
+      settleThinkingBlock();
+      const target = activeToolBlock || pendingToolBlockEl;
+      if (target && !target.dataset.hasResult) {
+        updateToolBlockWithResult(target, event);
+        refreshProcessDetailsState();
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return;
+      }
+      appendOrphanResultBlock(event, processZone);
+      refreshProcessDetailsState();
+      return;
+    }
+
+    if (['plan', 'error'].includes(event.type)) {
+      settleThinkingBlock();
+    }
+
+    const block = document.createElement('div');
+    block.dataset.blockType = event.type;
+    block.className = `hermes-block rounded-xl border px-3 py-2 text-xs sm:text-sm ${style.bg}`;
+
+    let body = blockHeaderHtml(style, false);
+    if (event.type === 'plan' && event.data && event.data.path_tree) {
+      body += `<div class="hermes-md">${renderMarkdown(event.content || '')}</div>`;
+      body += formatPathTree(event.data.path_tree);
+    } else if (event.content) {
+      body += `<div class="hermes-md">${renderMarkdown(event.content)}</div>`;
+    }
+    block.innerHTML = body;
+    processZone.appendChild(block);
+    refreshProcessDetailsState();
+  }
+
+  function finalizeTurn(finalText) {
+    settleThinkingBlock();
+    settleToolBlock();
+    pendingToolBlockEl = null;
+    refreshProcessDetailsState();
+    setAgentWorking(false);
+    const active = document.getElementById('agent-turn-active');
+    const messageZone = active ? active.querySelector('.hermes-turn-message') : null;
+    if (active) active.removeAttribute('id');
+    const streamed = (messageStreamText || '').trim();
+    const text = (finalText || streamed || '').trim();
+    if (activeMessageStreamBlock) {
+      settleMessageStreamBlock();
+    } else if (text && messageZone) {
+      appendTurnFinalMessage(text, messageZone);
+    } else if (text) {
+      appendAssistantBubble(text, { markdown: true });
+    }
+    messageStreamText = '';
+  }
+
+  function renderStoredTurn(userText, assistantMsg, options) {
+    options = options || {};
+    pendingToolBlockEl = null;
+    appendUserBubble(userText);
+    history.push({ role: 'user', content: userText });
+    const blocks = assistantMsg.blocks || [];
+    const isStreaming = !!assistantMsg.streaming;
+    getOrCreateTurnContainer();
+    for (const block of blocks) {
+      appendBlock(block, { live: isStreaming });
+    }
+    if (isStreaming) {
+      setAgentWorking(true);
+      return;
+    }
+    const finalText = assistantMsg.content || '';
+    finalizeTurn(finalText);
+    if (finalText) history.push({ role: 'assistant', content: finalText });
+  }
+
+  function renderSession(session, options) {
+    options = options || {};
+    clearMessages();
+    sessionId = session.session_id;
+    saveLastSession(sessionId);
+    const welcome = messagesEl.querySelector('.welcome-msg');
+    if (welcome && (session.messages || []).length) welcome.remove();
+
+    const msgs = session.messages || [];
+    syncSessionToolsFromMessages(msgs);
+    for (let i = 0; i < msgs.length; i += 2) {
+      const userMsg = msgs[i];
+      const assistantMsg = msgs[i + 1];
+      if (userMsg && userMsg.role === 'user' && assistantMsg && assistantMsg.role === 'assistant') {
+        renderStoredTurn(userMsg.content, assistantMsg);
+      }
+    }
+    renderSessionList();
+  }
+
+  async function loadSession(id, options) {
+    options = options || {};
+    if (streaming && !options.allowWhileStreaming) return;
+    try {
+      const resp = await fetch(`/api/crawl-agent/chats/${encodeURIComponent(id)}`);
+      if (!resp.ok) {
+        saveLastSession(null);
+        return null;
+      }
+      const session = await resp.json();
+      const runInfo = session.run || {};
+      const willReconnect = !options.skipAutoReconnect && runInfo.status === 'running';
+      const isInterrupted = !options.skipAutoReconnect && !!session.streaming && runInfo.status === 'interrupted';
+      renderSession(session);
+      if (willReconnect) {
+        streamAfter = runInfo.event_count || countBufferedBlocksFromSession(session) || 0;
+        reconnectAttempts = 0;
+        await reconnectStream(id, streamAfter, { skipUiSetup: false });
+      } else if (isInterrupted) {
+        appendInterruptedHint();
+      }
+      return session;
+    } catch (e) {
+      console.warn('load session', e);
+      return null;
+    }
+  }
+
+  async function startNewChat() {
+    if (streaming) return;
+    try {
+      const resp = await fetch('/api/crawl-agent/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '' }),
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      sessionId = data.session.session_id;
+      saveLastSession(sessionId);
+      clearMessages();
+      await fetchSessions();
+      renderSessionList();
+      input.focus();
+    } catch (e) {
+      console.warn('new chat', e);
+      sessionId = null;
+      saveLastSession(null);
+      clearMessages();
+    }
+  }
+
+  async function initPage() {
+    await fetchSessions();
+    const params = new URLSearchParams(window.location.search);
+    const onboardIntent = params.get('intent') === 'onboard';
+    const tasksIntent = params.get('intent') === 'tasks';
+    const lastId = localStorage.getItem(LS_KEY);
+    if (lastId && sessions.some(s => s.session_id === lastId)) {
+      await loadSession(lastId);
+    } else if (sessions.length) {
+      await loadSession(sessions[0].session_id);
+    } else {
+      await startNewChat();
+    }
+    if (onboardIntent && !IS_AGRI && !IS_STOCK) {
+      showOnboardIntentUi();
+      const siteId = params.get('site_id');
+      if (siteId) {
+        fetch('/api/sites/onboarding/' + encodeURIComponent(siteId) + '/status')
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(data) {
+            if (!data || !data.ok) return;
+            appendGenerativeUiBlock({
+              type: 'ui',
+              data: {
+                component: 'onboarding_stepper',
+                site_id: data.site_id,
+                name: data.name,
+                url: data.url,
+                current_stage: data.current_stage,
+                stages: stagesFromStatus(data),
+              },
+            });
+          })
+          .catch(function() {});
+      }
+    }
+    if (tasksIntent && !IS_AGRI && !IS_STOCK) {
+      showTasksIntentUi();
+    }
+  }
+
+  function handleStreamEvent(event, options) {
+    options = options || {};
+    const live = options.live !== false;
+    if (event.type === 'ping') {
+      lastPingAt = Date.now();
+      setAgentWorking(true, true);
+      return { done: false };
+    }
+    if (event.type === 'session' && event.session_id) {
+      sessionId = event.session_id;
+      saveLastSession(sessionId);
+      return { done: false };
+    }
+    if (event.type === 'message') {
+      return {
+        done: false,
+        finalMessage: event.content || '',
+        canContinue: !!(event.data && event.data.can_continue),
+        turnsUsed: event.data && event.data.turns_used,
+        maxTurns: event.data && event.data.max_turns,
+      };
+    }
+    if (event.type === 'done') {
+      return { done: true, streamCompleted: true };
+    }
+    if (event.type === 'cancelled') {
+      settleAllActiveBlocks();
+      setAgentWorking(false);
+      appendBlock(event);
+      return { done: true, streamCompleted: true, cancelled: true };
+    }
+    if (['thinking', 'plan', 'tool', 'result', 'error', 'url_crawl', 'message_delta', 'ui'].includes(event.type)) {
+      appendBlock(event, { live: live });
+    }
+    return { done: false };
+  }
+
+  async function consumeSseResponse(resp, options) {
+    options = options || {};
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let finalMessage = '';
+    let canContinue = false;
+    let turnsUsed = null;
+    let maxTurns = null;
+    let completed = false;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() || '';
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line || line.startsWith(':') || !line.startsWith('data:')) continue;
+        const jsonStr = line.slice(5).trim();
+        if (!jsonStr) continue;
+        try {
+          const event = JSON.parse(jsonStr);
+          bumpStreamAfter(event);
+          const result = handleStreamEvent(event, { live: options.live !== false });
+          if (result.finalMessage !== undefined) finalMessage = result.finalMessage;
+          if (result.canContinue) {
+            canContinue = true;
+            turnsUsed = result.turnsUsed;
+            maxTurns = result.maxTurns;
+          }
+          if (result.streamCompleted) {
+            completed = true;
+            if (result.cancelled) {
+              finalizeTurn('');
+              await fetchSessions();
+              return { streamCompleted: true, cancelled: true };
+            }
+            finalizeTurn(finalMessage);
+            if (canContinue) appendContinueHint(turnsUsed, maxTurns);
+            if (finalMessage) history.push({ role: 'assistant', content: finalMessage });
+            await fetchSessions();
+            return { streamCompleted: true, finalMessage, canContinue, turnsUsed, maxTurns };
+          }
+        } catch (e) {
+          console.warn('SSE parse', e);
+        }
+      }
+    }
+    return { streamCompleted: completed, finalMessage, canContinue, turnsUsed, maxTurns };
+  }
+
+  async function fetchStreamResponse(sid, after) {
+    return fetch(
+      `/api/crawl-agent/chats/${encodeURIComponent(sid)}/stream?after=${after || 0}`,
+      {
+        headers: { Accept: 'text/event-stream' },
+        signal: streamAbortController ? streamAbortController.signal : undefined,
+      }
+    );
+  }
+
+  async function checkRunStillActive(sid) {
+    try {
+      const resp = await fetch(`/api/crawl-agent/chats/${encodeURIComponent(sid)}`);
+      if (!resp.ok) return false;
+      const session = await resp.json();
+      return !!(session.run && session.run.status === 'running');
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function reloadSessionIfRunFinished(sid) {
+    try {
+      const resp = await fetch(`/api/crawl-agent/chats/${encodeURIComponent(sid)}`);
+      if (!resp.ok) return false;
+      const session = await resp.json();
+      if (session.run && session.run.status === 'running') return false;
+      await loadSession(sid, { allowWhileStreaming: true, skipAutoReconnect: true });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function autoReconnectStream(sid) {
+    if (!sid || userCancelled) return { ok: false };
+
+    for (let attempt = 1; attempt <= SSE_RECONNECT_MAX; attempt++) {
+      reconnectAttempts = attempt;
+      setReconnectStatus(`连接中断，自动重连中 (${attempt}/${SSE_RECONNECT_MAX})…`);
+      await sleep(SSE_RECONNECT_BASE_MS * attempt);
+
+      if (userCancelled) return { ok: false, cancelled: true };
+
+      try {
+        const resp = await fetchStreamResponse(sid, streamAfter);
+        if (resp.status === 404) {
+          if (await reloadSessionIfRunFinished(sid)) {
+            return { ok: true, streamCompleted: true, reloaded: true };
+          }
+          continue;
+        }
+        if (!resp.ok) continue;
+
+        const result = await consumeSseResponse(resp, { live: true });
+        if (result.streamCompleted) {
+          reconnectAttempts = 0;
+          return { ok: true, ...result };
+        }
+
+        const stillRunning = await checkRunStillActive(sid);
+        if (!stillRunning) {
+          if (await reloadSessionIfRunFinished(sid)) {
+            return { ok: true, streamCompleted: true, reloaded: true };
+          }
+        }
+      } catch (e) {
+        if (userCancelled) return { ok: false, cancelled: true };
+        console.warn('auto reconnect attempt', attempt, e);
+      }
+    }
+    return { ok: false };
+  }
+
+  function beginStreamUi() {
+    streaming = true;
+    streamCompleted = false;
+    userCancelled = false;
+    lastPingAt = 0;
+    sendBtn.disabled = true;
+    streamAbortController = new AbortController();
+    setCancelButtonBusy(false);
+    setAgentWorking(true);
+    getOrCreateTurnContainer();
+  }
+
+  function endStreamUi() {
+    streaming = false;
+    streamAbortController = null;
+    userCancelled = false;
+    reconnectAttempts = 0;
+    setCancelButtonBusy(false);
+    sendBtn.disabled = false;
+  }
+
+  async function attachStream(sid, after, options) {
+    options = options || {};
+    if (!sid) return { ok: false };
+    if (streaming && !options.allowWhileStreaming) return { ok: false };
+
+    const manageUi = !options.skipUiSetup;
+    if (manageUi) beginStreamUi();
+
+    try {
+      const resp = await fetchStreamResponse(sid, after);
+      if (resp.status === 404) {
+        if (await reloadSessionIfRunFinished(sid)) {
+          return { ok: true, streamCompleted: true, reloaded: true };
+        }
+        settleAllActiveBlocks();
+        setAgentWorking(false);
+        return { ok: false, notFound: true };
+      }
+      if (!resp.ok) {
+        settleAllActiveBlocks();
+        setAgentWorking(false);
+        if (resp.status !== 404) {
+          appendAssistantBubble('重连失败: HTTP ' + resp.status);
+        }
+        return { ok: false, httpStatus: resp.status };
+      }
+
+      const result = await consumeSseResponse(resp, { live: true });
+      if (result.streamCompleted) {
+        reconnectAttempts = 0;
+        return { ok: true, ...result };
+      }
+
+      if (userCancelled) return { ok: false, cancelled: true };
+
+      const reconnected = await autoReconnectStream(sid);
+      if (reconnected.ok) return reconnected;
+
+      settleAllActiveBlocks();
+      setAgentWorking(false);
+      appendReconnectRetryButton();
+      return { ok: false, exhausted: true };
+    } catch (e) {
+      if (userCancelled) {
+        appendBlock({ type: 'cancelled', content: '用户已中止爬取' });
+        finalizeTurn('');
+        return { ok: false, cancelled: true };
+      }
+      if (isNetworkLikeError(e)) {
+        const reconnected = await autoReconnectStream(sid);
+        if (reconnected.ok) return reconnected;
+      }
+      settleAllActiveBlocks();
+      setAgentWorking(false);
+      const { text } = formatStreamError(e, reconnectAttempts);
+      appendAssistantBubble('重连错误: ' + escapeHtml(text));
+      return { ok: false, error: e };
+    } finally {
+      if (manageUi) endStreamUi();
+    }
+  }
+
+  async function reconnectStream(sid, after, options) {
+    options = options || {};
+    return attachStream(sid, after, { allowWhileStreaming: true, ...options });
+  }
+
+  async function sendMessage(text) {
+    if (!text.trim() || streaming) return;
+    resetStreamTracking();
+    activeThinkingBlock = null;
+    activeToolBlock = null;
+    pendingToolBlockEl = null;
+
+    const welcome = messagesEl.querySelector('.welcome-msg');
+    if (welcome) welcome.remove();
+
+    appendUserBubble(text);
+    history.push({ role: 'user', content: text });
+    input.value = '';
+
+    beginStreamUi();
+
+    try {
+      const body = { message: text, history: history.slice(0, -1) };
+      if (sessionId) body.session_id = sessionId;
+      if (AGENT_PROFILE && AGENT_PROFILE !== 'default') body.agent_profile = AGENT_PROFILE;
+
+      const resp = await fetch('/api/crawl-agent/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        body: JSON.stringify(body),
+        signal: streamAbortController.signal,
+      });
+      if (!resp.ok) {
+        const err = await resp.text();
+        settleAllActiveBlocks();
+        setAgentWorking(false);
+        if (resp.status === 409) {
+          appendAssistantBubble('该会话仍在执行中，正在自动恢复流式输出…');
+          const reconnected = await attachStream(sessionId, streamAfter, {
+            allowWhileStreaming: true,
+            skipUiSetup: true,
+          });
+          if (reconnected.ok) return;
+        } else {
+          appendAssistantBubble('请求失败: ' + escapeHtml(err));
+        }
+        return;
+      }
+
+      const result = await consumeSseResponse(resp, { live: true });
+      streamCompleted = !!result.streamCompleted;
+      if (streamCompleted) {
+        reconnectAttempts = 0;
+        return;
+      }
+
+      if (userCancelled) return;
+
+      const reconnected = await autoReconnectStream(sessionId);
+      if (reconnected.ok) return;
+
+      settleAllActiveBlocks();
+      setAgentWorking(false);
+      appendReconnectRetryButton();
+    } catch (e) {
+      settleAllActiveBlocks();
+      setAgentWorking(false);
+      if (userCancelled) {
+        appendBlock({ type: 'cancelled', content: '用户已中止爬取' });
+        finalizeTurn('');
+      } else if (isNetworkLikeError(e)) {
+        const reconnected = await autoReconnectStream(sessionId);
+        if (reconnected.ok) return;
+        const { text: errText } = formatStreamError(e, reconnectAttempts);
+        appendAssistantBubble('网络错误: ' + escapeHtml(errText));
+      } else {
+        const { text: errText } = formatStreamError(e, reconnectAttempts);
+        appendAssistantBubble('网络错误: ' + escapeHtml(errText));
+      }
+    } finally {
+      endStreamUi();
+      input.focus();
+    }
+  }
+
+  const cancelCrawlBtn = document.getElementById('cancel-crawl-btn');
+  if (cancelCrawlBtn) cancelCrawlBtn.addEventListener('click', cancelActiveCrawl);
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    sendMessage(input.value.trim());
+  });
+
+  input.addEventListener('compositionstart', function() {
+    composing = true;
+  });
+  input.addEventListener('compositionend', function() {
+    composing = false;
+  });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      if (composing || e.isComposing || e.keyCode === 229) return;
+      e.preventDefault();
+      form.dispatchEvent(new Event('submit'));
+    }
+  });
+
+  newChatBtn.addEventListener('click', startNewChat);
+  if (clearAllBtn) clearAllBtn.addEventListener('click', clearAllSessions);
+  initPage();
+})();
+</script>
+</div>

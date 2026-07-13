@@ -1,0 +1,57 @@
+version: 1
+site_id: 中国华电集团有限公司_华电集团电子商务平台
+name: 华电集团电子商务平台
+enabled: true
+entry_url: https://www.chdtp.com/webs/queryWebZbgg.action?zbggType=1
+alt_entry_url: https://www.chdtp.com/pages/wzglS/cgxx/caigou.jsp?cgtype=4
+alt_entry_label: 招标公告列表（caigou.jsp入口，支持页面搜索框搜索BIM）
+entry_steps:
+  - action: navigate
+    url: https://www.chdtp.com/webs/queryWebZbgg.action?zbggType=1
+    label: 招标公告列表（直接访问数据页，绕过iframe）
+list_page:
+  strategy: dom
+  container: "form#queryWebZbgg table"
+  item: "tr"
+  title: "td.td_2 a"
+  link: "td.td_2 a"
+  date: "td.td_4 span"
+  wait_for: "td.td_2 a"
+pagination:
+  type: next_button
+  selector: "input[src*='page-next.png']"
+  wait_after_ms: 2000
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "https://www.chdtp.com/staticPage/.*"
+  link_extractor:
+    type: onclick
+    pattern: "toGetContent\\('([^']+)'\\)"
+  url_format: "https://www.chdtp.com/staticPage/{path}"
+  content_selector: "table.LayoutTable td"
+  wait_for: "table.LayoutTable"
+limits:
+  max_pages: 100
+  max_items: 2000
+  max_depth: 2
+  rate_limit_seconds: 1.5
+search:
+  enabled: true
+  type: api
+  details:
+    api:
+      url: "https://www.chdtp.com/webs/searchAction.action"
+      method: POST
+      content_type: "application/x-www-form-urlencoded"
+      body_template: "key=1-1&search=BIM"
+    list_page:
+      container: "table"
+      item: "tr"
+      title: "td:nth-child(2) a"
+      link: "td:nth-child(2) a"
+      date: "td:last-child"
+      link_extractor:
+        type: onclick
+        pattern: "toGetContent\\('([^']+)'\\)"
+      url_format: "https://www.chdtp.com/staticPage/{path}"

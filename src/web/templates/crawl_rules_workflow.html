@@ -1,0 +1,1556 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 规则工作流 — {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">爬取规则工作流</h2>
+      <p class="text-sm text-slate-500 mt-1">
+        {{ site_name }} · <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">{{ site_id }}</code>
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <span id="badge-site-enabled" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">站点 —</span>
+      <span id="badge-rule-enabled" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">规则 —</span>
+      <span id="badge-schedule" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">调度 —</span>
+      <span id="badge-valid" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">未校验</span>
+      <a href="/hermes?site_id={{ site_id }}"
+         class="text-xs text-violet-600 hover:text-violet-800 border border-violet-200 rounded-lg px-2.5 py-1.5">Hermes 对话</a>
+      <a href="/crawl-rules/{{ site_id }}"
+         class="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-2.5 py-1.5">YAML 编辑</a>
+      <a href="/sites" class="text-xs text-slate-500 hover:text-slate-700">← 站点列表</a>
+    </div>
+  </div>
+</section>
+
+<!-- 模式切换 -->
+<div class="workflow-mode-tabs mb-4">
+  <button type="button" id="tab-manual" class="workflow-mode-tab workflow-mode-tab-active">手动编辑</button>
+  <button type="button" id="tab-ai" class="workflow-mode-tab">AI 生成</button>
+  <button type="button" id="tab-record" class="workflow-mode-tab">浏览器录制</button>
+</div>
+
+<!-- 手动编辑模式 -->
+<div id="mode-manual">
+  <div id="crawl-workflow-shell" class="crawl-workflow-shell bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h3 class="text-sm font-semibold text-slate-700">工作流</h3>
+        <p class="text-xs text-slate-400 mt-0.5">从左侧拖入节点 · 按住空白拖动画布 · 滚轮缩放 · 拖动节点定位 · 拖拽或点击端口连线</p>
+        <p id="connection-hint" class="workflow-connection-hint mt-1 hidden"></p>
+      </div>
+      <div class="workflow-toolbar">
+        <button type="button" id="btn-zoom-out" class="wf-viewport-btn" title="缩小">−</button>
+        <span id="wf-zoom-label" class="wf-zoom-label">100%</span>
+        <button type="button" id="btn-zoom-in" class="wf-viewport-btn" title="放大">+</button>
+        <button type="button" id="btn-reset-view" class="wf-viewport-btn wf-viewport-btn-text">重置视图</button>
+        <button type="button" id="btn-save-viewport" class="wf-viewport-btn wf-viewport-btn-text">保存视图</button>
+        <button type="button" id="btn-maximize" class="wf-viewport-btn wf-viewport-btn-primary" title="最大化编辑" aria-pressed="false">
+          <span id="maximize-label">最大化</span>
+        </button>
+        <span class="wf-viewport-divider" aria-hidden="true"></span>
+        <button type="button" id="btn-auto-layout"
+                class="rounded-lg border border-slate-200 text-slate-600 px-3 py-2 text-xs font-medium hover:bg-slate-50 transition">
+          自动排列
+        </button>
+        <button type="button" id="btn-delete-node"
+                class="rounded-lg border border-red-200 text-red-600 px-3 py-2 text-xs font-medium hover:bg-red-50 transition disabled:opacity-40"
+                disabled>
+          删除节点
+        </button>
+        <button type="button" id="btn-save"
+                class="rounded-lg bg-emerald-600 text-white px-4 py-2 text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50">
+          保存规则
+        </button>
+        <button type="button" id="btn-dry-run"
+                class="rounded-lg border border-brand-300 bg-brand-50 text-brand-700 px-4 py-2 text-sm font-medium hover:bg-brand-100 transition disabled:opacity-50">
+          试跑
+        </button>
+      </div>
+    </div>
+
+    <div class="workflow-layout">
+      <!-- 节点面板 -->
+      <aside class="workflow-palette">
+        <div class="workflow-palette-title">拖入画布</div>
+        <div id="node-palette"></div>
+        <p class="text-[10px] text-slate-400 mt-4 leading-relaxed">
+          连线：从输出端口（右）拖到输入端口（左），或依次点击两个端口
+        </p>
+      </aside>
+
+      <!-- 画布 -->
+      <div id="workflow-canvas" class="workflow-canvas" tabindex="0">
+        <div id="workflow-canvas-transform" class="workflow-canvas-transform">
+          <svg id="workflow-edges" class="workflow-edges-svg"></svg>
+          <div id="workflow-nodes-layer" class="workflow-nodes-layer"></div>
+        </div>
+        <div id="workflow-empty" class="workflow-canvas-empty">
+          <div class="workflow-canvas-empty-icon">◇</div>
+          <div class="workflow-canvas-empty-title">画布为空</div>
+          <div class="workflow-canvas-empty-hint">从左侧拖入节点开始搭建工作流，或使用「自动排列」整理已有节点</div>
+        </div>
+        <div class="workflow-canvas-hint"><span>正在拖动画布…</span></div>
+      </div>
+
+      <!-- 编辑面板 -->
+      <div class="hidden xl:flex workflow-edit-panel">
+        <div class="px-4 py-3 border-b border-slate-100">
+          <h3 id="panel-title" class="text-sm font-semibold text-slate-700">节点编辑</h3>
+          <p id="panel-subtitle" class="text-xs text-slate-400 mt-0.5">选择画布中的节点</p>
+        </div>
+        <div id="panel-empty" class="px-4 py-8 text-center text-sm text-slate-400 flex-1">
+          点击节点开始编辑
+        </div>
+        <form id="node-form" class="hidden flex-1 flex flex-col">
+          <div id="node-fields" class="px-4 py-3 space-y-3 flex-1 overflow-y-auto max-h-[420px]"></div>
+          <div class="px-4 py-3 border-t border-slate-100">
+            <button type="submit"
+                    class="w-full rounded-lg bg-brand-600 text-white px-4 py-2 text-sm font-medium hover:bg-brand-700 transition">
+              应用到节点
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="error-box" class="hidden px-5 py-3 bg-red-50 border-t border-red-100">
+      <ul id="error-list" class="text-xs text-red-700 space-y-0.5"></ul>
+    </div>
+
+    <div id="dry-run-result" class="hidden border-t border-slate-100">
+      <div class="px-5 py-3 bg-slate-50 flex items-center justify-between">
+        <h4 class="text-xs font-semibold text-slate-600">试跑结果</h4>
+        <button type="button" id="btn-close-dry-run" class="text-xs text-slate-400 hover:text-slate-600">关闭</button>
+      </div>
+      <div id="dry-run-body" class="px-5 py-4 text-sm max-h-64 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- 移动端编辑面板 -->
+  <div class="xl:hidden mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+    <div class="px-4 py-3 border-b border-slate-100">
+      <h3 id="panel-title-mobile" class="text-sm font-semibold text-slate-700">节点编辑</h3>
+      <p id="panel-subtitle-mobile" class="text-xs text-slate-400 mt-0.5">选择画布中的节点</p>
+    </div>
+    <div id="panel-empty-mobile" class="px-4 py-6 text-center text-sm text-slate-400">点击节点开始编辑</div>
+    <form id="node-form-mobile" class="hidden">
+      <div id="node-fields-mobile" class="px-4 py-3 space-y-3 max-h-72 overflow-y-auto"></div>
+      <div class="px-4 py-3 border-t border-slate-100">
+        <button type="submit"
+                class="w-full rounded-lg bg-brand-600 text-white px-4 py-2 text-sm font-medium hover:bg-brand-700 transition">
+          应用到节点
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- AI 生成模式 -->
+<div id="mode-ai" class="hidden">
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="workflow-ai-panel">
+      <h3 class="text-sm font-semibold text-slate-700 mb-1">AI 生成工作流</h3>
+      <p class="text-xs text-slate-500 mb-4">
+        描述列表页结构、分页方式、选择器线索；生成后可切回「手动编辑」微调节点。
+        也可在 <a href="/hermes?site_id={{ site_id }}" class="text-brand-600 hover:underline">Hermes 对话</a> 中使用
+        <code class="text-[10px] bg-slate-100 px-1 rounded">crawl_generate_workflow</code> 工具。
+      </p>
+      <label class="block text-xs font-medium text-slate-600 mb-1">入口 URL（可选）</label>
+      <input type="url" id="ai-entry-url" value="{{ site_url }}"
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-3 focus:ring-2 focus:ring-brand-500"
+             placeholder="https://...">
+      <label class="block text-xs font-medium text-slate-600 mb-1">生成说明</label>
+      <textarea id="ai-prompt" class="workflow-ai-textarea mb-3"
+                placeholder="例如：列表在 .con_list 下，每条 li 含标题 a.gccon_title 和日期 span.gc_date，分页为 page 参数递增…"></textarea>
+      <label class="block text-xs font-medium text-slate-600 mb-1">page_hints（可选，来自 WebBridge 探查）</label>
+      <textarea id="ai-page-hints" class="workflow-ai-textarea mb-4 text-xs font-mono" rows="4"
+                placeholder='{"container": "#list", "item": "li", ...}'></textarea>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" id="btn-ai-generate"
+                class="rounded-lg bg-violet-600 text-white px-5 py-2.5 text-sm font-medium hover:bg-violet-700 transition disabled:opacity-50">
+          生成工作流
+        </button>
+        <button type="button" id="btn-ai-generate-save"
+                class="rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 px-5 py-2.5 text-sm font-medium hover:bg-emerald-100 transition disabled:opacity-50">
+          生成并保存
+        </button>
+      </div>
+      <div id="ai-status" class="hidden mt-4 text-sm"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 浏览器录制模式 -->
+<div id="mode-record" class="hidden">
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="workflow-ai-panel">
+      <h3 class="text-sm font-semibold text-slate-700 mb-1">Chrome 插件录制工作流</h3>
+      <p class="text-xs text-slate-500 mb-4">
+        在真实浏览器中操作站点，插件记录导航/点击步骤；到达列表页后自动或手动识别列表结构，生成「分页 + 详情」工作流。
+        完成后可切回「手动编辑」微调并保存。
+      </p>
+
+      <label class="block text-xs font-medium text-slate-600 mb-1">入口 URL</label>
+      <input type="url" id="rec-entry-url" value="{{ site_url }}"
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mb-4 focus:ring-2 focus:ring-brand-500"
+             placeholder="https://...">
+
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button type="button" id="btn-rec-start"
+                class="rounded-lg bg-orange-600 text-white px-5 py-2.5 text-sm font-medium hover:bg-orange-700 transition disabled:opacity-50">
+          开始录制
+        </button>
+        <button type="button" id="btn-rec-finish"
+                class="rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 px-5 py-2.5 text-sm font-medium hover:bg-emerald-100 transition disabled:opacity-50"
+                disabled>
+          完成录制并生成工作流
+        </button>
+      </div>
+
+      <!-- 插件安装指引 -->
+      <div id="rec-install-panel" class="hidden rounded-xl border border-amber-200 bg-amber-50 p-4 mb-4">
+        <h4 class="text-xs font-semibold text-amber-800 mb-2">安装 Chrome 插件（首次使用）</h4>
+        <ol class="text-xs text-amber-900 space-y-1.5 list-decimal list-inside">
+          <li>打开 <a id="rec-chrome-ext-link" href="chrome://extensions" target="_blank" class="underline">chrome://extensions</a></li>
+          <li>开启右上角「开发者模式」</li>
+          <li>点击「加载已解压的扩展程序」</li>
+          <li>选择目录：<code id="rec-ext-path" class="bg-white/70 px-1 rounded text-[10px] break-all">—</code></li>
+        </ol>
+        <p class="text-[11px] text-amber-700 mt-2">
+          会话 ID：<code id="rec-session-id" class="bg-white/70 px-1 rounded">—</code>
+          · 连接状态：<span id="rec-ws-status" class="font-medium">未连接</span>
+          · 插件：<span id="rec-ext-status" class="font-medium">等待连接…</span>
+        </p>
+        <button type="button" id="btn-rec-open-site"
+                class="mt-3 rounded-lg bg-brand-600 text-white px-4 py-2 text-xs font-medium hover:bg-brand-700 transition disabled:opacity-50"
+                disabled>
+          在新标签页打开入口站点
+        </button>
+      </div>
+
+      <!-- 实时步骤 -->
+      <div id="rec-steps-panel" class="hidden">
+        <div id="rec-list-confirmed" class="hidden mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+          <span class="font-medium">已确认列表页：</span><span id="rec-list-confirmed-url" class="break-all">—</span>
+        </div>
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-xs font-semibold text-slate-600">已录制步骤</h4>
+          <span id="rec-step-count" class="text-xs text-slate-400">0 步</span>
+        </div>
+        <ul id="rec-step-list" class="text-xs border border-slate-100 rounded-lg max-h-48 overflow-y-auto divide-y divide-slate-50"></ul>
+
+        <!-- 实时工作流预览 -->
+        <div id="rec-preview-panel" class="hidden mt-4">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-xs font-semibold text-slate-600">工作流预览</h4>
+            <span id="rec-preview-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">实时</span>
+          </div>
+          <div id="rec-preview-nodes" class="flex flex-wrap gap-1.5 text-[10px]"></div>
+          <button type="button" id="btn-rec-import-canvas"
+                  class="hidden mt-3 rounded-lg border border-brand-300 bg-brand-50 text-brand-700 px-4 py-2 text-xs font-medium hover:bg-brand-100 transition">
+            导入到画布
+          </button>
+        </div>
+      </div>
+
+      <div id="rec-status" class="hidden mt-4 text-sm"></div>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="/static/workflow-canvas.css">
+<script src="/static/workflow-canvas.js"></script>
+<script>
+const SITE_ID = {{ site_id|tojson }};
+let viewportApi = null;
+const NODE_COLORS = {
+  meta: '#8b5cf6', navigate: '#3b82f6', wait: '#f59e0b', click: '#ef4444',
+  scroll: '#06b6d4', extract_list: '#10b981', paginate: '#6366f1',
+  extract_detail: '#ec4899', save: '#64748b',
+};
+let workflow = { nodes: [], edges: [] };
+let fieldSchemas = {};
+let nodeLabels = {};
+let paletteTypes = [];
+let activeNodeId = null;
+let connectFromId = null;
+let connectDragState = null;
+let selectedEdgeIndex = null;
+let dragState = null;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const NODE_W = 160;
+const NODE_H = 72;
+const LAYOUT_COL_W = 220;
+const LAYOUT_ROW_H = 120;
+const LAYOUT_COLS = 4;
+const LAYOUT_PAD = 48;
+const CANVAS_MIN_W = 640;
+const CANVAS_MIN_H = 360;
+
+function layoutPosition(index) {
+  const row = Math.floor(index / LAYOUT_COLS);
+  const col = index % LAYOUT_COLS;
+  return { x: LAYOUT_PAD + col * LAYOUT_COL_W, y: LAYOUT_PAD + row * LAYOUT_ROW_H };
+}
+
+function nodesNeedAutoLayout(nodes) {
+  if (!nodes || !nodes.length) return false;
+  const positions = nodes.map(n => n.position || { x: 0, y: 0 });
+  const xs = positions.map(p => p.x);
+  const ys = positions.map(p => p.y);
+  const allSameX = xs.every(x => x === xs[0]);
+  const stacked = positions.some((p, i) =>
+    i > 0 && Math.abs(p.x - positions[i - 1].x) < 8 && Math.abs(p.y - positions[i - 1].y) < 8
+  );
+  const verticalOnly = allSameX && ys.length > 3 && (ys[ys.length - 1] - ys[0]) > 400;
+  return stacked || verticalOnly;
+}
+
+function layoutNodesByFlow() {
+  const ordered = computeExecutionOrder();
+  if (!ordered.length) return;
+  ordered.forEach((node, i) => {
+    node.position = layoutPosition(i);
+  });
+}
+
+function getNodesBoundingBox() {
+  const nodes = workflow.nodes || [];
+  if (!nodes.length) {
+    return { minX: 0, minY: 0, maxX: CANVAS_MIN_W, maxY: CANVAS_MIN_H };
+  }
+  let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+  nodes.forEach(node => {
+    const pos = node.position || { x: 0, y: 0 };
+    minX = Math.min(minX, pos.x);
+    minY = Math.min(minY, pos.y);
+    maxX = Math.max(maxX, pos.x + NODE_W);
+    maxY = Math.max(maxY, pos.y + NODE_H);
+  });
+  const pad = 80;
+  return {
+    minX: Math.max(0, minX - pad),
+    minY: Math.max(0, minY - pad),
+    maxX: maxX + pad,
+    maxY: maxY + pad,
+  };
+}
+
+function resizeCanvasContent() {
+  const layer = document.getElementById('workflow-nodes-layer');
+  const svg = document.getElementById('workflow-edges');
+  const transformEl = document.getElementById('workflow-canvas-transform');
+  const bbox = getNodesBoundingBox();
+  const w = Math.max(CANVAS_MIN_W, bbox.maxX);
+  const h = Math.max(CANVAS_MIN_H, bbox.maxY);
+  layer.style.width = w + 'px';
+  layer.style.height = h + 'px';
+  svg.style.width = w + 'px';
+  svg.style.height = h + 'px';
+  if (transformEl) {
+    transformEl.style.width = w + 'px';
+    transformEl.style.height = h + 'px';
+  }
+  return { w, h, bbox };
+}
+
+function fitCanvasView() {
+  const { bbox } = resizeCanvasContent();
+  const nodes = workflow.nodes || [];
+  if (!nodes.length) {
+    if (viewportApi) viewportApi.resetView();
+    return;
+  }
+  if (viewportApi) viewportApi.fitToBBox(bbox);
+}
+
+function updateEmptyState() {
+  const empty = document.getElementById('workflow-empty');
+  const actionable = (workflow.nodes || []).filter(n => n.type !== 'meta');
+  empty.classList.toggle('hidden', actionable.length > 0);
+}
+
+function setBadge(elId, text, tone) {
+  const el = document.getElementById(elId);
+  const tones = {
+    ok: 'bg-emerald-50 text-emerald-700',
+    warn: 'bg-amber-50 text-amber-700',
+    off: 'bg-slate-100 text-slate-600',
+    bad: 'bg-red-50 text-red-700',
+    neutral: 'bg-slate-100 text-slate-500',
+  };
+  el.textContent = text;
+  el.className = 'text-xs px-2.5 py-1 rounded-full ' + (tones[tone] || tones.neutral);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showErrors(errors) {
+  const box = document.getElementById('error-box');
+  const list = document.getElementById('error-list');
+  if (!errors || !errors.length) { box.classList.add('hidden'); return; }
+  list.innerHTML = errors.map(e => '<li>' + escapeHtml(String(e)) + '</li>').join('');
+  box.classList.remove('hidden');
+}
+
+function getNode(id) { return workflow.nodes.find(n => n.id === id); }
+
+function genId(type) {
+  return type + '_' + Math.random().toString(36).slice(2, 10);
+}
+
+function defaultData(type) {
+  const defaults = {
+    navigate: { url: '' },
+    wait: { selector: '', timeout_ms: 15000, mode: 'selector' },
+    click: { selector: '', text: '', exact: false },
+    scroll: { direction: 'down', amount: 500 },
+    extract_list: { strategy: 'dom', container: '', item: '', title: '', link: '', date: '', wait_for: '' },
+    paginate: { type: 'next_button', selector: '', max_pages: 20, stop_when_empty: true },
+    extract_detail: { fetch_detail: false, strategy: 'dom', content_selector: '', title_selector: '' },
+    save: { max_pages: 20, max_items: 100, max_depth: 2, rate_limit_seconds: 0.0 },
+  };
+  return JSON.parse(JSON.stringify(defaults[type] || {}));
+}
+
+function updateNodeSummary(node) {
+  const d = node.data || {};
+  const s = {
+    meta: () => (d.name || d.site_id || '—') + ' · ' + (d.enabled ? '启用' : '禁用'),
+    navigate: () => (d.url || '').slice(0, 50) || '未设置 URL',
+    wait: () => d.selector ? '等待 ' + d.selector.slice(0, 30) : (d.url_pattern ? '网络 ' + d.url_pattern.slice(0, 30) : d.timeout_ms + 'ms'),
+    click: () => (d.selector || d.text || '—').slice(0, 40),
+    scroll: () => d.direction + ' · ' + d.amount + 'px',
+    extract_list: () => (d.strategy || 'dom') + ' · ' + (d.container || d.item || '—'),
+    paginate: () => (d.type || 'next_button') + (d.max_pages ? ' · ' + d.max_pages + '页' : ''),
+    extract_detail: () => d.fetch_detail ? '抓取详情' : '仅列表',
+    save: () => '最多 ' + (d.max_items || 100) + ' 条',
+  };
+  node.summary = (s[node.type] || (() => ''))();
+}
+
+function renderPalette() {
+  const el = document.getElementById('node-palette');
+  el.innerHTML = '';
+  paletteTypes.forEach(type => {
+    const item = document.createElement('div');
+    item.className = 'workflow-palette-item';
+    item.draggable = true;
+    item.dataset.nodeType = type;
+    item.innerHTML = '<span class="workflow-palette-dot" style="background:' + (NODE_COLORS[type] || '#94a3b8') + '"></span>' +
+      escapeHtml(nodeLabels[type] || type);
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', type);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+    el.appendChild(item);
+  });
+}
+
+function getPortPos(nodeId, port) {
+  const node = getNode(nodeId);
+  if (!node) return { x: 0, y: 0 };
+  const pos = node.position || { x: 0, y: 0 };
+  if (port === 'in') {
+    return { x: pos.x, y: pos.y + NODE_H / 2 };
+  }
+  return { x: pos.x + NODE_W, y: pos.y + NODE_H / 2 };
+}
+
+function bezierD(from, to) {
+  const mx = (from.x + to.x) / 2;
+  return 'M' + from.x + ',' + from.y + ' C' + mx + ',' + from.y + ' ' + mx + ',' + to.y + ' ' + to.x + ',' + to.y;
+}
+
+function pointOnBezier(from, to, t) {
+  const mx = (from.x + to.x) / 2;
+  const u = 1 - t;
+  return {
+    x: u * u * u * from.x + 3 * u * u * t * mx + 3 * u * t * t * mx + t * t * t * to.x,
+    y: u * u * u * from.y + 3 * u * u * t * from.y + 3 * u * t * t * to.y + t * t * t * to.y,
+  };
+}
+
+function computeExecutionOrder() {
+  const nodes = workflow.nodes || [];
+  const edges = workflow.edges || [];
+  if (!nodes.length) return [];
+  const byId = {};
+  nodes.forEach(n => { if (n.id) byId[n.id] = n; });
+  if (!edges.length) return nodes.slice();
+
+  const nextMap = {};
+  const incoming = new Set();
+  edges.forEach(edge => {
+    if (edge.from && edge.to) {
+      nextMap[edge.from] = edge.to;
+      incoming.add(edge.to);
+    }
+  });
+
+  let startId = null;
+  for (const node of nodes) {
+    if (node.id && !incoming.has(node.id)) { startId = node.id; break; }
+  }
+  if (!startId) {
+    const meta = nodes.find(n => n.type === 'meta');
+    startId = meta ? meta.id : nodes[0].id;
+  }
+
+  const ordered = [];
+  const seen = new Set();
+  let cur = startId;
+  while (cur && !seen.has(cur) && byId[cur]) {
+    seen.add(cur);
+    ordered.push(byId[cur]);
+    cur = nextMap[cur];
+  }
+  nodes.forEach(n => { if (n.id && !seen.has(n.id)) ordered.push(n); });
+  return ordered;
+}
+
+function edgeOrderMap() {
+  const ordered = computeExecutionOrder();
+  const map = {};
+  ordered.forEach((node, i) => { if (i > 0) map[node.id] = i; });
+  return map;
+}
+
+function updateConnectionHint() {
+  const el = document.getElementById('connection-hint');
+  const edgeCount = (workflow.edges || []).length;
+  const nodeCount = (workflow.nodes || []).filter(n => n.type !== 'meta').length;
+  if (!edgeCount && !nodeCount) { el.classList.add('hidden'); return; }
+  el.textContent = edgeCount + ' 条连线 · 执行顺序按连线拓扑（' + computeExecutionOrder().length + ' 个节点）';
+  el.classList.remove('hidden');
+}
+
+function isConnecting() {
+  return !!(connectFromId || connectDragState);
+}
+
+function isValidConnectTarget(fromId, toId) {
+  if (!fromId || !toId || fromId === toId) return false;
+  const fromNode = getNode(fromId);
+  const toNode = getNode(toId);
+  if (!fromNode || !toNode) return false;
+  if (toNode.type === 'meta') return false;
+  return true;
+}
+
+function addEdge(fromId, toId) {
+  if (!isValidConnectTarget(fromId, toId)) {
+    showToast('无法连接：不能连到自身或元信息节点', 'error');
+    return false;
+  }
+  workflow.edges = (workflow.edges || []).filter(e => !(e.from === fromId && e.to === toId));
+  workflow.edges = workflow.edges.filter(e => e.to !== toId);
+  workflow.edges.push({ from: fromId, to: toId, fromPort: 'out', toPort: 'in' });
+  connectFromId = null;
+  connectDragState = null;
+  selectedEdgeIndex = null;
+  updateConnectionHint();
+  renderCanvas();
+  showToast('已连接节点', 'info');
+  return true;
+}
+
+function deleteEdge(index) {
+  if (index == null || index < 0 || index >= (workflow.edges || []).length) return;
+  workflow.edges.splice(index, 1);
+  selectedEdgeIndex = null;
+  updateConnectionHint();
+  renderCanvas();
+  showToast('已删除连线', 'info');
+}
+
+function cancelConnect() {
+  connectFromId = null;
+  connectDragState = null;
+  renderCanvas();
+}
+
+function renderEdges() {
+  const svg = document.getElementById('workflow-edges');
+  const { w, h } = resizeCanvasContent();
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+  svg.innerHTML = '';
+
+  const orderByTarget = edgeOrderMap();
+
+  (workflow.edges || []).forEach((edge, index) => {
+    const from = getPortPos(edge.from, 'out');
+    const to = getPortPos(edge.to, 'in');
+    const d = bezierD(from, to);
+    const mid = pointOnBezier(from, to, 0.5);
+    const selected = index === selectedEdgeIndex;
+    const order = orderByTarget[edge.to];
+
+    const g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('class', 'workflow-edge-group' + (selected ? ' workflow-edge-group-selected' : ''));
+    g.dataset.edgeIndex = String(index);
+
+    const hit = document.createElementNS(SVG_NS, 'path');
+    hit.setAttribute('class', 'workflow-edge-hit');
+    hit.setAttribute('d', d);
+
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('class', 'workflow-edge-path' + (selected ? ' workflow-edge-path-selected' : ''));
+    path.setAttribute('d', d);
+
+    if (order != null) {
+      const bg = document.createElementNS(SVG_NS, 'circle');
+      bg.setAttribute('class', 'workflow-edge-order-bg');
+      bg.setAttribute('cx', String(mid.x - 14));
+      bg.setAttribute('cy', String(mid.y));
+      bg.setAttribute('r', '8');
+      const label = document.createElementNS(SVG_NS, 'text');
+      label.setAttribute('class', 'workflow-edge-order');
+      label.setAttribute('x', String(mid.x - 14));
+      label.setAttribute('y', String(mid.y + 3));
+      label.setAttribute('text-anchor', 'middle');
+      label.textContent = String(order);
+      g.appendChild(bg);
+      g.appendChild(label);
+    }
+
+    const del = document.createElementNS(SVG_NS, 'circle');
+    del.setAttribute('class', 'workflow-edge-delete');
+    del.setAttribute('cx', String(mid.x + 14));
+    del.setAttribute('cy', String(mid.y));
+    del.setAttribute('r', '7');
+    del.setAttribute('title', '删除连线');
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteEdge(index);
+    });
+
+    g.appendChild(hit);
+    g.appendChild(path);
+    g.appendChild(del);
+    g.addEventListener('click', e => {
+      if (e.target.classList.contains('workflow-edge-delete')) return;
+      e.stopPropagation();
+      selectedEdgeIndex = index;
+      activeNodeId = null;
+      connectFromId = null;
+      connectDragState = null;
+      renderCanvas();
+    });
+    svg.appendChild(g);
+  });
+
+  if (connectDragState) {
+    const from = { x: connectDragState.x, y: connectDragState.y };
+    const to = {
+      x: connectDragState.cursorX != null ? connectDragState.cursorX : from.x,
+      y: connectDragState.cursorY != null ? connectDragState.cursorY : from.y,
+    };
+    const rubber = document.createElementNS(SVG_NS, 'path');
+    rubber.setAttribute('class', 'workflow-edge-rubber');
+    rubber.setAttribute('d', bezierD(from, to));
+    svg.appendChild(rubber);
+  }
+}
+
+function renderCanvas() {
+  const layer = document.getElementById('workflow-nodes-layer');
+  layer.innerHTML = '';
+  const fromId = connectDragState ? connectDragState.fromId : connectFromId;
+  workflow.nodes.forEach(node => {
+    const pos = node.position || { x: 80, y: 60 };
+    const card = document.createElement('div');
+    card.className = 'workflow-node-card' +
+      (node.id === activeNodeId ? ' workflow-node-card-active' : '') +
+      ((node.id === connectFromId || (connectDragState && connectDragState.fromId === node.id))
+        ? ' workflow-node-card-connecting' : '') +
+      (node.type === 'meta' ? ' workflow-node-card-meta' : '');
+    card.style.left = pos.x + 'px';
+    card.style.top = pos.y + 'px';
+    card.dataset.nodeId = node.id;
+    const inPortClass = (fromId && isValidConnectTarget(fromId, node.id))
+      ? ' workflow-node-port-drop-target' : '';
+    const outPortClass = (node.id === fromId) ? ' workflow-node-port-connecting' : '';
+    card.innerHTML =
+      '<div class="workflow-node-type">' + escapeHtml(node.label || nodeLabels[node.type] || node.type) + '</div>' +
+      '<div class="workflow-node-summary">' + escapeHtml(node.summary || '—') + '</div>' +
+      (node.type !== 'meta'
+        ? '<div class="workflow-node-port workflow-node-port-in' + inPortClass + '" data-port="in" title="输入端口：拖到此处或点击以连接"></div>'
+        : '') +
+      '<div class="workflow-node-port workflow-node-port-out' + outPortClass + '" data-port="out" title="从输出端口拖到输入端口以连接"></div>';
+
+    card.addEventListener('mousedown', e => {
+      if (e.target.dataset.port) return;
+      if (e.button !== 0) return;
+      selectedEdgeIndex = null;
+      const world = viewportApi ? viewportApi.screenToWorld(e.clientX, e.clientY) : { x: pos.x, y: pos.y };
+      dragState = { nodeId: node.id, offsetX: world.x - pos.x, offsetY: world.y - pos.y };
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    card.addEventListener('click', e => {
+      if (e.target.dataset.port) return;
+      selectedEdgeIndex = null;
+      selectNode(node.id);
+    });
+
+    card.querySelectorAll('.workflow-node-port').forEach(port => {
+      port.addEventListener('mousedown', e => {
+        if (port.dataset.port !== 'out' || e.button !== 0) return;
+        e.stopPropagation();
+        e.preventDefault();
+        selectedEdgeIndex = null;
+        activeNodeId = null;
+        const p = getPortPos(node.id, 'out');
+        connectDragState = {
+          fromId: node.id,
+          x: p.x,
+          y: p.y,
+          startClientX: e.clientX,
+          startClientY: e.clientY,
+          moved: false,
+        };
+        renderCanvas();
+      });
+      port.addEventListener('click', e => {
+        e.stopPropagation();
+        handlePortClick(node.id, port.dataset.port);
+      });
+    });
+    layer.appendChild(card);
+  });
+  renderEdges();
+  updateConnectionHint();
+  updateEmptyState();
+  document.getElementById('btn-delete-node').disabled = !activeNodeId || activeNodeId === 'meta';
+}
+
+function handlePortClick(nodeId, port) {
+  if (port === 'out') {
+    connectFromId = connectFromId === nodeId ? null : nodeId;
+    connectDragState = null;
+    selectedEdgeIndex = null;
+    renderCanvas();
+    if (connectFromId) showToast('已选输出端口，点击目标输入端口完成连接', 'info');
+    return;
+  }
+  if (port === 'in' && connectFromId) {
+    addEdge(connectFromId, nodeId);
+  }
+}
+
+function addNodeAt(type, x, y) {
+  if (type === 'meta') return;
+  const node = {
+    id: genId(type),
+    type,
+    label: nodeLabels[type] || type,
+    position: { x: Math.max(20, x - 80), y: Math.max(20, y - 30) },
+    data: defaultData(type),
+    summary: '',
+  };
+  updateNodeSummary(node);
+  workflow.nodes.push(node);
+  const lastEdge = (workflow.edges || []).slice(-1)[0];
+  if (lastEdge) {
+    workflow.edges.push({ from: lastEdge.to, to: node.id, fromPort: 'out', toPort: 'in' });
+  } else {
+    const meta = workflow.nodes.find(n => n.type === 'meta');
+    if (meta && meta.id !== node.id) {
+      workflow.edges.push({ from: meta.id, to: node.id, fromPort: 'out', toPort: 'in' });
+    }
+  }
+  updateConnectionHint();
+  selectNode(node.id);
+  renderCanvas();
+}
+
+function autoLayout() {
+  layoutNodesByFlow();
+  renderCanvas();
+  fitCanvasView();
+}
+
+function selectNode(nodeId) {
+  activeNodeId = nodeId;
+  renderCanvas();
+  const node = getNode(nodeId);
+  if (!node) return;
+  ['', '-mobile'].forEach(suffix => {
+    document.getElementById('panel-empty' + suffix).classList.add('hidden');
+    document.getElementById('node-form' + suffix).classList.remove('hidden');
+    document.getElementById('panel-title' + suffix).textContent = node.label || nodeId;
+    document.getElementById('panel-subtitle' + suffix).textContent = node.summary || '';
+    renderNodeForm(node, 'node-fields' + suffix);
+  });
+}
+
+function shouldShowField(field, data) {
+  if (!field.show_when) return true;
+  for (const [key, values] of Object.entries(field.show_when)) {
+    if (!values.includes(data[key])) return false;
+  }
+  return true;
+}
+
+function renderNodeForm(node, containerId) {
+  const fieldsEl = document.getElementById(containerId);
+  const schema = fieldSchemas[node.type] || [];
+  const data = node.data || {};
+  fieldsEl.innerHTML = '';
+  schema.filter(f => shouldShowField(f, data)).forEach(field => {
+    const wrap = document.createElement('div');
+    const label = document.createElement('label');
+    label.className = 'block text-xs font-medium text-slate-600 mb-1';
+    label.textContent = field.label;
+    wrap.appendChild(label);
+    let input;
+    const val = data[field.key];
+    if (field.type === 'checkbox') {
+      input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = !!val;
+      input.className = 'rounded border-slate-300 text-brand-600';
+    } else if (field.type === 'select') {
+      input = document.createElement('select');
+      input.className = 'app-select';
+      (field.options || []).forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt; o.textContent = opt;
+        if (val === opt) o.selected = true;
+        input.appendChild(o);
+      });
+      input.addEventListener('change', () => { data[field.key] = input.value; renderNodeForm(node, containerId); });
+    } else if (field.type === 'json') {
+      input = document.createElement('textarea');
+      input.rows = 5;
+      input.className = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono';
+      input.value = val != null ? JSON.stringify(val, null, 2) : '{}';
+    } else if (field.type === 'number') {
+      input = document.createElement('input');
+      input.type = 'number';
+      input.step = field.step || '1';
+      input.className = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm';
+      input.value = val != null ? val : '';
+    } else {
+      input = document.createElement('input');
+      input.type = field.type === 'url' ? 'url' : 'text';
+      input.className = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm';
+      input.placeholder = field.placeholder || '';
+      input.value = val != null ? val : '';
+    }
+    input.dataset.fieldKey = field.key;
+    input.dataset.fieldType = field.type;
+    wrap.appendChild(input);
+    fieldsEl.appendChild(wrap);
+  });
+}
+
+function readNodeForm(node, containerId) {
+  const schema = fieldSchemas[node.type] || [];
+  const data = { ...(node.data || {}) };
+  const fieldsEl = document.getElementById(containerId);
+  schema.filter(f => shouldShowField(f, data)).forEach(field => {
+    const input = fieldsEl.querySelector('[data-field-key="' + field.key + '"]');
+    if (!input) return;
+    if (field.type === 'checkbox') data[field.key] = input.checked;
+    else if (field.type === 'json') {
+      const text = input.value.trim();
+      data[field.key] = text ? JSON.parse(text) : undefined;
+    } else if (field.type === 'number') {
+      data[field.key] = input.value === '' ? undefined : Number(input.value);
+    } else {
+      const v = input.value.trim();
+      data[field.key] = v || undefined;
+    }
+  });
+  return data;
+}
+
+function applyNodeForm(containerId) {
+  const node = getNode(activeNodeId);
+  if (!node) return;
+  node.data = readNodeForm(node, containerId);
+  updateNodeSummary(node);
+  renderCanvas();
+  selectNode(node.id);
+  showToast('已应用到节点（尚未保存）', 'info');
+}
+
+function applyStatus(data) {
+  setBadge('badge-site-enabled', data.site_enabled ? '站点已启用' : '站点未启用', data.site_enabled ? 'ok' : 'off');
+  const meta = (data.workflow.nodes || []).find(n => n.type === 'meta');
+  setBadge('badge-rule-enabled', meta && meta.data.enabled ? '规则已启用' : '规则已禁用', meta && meta.data.enabled ? 'ok' : 'off');
+  const sched = data.schedule_status || {};
+  setBadge('badge-schedule', sched.schedule_eligible ? '可调度' : '不可调度', sched.schedule_eligible ? 'ok' : 'warn');
+  setBadge('badge-valid', data.validation && data.validation.valid ? '校验通过' : '待校验',
+    data.validation && data.validation.valid ? 'ok' : 'neutral');
+  if (data.validation && data.validation.errors && data.validation.errors.length) showErrors(data.validation.errors);
+}
+
+async function loadWorkflow() {
+  const res = await fetch('/api/crawl-rules/' + encodeURIComponent(SITE_ID) + '/workflow');
+  if (!res.ok) { showToast('加载失败', 'error'); return; }
+  const data = await res.json();
+  if (!data.ok) { showToast(data.error || '加载失败', 'error'); return; }
+  workflow = data.workflow;
+  fieldSchemas = data.field_schemas || {};
+  nodeLabels = data.node_labels || {};
+  paletteTypes = data.palette_types || Object.keys(NODE_COLORS).filter(t => t !== 'meta');
+  applyStatus(data);
+  renderPalette();
+  if (nodesNeedAutoLayout(workflow.nodes)) layoutNodesByFlow();
+  renderCanvas();
+  requestAnimationFrame(() => {
+    if (viewportApi && !viewportApi.loadLayout()) fitCanvasView();
+    else resizeCanvasContent();
+  });
+  updateConnectionHint();
+  if (workflow.nodes.length && !activeNodeId) selectNode(workflow.nodes[0].id);
+}
+
+// 画布拖放
+const canvas = document.getElementById('workflow-canvas');
+canvas.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+canvas.addEventListener('drop', e => {
+  e.preventDefault();
+  const type = e.dataTransfer.getData('text/plain');
+  if (!type) return;
+  const world = viewportApi
+    ? viewportApi.screenToWorld(e.clientX, e.clientY)
+    : { x: 80, y: 60 };
+  addNodeAt(type, world.x, world.y);
+});
+
+document.addEventListener('mousemove', e => {
+  if (connectDragState) {
+    const world = viewportApi
+      ? viewportApi.screenToWorld(e.clientX, e.clientY)
+      : { x: connectDragState.x, y: connectDragState.y };
+    connectDragState.cursorX = world.x;
+    connectDragState.cursorY = world.y;
+    if (!connectDragState.moved) {
+      const dx = e.clientX - connectDragState.startClientX;
+      const dy = e.clientY - connectDragState.startClientY;
+      if (Math.hypot(dx, dy) > 4) connectDragState.moved = true;
+    }
+    renderEdges();
+    return;
+  }
+  if (!dragState) return;
+  const node = getNode(dragState.nodeId);
+  if (!node) return;
+  const world = viewportApi
+    ? viewportApi.screenToWorld(e.clientX, e.clientY)
+    : { x: 0, y: 0 };
+  node.position = {
+    x: Math.max(0, world.x - dragState.offsetX),
+    y: Math.max(0, world.y - dragState.offsetY),
+  };
+  renderCanvas();
+});
+
+document.addEventListener('mouseup', e => {
+  if (connectDragState) {
+    const moved = connectDragState.moved;
+    const fromId = connectDragState.fromId;
+    connectDragState = null;
+    if (moved) {
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const inPort = target && target.closest && target.closest('.workflow-node-port-in');
+      if (inPort) {
+        const card = inPort.closest('[data-node-id]');
+        const toId = card && card.dataset.nodeId;
+        if (toId) addEdge(fromId, toId);
+        else { connectFromId = null; renderCanvas(); }
+      } else {
+        connectFromId = null;
+        renderCanvas();
+      }
+    }
+    return;
+  }
+  dragState = null;
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea, select')) return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdgeIndex != null) {
+    e.preventDefault();
+    deleteEdge(selectedEdgeIndex);
+  }
+  if (e.key === 'Escape') {
+    if (viewportApi && viewportApi.getState().maximized) return;
+    if (connectFromId || connectDragState) cancelConnect();
+    else if (selectedEdgeIndex != null) {
+      selectedEdgeIndex = null;
+      renderCanvas();
+    }
+  }
+});
+
+canvas.addEventListener('click', e => {
+  if (e.target.closest('.workflow-node-card') || e.target.closest('.workflow-edge-group')) return;
+  selectedEdgeIndex = null;
+  if (connectFromId) cancelConnect();
+  else renderEdges();
+});
+
+// 模式切换
+function activateWorkflowTab(tab) {
+  const tabs = ['manual', 'ai', 'record'];
+  tabs.forEach(name => {
+    const btn = document.getElementById('tab-' + name);
+    const panel = document.getElementById('mode-' + name);
+    const active = name === tab;
+    if (btn) btn.classList.toggle('workflow-mode-tab-active', active);
+    if (panel) panel.classList.toggle('hidden', !active);
+  });
+}
+document.getElementById('tab-manual').addEventListener('click', () => activateWorkflowTab('manual'));
+document.getElementById('tab-ai').addEventListener('click', () => activateWorkflowTab('ai'));
+document.getElementById('tab-record').addEventListener('click', () => activateWorkflowTab('record'));
+
+document.getElementById('node-form').addEventListener('submit', e => { e.preventDefault(); applyNodeForm('node-fields'); });
+document.getElementById('node-form-mobile').addEventListener('submit', e => { e.preventDefault(); applyNodeForm('node-fields-mobile'); });
+
+document.getElementById('btn-auto-layout').addEventListener('click', autoLayout);
+
+document.getElementById('btn-delete-node').addEventListener('click', () => {
+  if (!activeNodeId || activeNodeId === 'meta') return;
+  workflow.nodes = workflow.nodes.filter(n => n.id !== activeNodeId);
+  workflow.edges = (workflow.edges || []).filter(e => e.from !== activeNodeId && e.to !== activeNodeId);
+  activeNodeId = null;
+  selectedEdgeIndex = null;
+  updateConnectionHint();
+  renderCanvas();
+  document.getElementById('panel-empty').classList.remove('hidden');
+  document.getElementById('node-form').classList.add('hidden');
+  showToast('已删除节点', 'info');
+});
+
+document.getElementById('btn-save').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/crawl-rules/' + encodeURIComponent(SITE_ID) + '/workflow', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(workflow),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      showErrors(data.errors || (data.detail && data.detail.errors) || ['保存失败']);
+      showToast('保存失败', 'error');
+      return;
+    }
+    workflow = data.workflow;
+    renderCanvas();
+    showErrors([]);
+    setBadge('badge-valid', '校验通过', 'ok');
+    showToast('已保存至 ' + (data.path || '规则文件'), 'success');
+  } catch (err) {
+    showToast('保存失败: ' + err, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('btn-dry-run').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-dry-run');
+  btn.disabled = true;
+  btn.textContent = '试跑中…';
+  const panel = document.getElementById('dry-run-result');
+  const body = document.getElementById('dry-run-body');
+  try {
+    const res = await fetch('/api/crawl-rules/' + encodeURIComponent(SITE_ID) + '/dry-run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ max_items: 5, max_pages: 1 }),
+    });
+    const data = await res.json();
+    panel.classList.remove('hidden');
+    if (data.success) {
+      const items = data.items || [];
+      body.innerHTML = '<p class="text-emerald-700 text-xs mb-2">成功 · 采样 ' + items.length + ' 条</p>' +
+        (items.length ? '<ul class="space-y-2">' + items.slice(0, 5).map(it =>
+          '<li class="text-xs border border-slate-100 rounded-lg p-2"><div class="font-medium">' +
+          escapeHtml(it.title || '—') + '</div></li>').join('') + '</ul>' : '<p class="text-slate-500 text-xs">无条目</p>');
+    } else {
+      body.innerHTML = '<p class="text-red-700 text-xs">' + escapeHtml((data.errors || ['失败']).join(' · ')) + '</p>';
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '试跑';
+  }
+});
+
+document.getElementById('btn-close-dry-run').addEventListener('click', () => {
+  document.getElementById('dry-run-result').classList.add('hidden');
+});
+
+async function runAiGenerate(save) {
+  const btn = save ? document.getElementById('btn-ai-generate-save') : document.getElementById('btn-ai-generate');
+  const status = document.getElementById('ai-status');
+  btn.disabled = true;
+  status.classList.remove('hidden');
+  status.innerHTML = '<span class="text-slate-500">AI 生成中…</span>';
+  try {
+    const res = await fetch('/api/crawl-rules/' + encodeURIComponent(SITE_ID) + '/workflow/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: document.getElementById('ai-entry-url').value.trim(),
+        prompt: document.getElementById('ai-prompt').value.trim(),
+        page_hints: document.getElementById('ai-page-hints').value.trim(),
+        save,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      status.innerHTML = '<span class="text-red-600">生成失败：' + escapeHtml((data.detail && data.detail.errors || data.errors || ['未知错误']).join(' · ')) + '</span>';
+      return;
+    }
+    workflow = data.workflow;
+    if (nodesNeedAutoLayout(workflow.nodes)) layoutNodesByFlow();
+    renderCanvas();
+    requestAnimationFrame(() => fitCanvasView());
+    status.innerHTML = '<span class="text-emerald-600">生成成功' + (data.saved ? '，已保存' : '') + '。可切回「手动编辑」微调。</span>';
+    activateWorkflowTab('manual');
+    if (workflow.nodes.length) selectNode(workflow.nodes[0].id);
+    showToast('工作流已加载到画布', 'success');
+  } catch (err) {
+    status.innerHTML = '<span class="text-red-600">请求失败: ' + escapeHtml(String(err)) + '</span>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('btn-ai-generate').addEventListener('click', () => runAiGenerate(false));
+document.getElementById('btn-ai-generate-save').addEventListener('click', () => runAiGenerate(true));
+
+// —— 浏览器录制 ——
+let recSessionId = null;
+let recPollTimer = null;
+let recWs = null;
+let recWsReconnectTimer = null;
+let recWsPingTimer = null;
+let recWsManualClose = false;
+let recExtensionReady = false;
+let recPendingWorkflow = null;
+const REC_EXT_READY_TIMEOUT_MS = 45000;
+const REC_WS_RECONNECT_MS = 2500;
+const REC_WS_PING_MS = 20000;
+
+function recWsUrl(sessionId) {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  return proto + '://' + location.host + '/api/crawl-recorder/sessions/' + encodeURIComponent(sessionId) + '/ws?client=page';
+}
+
+function setRecWsStatus(text, tone) {
+  const el = document.getElementById('rec-ws-status');
+  el.textContent = text;
+  el.className = 'font-medium ' + (tone === 'ok' ? 'text-emerald-700' : tone === 'warn' ? 'text-amber-700' : tone === 'err' ? 'text-red-600' : 'text-slate-600');
+}
+
+function setRecExtStatus(text, tone) {
+  const el = document.getElementById('rec-ext-status');
+  el.textContent = text;
+  el.className = 'font-medium ' + (tone === 'ok' ? 'text-emerald-700' : tone === 'warn' ? 'text-amber-700' : 'text-slate-600');
+}
+
+function clearRecWsTimers() {
+  if (recWsReconnectTimer) { clearTimeout(recWsReconnectTimer); recWsReconnectTimer = null; }
+  if (recWsPingTimer) { clearInterval(recWsPingTimer); recWsPingTimer = null; }
+}
+
+function startRecWsHeartbeat() {
+  if (recWsPingTimer) clearInterval(recWsPingTimer);
+  recWsPingTimer = setInterval(() => {
+    if (recWs && recWs.readyState === WebSocket.OPEN) {
+      recWs.send(JSON.stringify({ type: 'ping', ts: Date.now() }));
+    }
+  }, REC_WS_PING_MS);
+}
+
+function disconnectRecWs() {
+  recWsManualClose = true;
+  clearRecWsTimers();
+  if (recWs) {
+    try { recWs.close(); } catch (_e) { /* ignore */ }
+    recWs = null;
+  }
+}
+
+function scheduleRecWsReconnect() {
+  if (recWsManualClose || !recSessionId) return;
+  clearRecWsTimers();
+  recWsReconnectTimer = setTimeout(() => connectRecWebSocket(recSessionId), REC_WS_RECONNECT_MS);
+}
+
+function handleRecWsMessage(data) {
+  if (!data || !data.type) return;
+
+  if (data.type === 'connected' || data.type === 'workflow_ready') {
+    setRecWsStatus('已连接', 'ok');
+    if (data.session) applyRecSession(data.session);
+    return;
+  }
+
+  if (data.type === 'extension_ready') {
+    recExtensionReady = true;
+    setRecExtStatus('插件已就绪 ✓', 'ok');
+    document.getElementById('btn-rec-open-site').disabled = false;
+    const status = document.getElementById('rec-status');
+    status.classList.remove('hidden');
+    status.innerHTML = '<span class="text-emerald-600">插件已就绪，可打开目标站点开始录制。</span>';
+    if (data.session) applyRecSession(data.session);
+    return;
+  }
+
+  if (data.type === 'step_recorded') {
+    if (data.session) applyRecSession(data.session);
+    else if (data.step) appendRecStep(data.step);
+    setRecExtStatus('录制中…', 'ok');
+    document.getElementById('btn-rec-finish').disabled = false;
+    return;
+  }
+
+  if (data.type === 'list_page_detected') {
+    const status = document.getElementById('rec-status');
+    status.classList.remove('hidden');
+    status.innerHTML = '<span class="text-blue-600">插件检测到列表页，请在浏览器中确认。</span>';
+    return;
+  }
+
+  if (data.type === 'list_page_confirmed') {
+    if (data.session) applyRecSession(data.session);
+    const status = document.getElementById('rec-status');
+    status.classList.remove('hidden');
+    status.innerHTML = '<span class="text-emerald-600">列表页已确认，继续录制或点击完成。</span>';
+    return;
+  }
+
+  if (data.type === 'workflow_snapshot') {
+    recPendingWorkflow = data.workflow;
+    renderRecPreview(data.workflow, !!data.partial);
+    if (!data.partial) {
+      onRecWorkflowComplete(data);
+    }
+    return;
+  }
+
+  if (data.type === 'recording_stopped') {
+    if (data.session) applyRecSession(data.session);
+    setRecExtStatus('录制已结束', 'ok');
+    const status = document.getElementById('rec-status');
+    status.classList.remove('hidden');
+    status.innerHTML = '<span class="text-slate-500">录制已停止，正在生成工作流…</span>';
+    return;
+  }
+
+  if (data.type === 'session_state' && data.session) {
+    applyRecSession(data.session);
+  }
+}
+
+function connectRecWebSocket(sessionId) {
+  disconnectRecWs();
+  recWsManualClose = false;
+  recExtensionReady = false;
+  setRecWsStatus('连接中…', 'warn');
+  setRecExtStatus('等待插件连接…', 'warn');
+  document.getElementById('btn-rec-open-site').disabled = true;
+
+  const ws = new WebSocket(recWsUrl(sessionId));
+  recWs = ws;
+
+  ws.onopen = () => {
+    setRecWsStatus('已连接', 'ok');
+    ws.send(JSON.stringify({ type: 'workflow_ready' }));
+    startRecWsHeartbeat();
+  };
+
+  ws.onmessage = (ev) => {
+    try {
+      handleRecWsMessage(JSON.parse(ev.data));
+    } catch (_e) { /* ignore */ }
+  };
+
+  ws.onclose = () => {
+    if (recWs === ws) recWs = null;
+    setRecWsStatus('已断开，重连中…', 'warn');
+    scheduleRecWsReconnect();
+  };
+
+  ws.onerror = () => {
+    setRecWsStatus('连接异常', 'err');
+  };
+
+  setTimeout(() => {
+    if (!recExtensionReady && recSessionId === sessionId) {
+      setRecExtStatus('仍未检测到插件', 'warn');
+      const status = document.getElementById('rec-status');
+      status.classList.remove('hidden');
+      status.innerHTML = '<span class="text-amber-700">等待插件连接超时。请确认已安装并启用扩展，然后刷新此页重试。</span>';
+    }
+  }, REC_EXT_READY_TIMEOUT_MS);
+}
+
+function recStepLabel(step) {
+  const t = step.type || step.action || 'unknown';
+  const p = step.params || step;
+  if (step.label) return step.label;
+  if (t === 'navigate') return '导航 → ' + (p.url || '').slice(0, 60);
+  if (t === 'click') return '点击 · ' + (p.text || p.selector || '—').slice(0, 50);
+  if (t === 'scroll') return '滚动 · ' + (p.amount || 0) + 'px';
+  if (t === 'input') return '输入 · ' + (p.selector || '—').slice(0, 40);
+  if (t === 'mark_list_page') return '标记列表页' + (p.confirmed ? '（已确认）' : p.auto ? '（自动识别）' : '');
+  return t;
+}
+
+function renderRecSteps(steps) {
+  const list = document.getElementById('rec-step-list');
+  const countEl = document.getElementById('rec-step-count');
+  const stepsArr = steps || [];
+  countEl.textContent = stepsArr.length + ' 步';
+  list.innerHTML = stepsArr.length
+    ? stepsArr.map((s, i) => {
+        const role = s.role ? '<span class="text-slate-400 mr-1">[' + escapeHtml(s.role) + ']</span>' : '';
+        return '<li class="px-3 py-2 text-slate-600"><span class="text-slate-400 mr-2">' + (i + 1) + '.</span>' + role + escapeHtml(recStepLabel(s)) + '</li>';
+      }).join('')
+    : '<li class="px-3 py-2 text-slate-400">暂无步骤，请在浏览器中操作站点</li>';
+}
+
+function appendRecStep(step) {
+  const list = document.getElementById('rec-step-list');
+  const countEl = document.getElementById('rec-step-count');
+  const empty = list.querySelector('.text-slate-400');
+  if (empty && empty.textContent.includes('暂无步骤')) list.innerHTML = '';
+  const idx = list.querySelectorAll('li').length + 1;
+  const role = step.role ? '<span class="text-slate-400 mr-1">[' + escapeHtml(step.role) + ']</span>' : '';
+  const li = document.createElement('li');
+  li.className = 'px-3 py-2 text-slate-600';
+  li.innerHTML = '<span class="text-slate-400 mr-2">' + idx + '.</span>' + role + escapeHtml(recStepLabel(step));
+  list.appendChild(li);
+  list.scrollTop = list.scrollHeight;
+  countEl.textContent = idx + ' 步';
+}
+
+function applyRecSession(session) {
+  renderRecSteps(session.steps || []);
+  if (session.extension_connected || recExtensionReady) {
+    recExtensionReady = true;
+    setRecExtStatus(session.recording_stopped ? '录制已结束' : '录制中…', 'ok');
+    document.getElementById('btn-rec-open-site').disabled = false;
+  }
+  const listConfirmedEl = document.getElementById('rec-list-confirmed');
+  const listConfirmedUrlEl = document.getElementById('rec-list-confirmed-url');
+  if (session.list_page_confirmed && session.list_page_confirmed_url) {
+    listConfirmedEl.classList.remove('hidden');
+    listConfirmedUrlEl.textContent = session.list_page_confirmed_url;
+  } else {
+    listConfirmedEl.classList.add('hidden');
+    listConfirmedUrlEl.textContent = '—';
+  }
+  if ((session.steps || []).length > 0) {
+    document.getElementById('btn-rec-finish').disabled = false;
+  }
+}
+
+function renderRecPreview(wf, partial) {
+  const panel = document.getElementById('rec-preview-panel');
+  const nodesEl = document.getElementById('rec-preview-nodes');
+  const badge = document.getElementById('rec-preview-badge');
+  const importBtn = document.getElementById('btn-rec-import-canvas');
+  if (!wf || !wf.nodes || !wf.nodes.length) {
+    panel.classList.add('hidden');
+    return;
+  }
+  panel.classList.remove('hidden');
+  badge.textContent = partial ? '实时预览' : '已完成';
+  badge.className = 'text-[10px] px-2 py-0.5 rounded-full ' + (partial ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-700');
+  nodesEl.innerHTML = wf.nodes.map((n) => {
+    const color = NODE_COLORS[n.type] || '#64748b';
+    const label = nodeLabels[n.type] || n.type;
+    return '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-slate-100 bg-white" style="border-left:3px solid ' + color + '">' + escapeHtml(label) + '</span>';
+  }).join('');
+  if (partial) {
+    importBtn.classList.add('hidden');
+  } else {
+    importBtn.classList.remove('hidden');
+  }
+}
+
+function onRecWorkflowComplete(data) {
+  stopRecPoll();
+  const status = document.getElementById('rec-status');
+  status.classList.remove('hidden');
+  status.innerHTML = '<span class="text-emerald-600">工作流已生成（' + (data.step_count || 0) + ' 步录制）。可导入画布或自动加载。</span>';
+  document.getElementById('btn-rec-import-canvas').classList.remove('hidden');
+  if (data.workflow) {
+    workflow = data.workflow;
+    if (nodesNeedAutoLayout(workflow.nodes)) layoutNodesByFlow();
+    renderCanvas();
+    requestAnimationFrame(() => fitCanvasView());
+    activateWorkflowTab('manual');
+    if (workflow.nodes.length) selectNode(workflow.nodes[0].id);
+    showToast('录制工作流已加载', 'success');
+  }
+}
+
+async function pollRecSession() {
+  if (!recSessionId) return;
+  try {
+    const res = await fetch('/api/crawl-recorder/sessions/' + encodeURIComponent(recSessionId));
+    if (!res.ok) return;
+    const data = await res.json();
+    applyRecSession(data.session || {});
+  } catch (_e) { /* ignore */ }
+}
+
+function stopRecPoll() {
+  if (recPollTimer) {
+    clearInterval(recPollTimer);
+    recPollTimer = null;
+  }
+}
+
+function stopRecSession() {
+  stopRecPoll();
+  disconnectRecWs();
+  recSessionId = null;
+  recExtensionReady = false;
+  recPendingWorkflow = null;
+}
+
+document.getElementById('btn-rec-start').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-rec-start');
+  const status = document.getElementById('rec-status');
+  btn.disabled = true;
+  status.classList.remove('hidden');
+  status.innerHTML = '<span class="text-slate-500">创建录制会话…</span>';
+  stopRecSession();
+  try {
+    const extRes = await fetch('/api/crawl-recorder/extension');
+    const extInfo = extRes.ok ? await extRes.json() : {};
+    document.getElementById('rec-ext-path').textContent = extInfo.load_unpacked_path || extInfo.path || 'extensions/crawl-workflow-recorder';
+
+    const res = await fetch('/api/crawl-recorder/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        site_id: SITE_ID,
+        entry_url: document.getElementById('rec-entry-url').value.trim(),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      status.innerHTML = '<span class="text-red-600">创建失败：' + escapeHtml(data.detail || data.error || '未知错误') + '</span>';
+      return;
+    }
+    recSessionId = data.session_id;
+    document.getElementById('rec-session-id').textContent = recSessionId;
+    document.getElementById('rec-install-panel').classList.remove('hidden');
+    document.getElementById('rec-steps-panel').classList.remove('hidden');
+    document.getElementById('rec-preview-panel').classList.add('hidden');
+    document.getElementById('btn-rec-finish').disabled = true;
+    document.getElementById('btn-rec-open-site').disabled = true;
+    renderRecSteps([]);
+    status.innerHTML = '<span class="text-slate-500">等待 Chrome 插件连接…</span>';
+    connectRecWebSocket(recSessionId);
+    recPollTimer = setInterval(pollRecSession, 5000);
+    pollRecSession();
+  } catch (err) {
+    status.innerHTML = '<span class="text-red-600">请求失败: ' + escapeHtml(String(err)) + '</span>';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('btn-rec-open-site').addEventListener('click', () => {
+  if (!recExtensionReady) {
+    showToast('请等待 Chrome 插件就绪后再打开站点', 'error');
+    return;
+  }
+  const base = document.getElementById('rec-entry-url').value.trim();
+  if (!base) { showToast('请先填写入口 URL', 'error'); return; }
+  const url = new URL(base);
+  if (recSessionId) url.searchParams.set('crawl_recorder_session', recSessionId);
+  window.open(url.toString(), '_blank');
+  setRecExtStatus('录制中…', 'ok');
+});
+
+document.getElementById('btn-rec-import-canvas').addEventListener('click', () => {
+  if (!recPendingWorkflow) return;
+  workflow = recPendingWorkflow;
+  if (nodesNeedAutoLayout(workflow.nodes)) layoutNodesByFlow();
+  renderCanvas();
+  requestAnimationFrame(() => fitCanvasView());
+  activateWorkflowTab('manual');
+  if (workflow.nodes.length) selectNode(workflow.nodes[0].id);
+  showToast('工作流已导入画布', 'success');
+});
+
+document.getElementById('btn-rec-finish').addEventListener('click', async () => {
+  if (!recSessionId) return;
+  const btn = document.getElementById('btn-rec-finish');
+  const status = document.getElementById('rec-status');
+  btn.disabled = true;
+  status.classList.remove('hidden');
+  status.innerHTML = '<span class="text-slate-500">分析列表页并编译工作流…</span>';
+  try {
+    const sessRes = await fetch('/api/crawl-recorder/sessions/' + encodeURIComponent(recSessionId));
+    const sessData = sessRes.ok ? await sessRes.json() : {};
+    const pageUrl = (sessData.session && sessData.session.page_url) || document.getElementById('rec-entry-url').value.trim();
+
+    await fetch('/api/crawl-recorder/sessions/' + encodeURIComponent(recSessionId) + '/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: pageUrl }),
+    });
+
+    const compileRes = await fetch('/api/crawl-recorder/sessions/' + encodeURIComponent(recSessionId) + '/compile', {
+      method: 'POST',
+    });
+    const compileData = await compileRes.json();
+    if (!compileRes.ok || !compileData.ok) {
+      status.innerHTML = '<span class="text-red-600">编译失败：' + escapeHtml(compileData.detail || compileData.error || '未知错误') + '</span>';
+      return;
+    }
+    workflow = compileData.workflow;
+    if (nodesNeedAutoLayout(workflow.nodes)) layoutNodesByFlow();
+    renderCanvas();
+    requestAnimationFrame(() => fitCanvasView());
+    stopRecPoll();
+    status.innerHTML = '<span class="text-emerald-600">工作流已生成（' + (compileData.step_count || 0) + ' 步录制）。已加载到画布，请微调后保存。</span>';
+    activateWorkflowTab('manual');
+    if (workflow.nodes.length) selectNode(workflow.nodes[0].id);
+    showToast('录制工作流已加载', 'success');
+  } catch (err) {
+    status.innerHTML = '<span class="text-red-600">请求失败: ' + escapeHtml(String(err)) + '</span>';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+viewportApi = initWorkflowCanvasViewport({
+  storageKey: 'crawl_workflow_viewport_' + SITE_ID,
+});
+
+loadWorkflow();
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => fitCanvasView(), 150);
+});
+</script>
+{% endblock %}

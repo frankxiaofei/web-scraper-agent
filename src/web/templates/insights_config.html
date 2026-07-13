@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 商机配置{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/insights.css">
+{% endblock %}
+
+{% block content %}
+<section class="stats-page insights-page insights-config-page">
+  <header class="stats-page-header insights-header">
+    <div class="insights-header-main">
+      <h2 class="stats-page-title insights-title">商机配置管理</h2>
+      <p class="stats-page-subtitle">{{ config.description or '数字农业每日线索采集 Agent' }}</p>
+      <p class="insights-meta">配置版本 v{{ config.version }} · 只读展示（MVP）</p>
+    </div>
+    <div class="insights-header-actions">
+      <a href="/insights" class="stats-btn stats-btn-secondary">返回洞察页</a>
+    </div>
+  </header>
+
+  <div class="insights-config-tabs" role="tablist" aria-label="配置分区">
+    <button type="button" class="insights-config-tab active" data-tab="product-lines">产品线</button>
+    <button type="button" class="insights-config-tab" data-tab="stages">阶段词库</button>
+    <button type="button" class="insights-config-tab" data-tab="sources">信息源</button>
+    <button type="button" class="insights-config-tab" data-tab="scoring">评分规则</button>
+    <button type="button" class="insights-config-tab" data-tab="schedule">调度设置</button>
+    <button type="button" class="insights-config-tab" data-tab="other">其他规则</button>
+  </div>
+
+  <div class="insights-config-panels">
+    <div class="insights-config-panel active" id="panel-product-lines">
+      <div class="stats-panel">
+        <div class="stats-panel-header">
+          <h3 class="stats-panel-title">产品线定义</h3>
+          <span class="stats-panel-badge">{{ (config.product_lines or {})|length }} 类</span>
+        </div>
+        <div class="insights-config-grid">
+          {% for name, line in (config.product_lines or {}).items() %}
+          <article class="insights-config-card">
+            <h4 class="insights-config-card-title">{{ name }}</h4>
+            <p class="insights-config-card-desc">{{ line.scope or '—' }}</p>
+            <div class="insights-config-tags">
+              {% for kw in (line.keywords or [])[:12] %}
+              <span class="insights-tag-chip">{{ kw }}</span>
+              {% endfor %}
+              {% if (line.keywords or [])|length > 12 %}
+              <span class="insights-config-more">+{{ (line.keywords|length) - 12 }} 词</span>
+              {% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="insights-config-panel" id="panel-stages">
+      <div class="stats-panel">
+        <div class="stats-panel-header">
+          <h3 class="stats-panel-title">阶段词库与复查周期</h3>
+        </div>
+        <div class="insights-config-table-wrap">
+          <table class="insights-config-table">
+            <thead>
+              <tr><th>阶段</th><th>顺序</th><th>复查周期</th><th>关键词</th></tr>
+            </thead>
+            <tbody>
+              {% for stage in config.stages or [] %}
+              <tr>
+                <td>{{ stage.name }}</td>
+                <td>{{ stage.order }}</td>
+                <td>{{ stage.check_days }}天</td>
+                <td>{{ (stage.keywords or [])|join('、') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="insights-config-panel" id="panel-sources">
+      <div class="stats-section stats-section-grid">
+        <div class="stats-panel">
+          <div class="stats-panel-header">
+            <h3 class="stats-panel-title">P0 官方来源</h3>
+          </div>
+          <p class="insights-config-card-desc">{{ (config.source_levels.get('P0') or {}).get('description', '官方原始来源') }}</p>
+          <p class="insights-config-meta">域名：{{ ((config.source_levels.get('P0') or {}).get('domains') or [])|join('、') }}</p>
+          <div class="insights-config-tags">
+            {% for sid in (config.sources.get('P0', {}).get('site_ids') or []) %}
+            <span class="insights-tag-chip">{{ sid }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="stats-panel">
+          <div class="stats-panel-header">
+            <h3 class="stats-panel-title">P1 权威辅助</h3>
+          </div>
+          <p class="insights-config-card-desc">{{ (config.source_levels.get('P1') or {}).get('description', '权威辅助来源') }}</p>
+          <div class="insights-config-tags">
+            {% for sid in (config.sources.get('P1', {}).get('site_ids') or []) %}
+            <span class="insights-tag-chip">{{ sid }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="stats-panel">
+        <div class="stats-panel-header">
+          <h3 class="stats-panel-title">默认同步站点</h3>
+          <span class="stats-panel-badge">{{ (config.sources.default_sync_site_ids or [])|length }} 站</span>
+        </div>
+        <p class="insights-config-meta">检索关键词：{{ (config.sources.search_keywords or [])|join('、') }}</p>
+      </div>
+    </div>
+
+    <div class="insights-config-panel" id="panel-scoring">
+      <div class="stats-panel">
+        <div class="stats-panel-header">
+          <h3 class="stats-panel-title">商机评分（100分）</h3>
+        </div>
+        <div class="insights-config-table-wrap">
+          <table class="insights-config-table">
+            <thead>
+              <tr><th>维度</th><th>分值</th><th>规则</th></tr>
+            </thead>
+            <tbody>
+              {% for dim in config.scoring.dimensions or [] %}
+              <tr>
+                <td>{{ dim.name }}</td>
+                <td>{{ dim.max_score }}</td>
+                <td>{{ dim.description }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="insights-config-levels">
+          {% for lv, threshold in (config.scoring.levels or {}).items() %}
+          <span class="insights-level-badge insights-level-{{ lv|lower }}">{{ lv }}级 ≥{{ threshold }}分</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="insights-config-panel" id="panel-schedule">
+      <div class="stats-panel">
+        <div class="stats-panel-header">
+          <h3 class="stats-panel-title">调度与工作流</h3>
+        </div>
+        <ul class="insights-config-list">
+          <li>商机同步：<code>{{ config.schedule.daily_biz_clue_sync_cron }}</code>
+            {% if config.schedule.daily_biz_clue_sync_enabled %}（已启用）{% else %}（已禁用）{% endif %}</li>
+          <li>简报输出：<code>{{ config.schedule.daily_biz_clue_brief_cron }}</code></li>
+          <li>任务生成：<code>{{ config.workflow.task_generate_cron }}</code></li>
+          <li>爬取窗口：{{ config.workflow.crawl_window }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="insights-config-panel" id="panel-other">
+      <div class="stats-section stats-section-grid">
+        <div class="stats-panel">
+          <div class="stats-panel-header"><h3 class="stats-panel-title">排除词</h3></div>
+          <div class="insights-config-tags">
+            {% for kw in config.exclude_keywords or [] %}
+            <span class="insights-tag-chip">{{ kw }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="stats-panel">
+          <div class="stats-panel-header"><h3 class="stats-panel-title">MVP 验收指标</h3></div>
+          <ul class="insights-config-list">
+            {% for key, val in (config.acceptance_metrics or {}).items() %}
+            <li>{{ key }}：{{ (val * 100)|int if val < 1 else val }}{% if val < 1 %}%{% endif %}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="stats-panel">
+        <div class="stats-panel-header"><h3 class="stats-panel-title">系统提示词预览</h3></div>
+        <pre class="insights-config-pre">{{ config.prompt_preview }}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function() {
+    var tabs = document.querySelectorAll('.insights-config-tab');
+    var panels = document.querySelectorAll('.insights-config-panel');
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        var target = tab.getAttribute('data-tab');
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        panels.forEach(function(p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        var panel = document.getElementById('panel-' + target);
+        if (panel) panel.classList.add('active');
+      });
+    });
+  })();
+</script>
+{% endblock %}

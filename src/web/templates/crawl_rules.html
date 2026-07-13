@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 爬取规则 — {{ site_name }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+<section class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">AI 生成爬取规则</h2>
+      <p class="text-sm text-slate-500 mt-1">
+        {{ site_name }} · <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">{{ site_id }}</code>
+      </p>
+      <a href="{{ site_url }}" target="_blank" rel="noopener"
+         class="text-xs text-brand-600 hover:underline mt-1 inline-block">{{ site_url }}</a>
+    </div>
+    <div class="flex items-center gap-2">
+      {% if llm_configured %}
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        LLM 已配置 ({{ llm_model }})
+      </span>
+      {% else %}
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">
+        需配置 OPENAI_API_KEY
+      </span>
+      {% endif %}
+      <a href="/crawl-rules/{{ site_id }}/workflow"
+         class="text-xs text-violet-600 hover:text-violet-700 border border-violet-200 rounded-lg px-2.5 py-1.5">工作流编辑</a>
+      <a href="/tasks" class="text-xs text-slate-500 hover:text-slate-700">← 返回任务状态</a>
+    </div>
+  </div>
+</section>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- 左侧：AI 对话 -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col" style="min-height: 600px;">
+    <div class="px-5 py-4 border-b border-slate-100">
+      <h3 class="text-sm font-semibold text-slate-700">对话区</h3>
+      <p class="text-xs text-slate-400 mt-0.5">描述爬取需求，或导入 Chrome 扩展录制的 JSON</p>
+    </div>
+
+    <div id="recording-dropzone"
+         class="mx-5 mt-3 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 px-3 py-3 text-center transition hover:border-brand-400 hover:bg-brand-50/30">
+      <input type="file" id="recording-file" accept=".json,application/json" class="hidden">
+      <p class="text-xs text-slate-500">拖拽录制 JSON 到此处，或
+        <button type="button" id="import-recording-btn" class="text-brand-600 hover:underline font-medium">选择文件</button>
+      </p>
+      <p class="text-[10px] text-slate-400 mt-1">来自 <code class="bg-slate-100 px-1 rounded">chrome-extension/crawl-recorder</code></p>
+    </div>
+
+    <div id="chat-messages" class="flex-1 overflow-y-auto px-5 py-4 space-y-3" style="max-height: 380px;">
+      <div class="text-xs text-slate-400 text-center py-4">发送消息开始生成规则…</div>
+    </div>
+
+    <div class="px-5 py-3 border-t border-slate-100">
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button type="button" class="prompt-btn text-xs px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+                data-prompt="为中央政府采购网生成规则：采购公告列表使用 AJAX 加载，REST API selectInfoMore.do 分页，每页15条，最多20页">
+          zycg AJAX 分页
+        </button>
+        <button type="button" class="prompt-btn text-xs px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+                data-prompt="需要点击「更多」或「下一页」按钮翻页，列表在 ul li 结构中">
+          按钮翻页
+        </button>
+        <button type="button" class="prompt-btn text-xs px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+                data-prompt="把 max_pages 改成 50，max_items 改成 200">
+          调整 limits
+        </button>
+        <button type="button" class="prompt-btn text-xs px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+                data-prompt="开启 fetch_detail，详情正文选择器 .article-content">
+          开启详情抓取
+        </button>
+      </div>
+      <form id="chat-form" class="flex gap-2">
+        <textarea id="chat-input" rows="2" placeholder="描述爬取需求，如：需要分页、查看更多、AJAX 列表…"
+                  class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"></textarea>
+        <button type="submit" id="send-btn"
+                class="shrink-0 rounded-lg bg-brand-600 text-white px-4 py-2 text-sm font-medium hover:bg-brand-700 transition disabled:opacity-50">
+          生成
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 右侧：YAML 预览 -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col" style="min-height: 600px;">
+    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-semibold text-slate-700">YAML 预览</h3>
+        <p class="text-xs text-slate-400 mt-0.5">可手动编辑后校验保存</p>
+      </div>
+      <span id="valid-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">未校验</span>
+    </div>
+
+    <details class="syntax-panel border-b border-slate-100 bg-slate-50/80">
+      <summary class="px-5 py-2.5 text-xs font-medium text-slate-600 hover:text-slate-800 select-none">
+        语法说明（L2 爬取规则 v1）
+      </summary>
+      <div class="px-5 pb-4 text-xs text-slate-600 space-y-3 max-h-64 overflow-y-auto">
+        <div>
+          <p class="font-semibold text-slate-700 mb-1">规则分层</p>
+          <ul class="list-disc list-inside space-y-0.5 text-slate-500">
+            <li><strong class="text-slate-600">L1</strong> — <code class="bg-slate-100 px-1 rounded">sites.yaml</code>：站点启用、adapter、limits 覆盖</li>
+            <li><strong class="text-slate-600">L2</strong> — <code class="bg-slate-100 px-1 rounded">crawl_rules/*.yaml</code>：声明式规则（本页编辑）</li>
+            <li><strong class="text-slate-600">L3</strong> — AI 对话生成草稿，人工确认后落盘为 L2</li>
+            <li><strong class="text-slate-600">L4</strong> — Agent 录制步骤序列，可导出为 L2</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="font-semibold text-slate-700 mb-1">顶层字段</p>
+          <ul class="list-disc list-inside space-y-0.5 text-slate-500">
+            <li><code class="bg-slate-100 px-1 rounded">version</code> — 规则版本，当前为 <code class="bg-slate-100 px-1 rounded">1</code></li>
+            <li><code class="bg-slate-100 px-1 rounded">site_id</code> — 站点 ID，须与文件名一致</li>
+            <li><code class="bg-slate-100 px-1 rounded">entry_url</code> — 爬取起始 URL（可与 sites.yaml 不同）</li>
+            <li><code class="bg-slate-100 px-1 rounded">entry_steps</code> — 从入口到列表页的导航步骤</li>
+            <li><code class="bg-slate-100 px-1 rounded">list_page</code> — 列表提取策略与选择器 / API</li>
+            <li><code class="bg-slate-100 px-1 rounded">pagination</code> — 翻页方式与上限</li>
+            <li><code class="bg-slate-100 px-1 rounded">detail</code> — 是否抓取详情正文</li>
+            <li><code class="bg-slate-100 px-1 rounded">limits</code> — 页数、条数、深度、限速</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="font-semibold text-slate-700 mb-1">entry_steps 动作</p>
+          <ul class="list-disc list-inside space-y-0.5 text-slate-500">
+            <li><code class="bg-slate-100 px-1 rounded">navigate</code> — 打开 <code class="bg-slate-100 px-1 rounded">url</code></li>
+            <li><code class="bg-slate-100 px-1 rounded">click_text</code> — 按可见文本点击（如「采购公告」「更多」）</li>
+            <li><code class="bg-slate-100 px-1 rounded">click_selector</code> — 按 CSS 选择器点击</li>
+            <li><code class="bg-slate-100 px-1 rounded">wait</code> — 等待 <code class="bg-slate-100 px-1 rounded">selector</code> 出现</li>
+            <li><code class="bg-slate-100 px-1 rounded">wait_network</code> — 等待匹配 <code class="bg-slate-100 px-1 rounded">url_pattern</code> 的 XHR</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="font-semibold text-slate-700 mb-1">list_page</p>
+          <ul class="list-disc list-inside space-y-0.5 text-slate-500">
+            <li><code class="bg-slate-100 px-1 rounded">strategy</code> — <code class="bg-slate-100 px-1 rounded">dom</code> | <code class="bg-slate-100 px-1 rounded">api</code> | <code class="bg-slate-100 px-1 rounded">dom_after_ajax</code></li>
+            <li><code class="bg-slate-100 px-1 rounded">container</code> / <code class="bg-slate-100 px-1 rounded">item</code> / <code class="bg-slate-100 px-1 rounded">title</code> / <code class="bg-slate-100 px-1 rounded">link</code> / <code class="bg-slate-100 px-1 rounded">date</code> — DOM 选择器</li>
+            <li><code class="bg-slate-100 px-1 rounded">api</code> 块 — REST 地址、<code class="bg-slate-100 px-1 rounded">params</code>、<code class="bg-slate-100 px-1 rounded">page_param</code>、<code class="bg-slate-100 px-1 rounded">fields</code> 字段映射</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="font-semibold text-slate-700 mb-1">pagination.type</p>
+          <ul class="list-disc list-inside space-y-0.5 text-slate-500">
+            <li><code class="bg-slate-100 px-1 rounded">ajax_param</code> — 直接请求 API 递增页码（zycg 推荐）</li>
+            <li><code class="bg-slate-100 px-1 rounded">next_button</code> — 点击「下一页」按钮</li>
+            <li><code class="bg-slate-100 px-1 rounded">page_number</code> — 遍历页码链接</li>
+            <li><code class="bg-slate-100 px-1 rounded">load_more</code> — 点击「加载更多」</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="font-semibold text-slate-700 mb-1">limits 约束</p>
+          <ul class="list-disc list-inside space-y-0.5 text-slate-500">
+            <li><code class="bg-slate-100 px-1 rounded">max_pages</code> — 最多翻页数（默认 20）</li>
+            <li><code class="bg-slate-100 px-1 rounded">max_items</code> — 最多采集条数（默认 100）</li>
+            <li><code class="bg-slate-100 px-1 rounded">max_depth</code> — 链接递归深度（默认 2）</li>
+            <li><code class="bg-slate-100 px-1 rounded">rate_limit_seconds</code> — 请求间隔秒数</li>
+          </ul>
+          <p class="text-slate-400 mt-1">L1 <code class="bg-slate-100 px-1 rounded">sites.yaml</code> 可覆盖 <code class="bg-slate-100 px-1 rounded">max_items</code>、<code class="bg-slate-100 px-1 rounded">fetch_detail</code> 等。</p>
+        </div>
+
+        <div>
+          <p class="font-semibold text-slate-700 mb-1">zycg 示例片段</p>
+          <pre class="bg-slate-900 text-slate-300 rounded-lg p-3 text-[11px] leading-relaxed overflow-x-auto font-mono"><code>entry_url: https://www.zycg.gov.cn/.../cggg/index.html
+list_page:
+  strategy: dom_after_ajax
+  container: "#noticeShow"
+  api:
+    url: .../selectInfoMore.do
+    page_param: currPage
+pagination:
+  type: ajax_param
+  page_param: currPage
+  max_pages: 20</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <div class="yaml-editor-wrap">
+      <pre class="yaml-highlight" aria-hidden="true"><code id="yaml-highlight-code" class="language-yaml"></code></pre>
+      <textarea id="yaml-editor" class="yaml-input" placeholder="# 生成的规则将显示在这里…"
+                spellcheck="false">{{ existing_yaml }}</textarea>
+    </div>
+
+    <div id="error-box" class="hidden px-5 py-2 bg-red-50 border-t border-red-100">
+      <ul id="error-list" class="text-xs text-red-700 space-y-0.5"></ul>
+    </div>
+
+    <div class="px-5 py-4 border-t border-slate-100 flex flex-wrap gap-2">
+      <button type="button" id="validate-btn"
+              class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        校验
+      </button>
+      <button type="button" id="save-btn"
+              class="rounded-lg bg-emerald-600 text-white px-4 py-2 text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50">
+        保存
+      </button>
+      <button type="button" id="download-btn"
+              class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        下载
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SITE_ID = {{ site_id|tojson }};
+const SITE_URL = {{ site_url|tojson }};
+let chatHistory = [];
+
+const yamlEditor = document.getElementById('yaml-editor');
+const yamlHighlight = document.querySelector('.yaml-highlight');
+const yamlHighlightCode = document.getElementById('yaml-highlight-code');
+
+function syncYamlHighlight() {
+  const text = yamlEditor.value;
+  yamlHighlightCode.textContent = text.endsWith('\n') ? text : text + '\n';
+  delete yamlHighlightCode.dataset.highlighted;
+  hljs.highlightElement(yamlHighlightCode);
+}
+
+function syncYamlScroll(from) {
+  if (from === 'editor') {
+    yamlHighlight.scrollTop = yamlEditor.scrollTop;
+    yamlHighlight.scrollLeft = yamlEditor.scrollLeft;
+  } else {
+    yamlEditor.scrollTop = yamlHighlight.scrollTop;
+    yamlEditor.scrollLeft = yamlHighlight.scrollLeft;
+  }
+}
+
+function setYamlValue(text) {
+  yamlEditor.value = text;
+  syncYamlHighlight();
+}
+
+yamlEditor.addEventListener('input', syncYamlHighlight);
+yamlEditor.addEventListener('scroll', () => syncYamlScroll('editor'));
+syncYamlHighlight();
+
+function appendMessage(role, content) {
+  const box = document.getElementById('chat-messages');
+  if (box.querySelector('.text-center')) box.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = role === 'user'
+    ? 'flex justify-end'
+    : 'flex justify-start';
+  const bubble = document.createElement('div');
+  bubble.className = role === 'user'
+    ? 'max-w-[85%] rounded-xl bg-brand-600 text-white text-sm px-3 py-2'
+    : 'max-w-[85%] rounded-xl bg-slate-100 text-slate-700 text-sm px-3 py-2';
+  bubble.textContent = content;
+  div.appendChild(bubble);
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function setValidBadge(valid, errors) {
+  const badge = document.getElementById('valid-badge');
+  const errBox = document.getElementById('error-box');
+  const errList = document.getElementById('error-list');
+  if (valid) {
+    badge.textContent = '校验通过';
+    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700';
+    errBox.classList.add('hidden');
+  } else {
+    badge.textContent = '校验失败';
+    badge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700';
+    errList.innerHTML = (errors || []).map(e => `<li>${e}</li>`).join('');
+    errBox.classList.remove('hidden');
+  }
+}
+
+async function generateFromRecording(recording) {
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+  appendMessage('user', `导入录制 JSON（${recording.steps?.length || 0} 步）`);
+  chatHistory.push({ role: 'user', content: '从 Chrome 扩展导入录制步骤' });
+
+  try {
+    const res = await fetch('/api/crawl-rules/generate-from-recording', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        site_id: SITE_ID,
+        url: recording.entry_url || SITE_URL,
+        recording,
+        prefer_llm: true,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      appendMessage('assistant', data.detail || '生成失败');
+      return;
+    }
+    if (data.yaml) {
+      setYamlValue(data.yaml);
+      const src = data.source === 'stub' ? '（stub 直转）' : '';
+      chatHistory.push({ role: 'assistant', content: '已从录制生成 YAML' + src });
+      appendMessage('assistant', data.valid ? `已从录制生成并通过校验 ✓ ${src}` : '已生成，但校验未通过');
+    }
+    setValidBadge(data.valid, data.errors);
+    if (data.llm_error) appendMessage('assistant', data.llm_error);
+  } catch (e) {
+    appendMessage('assistant', '请求失败: ' + e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '生成';
+  }
+}
+
+function handleRecordingFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const recording = JSON.parse(reader.result);
+      if (!recording.steps || !Array.isArray(recording.steps)) {
+        alert('无效的录制 JSON：缺少 steps 数组');
+        return;
+      }
+      if (recording.site_id && recording.site_id !== SITE_ID) {
+        if (!confirm(`录制 site_id 为 ${recording.site_id}，当前页为 ${SITE_ID}，仍继续？`)) return;
+      }
+      generateFromRecording(recording);
+    } catch (e) {
+      alert('JSON 解析失败: ' + e);
+    }
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById('import-recording-btn').addEventListener('click', () => {
+  document.getElementById('recording-file').click();
+});
+document.getElementById('recording-file').addEventListener('change', (e) => {
+  handleRecordingFile(e.target.files[0]);
+  e.target.value = '';
+});
+
+const dropzone = document.getElementById('recording-dropzone');
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-brand-400'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-brand-400'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('border-brand-400');
+  const file = e.dataTransfer.files[0];
+  if (file) handleRecordingFile(file);
+});
+
+async function generateRule(userMessage) {
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+  appendMessage('user', userMessage);
+  chatHistory.push({ role: 'user', content: userMessage });
+
+  try {
+    const res = await fetch('/api/crawl-rules/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        site_id: SITE_ID,
+        url: SITE_URL,
+        messages: chatHistory,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      appendMessage('assistant', data.detail || '生成失败');
+      return;
+    }
+    if (data.yaml) {
+      setYamlValue(data.yaml);
+      chatHistory.push({ role: 'assistant', content: '已生成 YAML 规则' });
+      appendMessage('assistant', data.valid ? '已生成并通过校验 ✓' : '已生成，但校验未通过，请查看右侧错误');
+    }
+    setValidBadge(data.valid, data.errors);
+    if (data.llm_error) {
+      appendMessage('assistant', 'LLM 错误: ' + data.llm_error);
+    }
+  } catch (e) {
+    appendMessage('assistant', '请求失败: ' + e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '生成';
+  }
+}
+
+document.getElementById('chat-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  generateRule(msg);
+});
+
+document.querySelectorAll('.prompt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const prompt = btn.dataset.prompt;
+    document.getElementById('chat-input').value = prompt;
+    generateRule(prompt);
+  });
+});
+
+document.getElementById('validate-btn').addEventListener('click', async () => {
+  const yaml = document.getElementById('yaml-editor').value;
+  const res = await fetch('/api/crawl-rules/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ site_id: SITE_ID, yaml }),
+  });
+  const data = await res.json();
+  setValidBadge(data.valid, data.errors);
+});
+
+document.getElementById('save-btn').addEventListener('click', async () => {
+  const yaml = document.getElementById('yaml-editor').value;
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/crawl-rules/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ site_id: SITE_ID, yaml }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert('已保存至 ' + data.path);
+      setValidBadge(true, []);
+    } else {
+      setValidBadge(false, data.errors);
+      alert('保存失败，请先修正校验错误');
+    }
+  } catch (e) {
+    alert('保存失败: ' + e);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('download-btn').addEventListener('click', () => {
+  const yaml = document.getElementById('yaml-editor').value;
+  const blob = new Blob([yaml], { type: 'text/yaml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = SITE_ID + '.yaml';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+</script>
+{% endblock %}

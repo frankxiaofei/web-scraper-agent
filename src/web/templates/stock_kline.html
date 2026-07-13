@@ -1,0 +1,275 @@
+{% extends "stock_base.html" %}
+
+{% block title %}WebScraperAgent — K线 · {{ stock_name or code }}{% endblock %}
+
+{% block content %}
+<section class="stats-page">
+  <header class="stats-page-header">
+    <div>
+      <nav class="text-sm text-slate-500 mb-2">
+        <a href="/insights" class="hover:text-blue-600">洞察分析</a>
+        <span class="mx-1">/</span>
+        <a id="kline-detail-link" href="/stock/{{ code }}" class="hover:text-blue-600">个股详情</a>
+        <span class="mx-1">/</span>
+        <span class="text-slate-700">K 线图</span>
+      </nav>
+      <h2 class="stats-page-title text-blue-900">
+        <span id="kline-title-name">{{ stock_name or code }}</span>
+        <span id="kline-title-code" class="text-base font-mono text-slate-500 ml-2">{{ code }}</span>
+      </h2>
+      <p id="kline-meta" class="stats-page-subtitle">加载中…</p>
+      <p class="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 inline-block">
+        {{ disclaimer or '行情数据仅供参考，不构成投资建议。' }}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2 items-center">
+      <div class="inline-flex rounded-lg border border-slate-200 overflow-hidden text-sm" id="period-tabs">
+        <button type="button" data-period="daily" class="kline-period-btn px-3 py-1.5 bg-blue-600 text-white">日K</button>
+        <button type="button" data-period="weekly" class="kline-period-btn px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-50">周K</button>
+        <button type="button" data-period="monthly" class="kline-period-btn px-3 py-1.5 bg-white text-slate-600 hover:bg-slate-50">月K</button>
+      </div>
+      <label class="text-sm text-slate-600 flex items-center gap-2">
+        条数
+        <select id="kline-limit" class="app-select app-select-sm">
+          <option value="60">60</option>
+          <option value="120" selected>120</option>
+          <option value="250">250</option>
+        </select>
+      </label>
+      <button type="button" id="kline-refresh-btn"
+              class="stats-btn stats-btn-primary bg-blue-600 text-white hover:bg-blue-700 border-blue-600">
+        刷新
+      </button>
+    </div>
+  </header>
+
+  <div class="stats-section">
+    <div class="stats-panel border-blue-100">
+      <div id="kline-loading" class="text-sm text-slate-500 py-16 text-center">正在加载 K 线数据…</div>
+      <div id="kline-error" class="hidden text-sm text-red-600 py-8 text-center"></div>
+      <div id="kline-chart" class="hidden w-full" style="height: 520px;"></div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+(function() {
+  var code = {{ code|tojson }};
+  var initialName = {{ (stock_name or '')|tojson }};
+  var market = {{ (market or '')|tojson }};
+  var period = {{ (period or 'daily')|tojson }};
+  var chart = null;
+
+  function activePeriodBtn(p) {
+    document.querySelectorAll('.kline-period-btn').forEach(function(btn) {
+      var active = btn.dataset.period === p;
+      btn.className = 'kline-period-btn px-3 py-1.5 ' +
+        (active ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50');
+    });
+  }
+
+  function splitData(items) {
+    var category = [];
+    var values = [];
+    var volumes = [];
+    items.forEach(function(it) {
+      category.push(it.date);
+      values.push([it.open, it.close, it.low, it.high]);
+      volumes.push(it.volume != null ? it.volume : 0);
+    });
+    return { category: category, values: values, volumes: volumes };
+  }
+
+  function renderChart(items) {
+    var el = document.getElementById('kline-chart');
+    var loading = document.getElementById('kline-loading');
+    var errBox = document.getElementById('kline-error');
+    if (!items || !items.length) {
+      loading.classList.add('hidden');
+      el.classList.add('hidden');
+      errBox.textContent = '暂无 K 线数据';
+      errBox.classList.remove('hidden');
+      return;
+    }
+    loading.classList.add('hidden');
+    errBox.classList.add('hidden');
+    el.classList.remove('hidden');
+
+    if (!chart) {
+      chart = echarts.init(el);
+      window.addEventListener('resize', function() { if (chart) chart.resize(); });
+    }
+
+    var data = splitData(items);
+    var upColor = '#ef4444';
+    var downColor = '#22c55e';
+
+    chart.setOption({
+      animation: false,
+      legend: { data: ['K线', '成交量'], top: 0, textStyle: { color: '#64748b' } },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross' },
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        borderColor: '#e2e8f0',
+        textStyle: { color: '#334155' }
+      },
+      axisPointer: { link: [{ xAxisIndex: 'all' }] },
+      grid: [
+        { left: '8%', right: '3%', top: '12%', height: '58%' },
+        { left: '8%', right: '3%', top: '76%', height: '16%' }
+      ],
+      xAxis: [
+        {
+          type: 'category',
+          data: data.category,
+          boundaryGap: true,
+          axisLine: { lineStyle: { color: '#cbd5e1' } },
+          axisLabel: { color: '#64748b', fontSize: 11 },
+          min: 'dataMin',
+          max: 'dataMax'
+        },
+        {
+          type: 'category',
+          gridIndex: 1,
+          data: data.category,
+          boundaryGap: true,
+          axisLine: { lineStyle: { color: '#cbd5e1' } },
+          axisLabel: { show: false },
+          axisTick: { show: false }
+        }
+      ],
+      yAxis: [
+        {
+          scale: true,
+          splitLine: { lineStyle: { color: '#f1f5f9' } },
+          axisLabel: { color: '#64748b' }
+        },
+        {
+          scale: true,
+          gridIndex: 1,
+          splitNumber: 2,
+          axisLabel: { show: false },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          splitLine: { show: false }
+        }
+      ],
+      dataZoom: [
+        { type: 'inside', xAxisIndex: [0, 1], start: 50, end: 100 },
+        { show: true, xAxisIndex: [0, 1], type: 'slider', bottom: '2%', height: 18,
+          borderColor: '#e2e8f0', fillerColor: 'rgba(59,130,246,0.15)' }
+      ],
+      series: [
+        {
+          name: 'K线',
+          type: 'candlestick',
+          data: data.values,
+          itemStyle: {
+            color: upColor,
+            color0: downColor,
+            borderColor: upColor,
+            borderColor0: downColor
+          }
+        },
+        {
+          name: '成交量',
+          type: 'bar',
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: data.volumes.map(function(v, i) {
+            var o = items[i].open, c = items[i].close;
+            return {
+              value: v,
+              itemStyle: { color: (c != null && o != null && c >= o) ? upColor : downColor }
+            };
+          })
+        }
+      ]
+    }, true);
+    chart.resize();
+  }
+
+  function marketQuery() {
+    return market ? ('&market=' + encodeURIComponent(market)) : '';
+  }
+
+  function detailUrl(name) {
+    if (market === 'HK') {
+      return '/stock/hk/' + encodeURIComponent(code) + '?name=' + encodeURIComponent(name || initialName || code);
+    }
+    if (market === 'US') {
+      return '/stock/us/' + encodeURIComponent(code) + '?name=' + encodeURIComponent(name || initialName || code);
+    }
+    return '/stock/' + encodeURIComponent(code) + '?name=' + encodeURIComponent(name || initialName || code) + marketQuery();
+  }
+
+  function loadKline(force) {
+    var limit = document.getElementById('kline-limit').value;
+    var btn = document.getElementById('kline-refresh-btn');
+    var loading = document.getElementById('kline-loading');
+    var errBox = document.getElementById('kline-error');
+    var metaEl = document.getElementById('kline-meta');
+
+    if (btn) { btn.disabled = true; btn.textContent = '加载中…'; }
+    loading.classList.remove('hidden');
+    errBox.classList.add('hidden');
+    document.getElementById('kline-chart').classList.add('hidden');
+    activePeriodBtn(period);
+
+    var url = '/api/stock/kline?code=' + encodeURIComponent(code) +
+      '&period=' + encodeURIComponent(period) +
+      '&limit=' + encodeURIComponent(limit) +
+      marketQuery() +
+      (force ? '&auto_fetch=true' : '&auto_fetch=true');
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        loading.classList.add('hidden');
+        if (!data.ok && !(data.items && data.items.length)) {
+          errBox.textContent = data.error || '加载失败';
+          errBox.classList.remove('hidden');
+          metaEl.textContent = '无数据';
+          return;
+        }
+        var name = data.name || initialName || code;
+        document.getElementById('kline-title-name').textContent = name;
+        var detailLink = document.getElementById('kline-detail-link');
+        if (detailLink) {
+          detailLink.href = detailUrl(name);
+          detailLink.textContent = name;
+        }
+        var meta = data.meta || {};
+        var parts = [data.period_label || period, data.count + ' 条'];
+        if (meta.start_date && meta.end_date) {
+          parts.push(meta.start_date + ' ~ ' + meta.end_date);
+        }
+        if (data.fetched) parts.push('已同步 AKShare');
+        metaEl.textContent = parts.join(' · ');
+        renderChart(data.items || []);
+      })
+      .catch(function(e) {
+        loading.classList.add('hidden');
+        errBox.textContent = '请求失败: ' + e;
+        errBox.classList.remove('hidden');
+      })
+      .finally(function() {
+        if (btn) { btn.disabled = false; btn.textContent = '刷新'; }
+      });
+  }
+
+  document.querySelectorAll('.kline-period-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      period = btn.dataset.period;
+      loadKline(true);
+    });
+  });
+  document.getElementById('kline-limit').addEventListener('change', function() { loadKline(true); });
+  document.getElementById('kline-refresh-btn').addEventListener('click', function() { loadKline(true); });
+
+  loadKline(false);
+})();
+</script>
+{% endblock %}

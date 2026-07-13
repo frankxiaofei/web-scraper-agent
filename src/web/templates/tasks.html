@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 任务状态{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">任务状态</h2>
+      <p class="text-sm text-slate-500 mt-1">共 {{ summary.total }} 个已启用站点 · 同步与定时爬取合一视图</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/crawl-agent/pending"
+         class="inline-flex items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 transition">
+        Agent 待办
+      </a>
+      <a href="/hermes"
+         class="inline-flex items-center justify-center rounded-lg border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-800 hover:bg-violet-100 transition">
+        智能采集
+      </a>
+      <button type="button" onclick="location.reload()"
+              class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+        刷新
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">每日全站同步</p>
+      <p class="text-lg font-semibold text-slate-900 mt-1">
+        {% if daily_sync.daily_sync_enabled %}已开启{% else %}已关闭{% endif %}
+      </p>
+      <p class="text-sm text-slate-600 mt-1">{{ daily_sync.daily_sync_cron_human }}</p>
+      <p class="text-xs text-brand-600 mt-1">下次 {{ daily_sync.next_scheduled_at }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">轮询爬取</p>
+      <p class="text-lg font-semibold text-slate-900 mt-1">{{ crawl_schedule.full_cycle_human }}</p>
+      <p class="text-xs text-slate-400 mt-1">间隔 {{ crawl_schedule.round_robin_interval_minutes }} 分钟/站</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4 bg-emerald-50/30">
+      <p class="text-xs font-medium text-emerald-700 uppercase tracking-wide">同步完成</p>
+      <p class="text-2xl font-bold text-emerald-600 mt-1">{{ summary.sync_completed }}</p>
+      <p class="text-xs text-slate-400 mt-1">失败 {{ summary.sync_failed }} · 进行中 {{ summary.sync_syncing }}</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">最近 Run</p>
+      <p class="text-2xl font-bold text-emerald-600 mt-1">{{ summary.run_success }}</p>
+      <p class="text-xs text-slate-400 mt-1">失败 {{ summary.run_failed }} · 运行中 {{ summary.run_running }}</p>
+    </div>
+  </div>
+
+  <p class="text-xs text-slate-400 mb-4">
+    状态存储: sync={{ backend.sync|upper }} · runs={{ backend.runs|upper }}
+  </p>
+</section>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">站点</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">同步状态</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">上次同步</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">下次调度</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">最近 Run</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">采集</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">操作</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for s in sites %}
+        {% set is_running = s.is_running %}
+        <tr class="hover:bg-slate-50/80 transition" id="row-{{ s.site_id }}" data-site-id="{{ s.site_id }}" data-running="{{ '1' if is_running else '0' }}">
+          <td class="px-4 py-3">
+            <div class="font-medium text-slate-900">{{ s.site_name }}</div>
+            <div class="text-xs text-slate-400 font-mono">{{ s.site_id }}</div>
+            {% if s.agent_actions %}
+            <div class="mt-1.5 space-y-0.5">
+              {% for a in s.agent_actions %}
+              <p class="text-xs text-violet-700 leading-snug" title="{{ a.detail }}">
+                <span class="text-violet-400">{{ a.timestamp_fmt }}</span> {{ a.summary }}
+              </p>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 sync-status-cell">
+            {% if is_running %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {% if s.sync_stale %}bg-amber-50 text-amber-700{% else %}bg-blue-50 text-blue-700{% endif %} sync-status-badge">
+              <span class="w-1.5 h-1.5 rounded-full {% if s.sync_stale %}bg-amber-500{% else %}bg-blue-500 animate-pulse{% endif %}"></span>{{ s.sync_status_label }}
+            </span>
+            {% if s.sync_stale %}
+            <p class="text-xs text-amber-600 mt-1">服务重启后任务已丢失 — 点「重置状态」或 POST /api/sync/…/reset；API 站可跑 scripts/crawl_powerchina_http.py</p>
+            {% endif %}
+            {% elif s.status == 'pending' %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 sync-status-badge">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>未同步
+            </span>
+            {% elif s.status == 'completed' %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 sync-status-badge">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>已完成
+            </span>
+            {% elif s.status == 'cancelled' %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 sync-status-badge">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>已中止
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 sync-status-badge">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>失败
+            </span>
+            {% endif %}
+            <div class="sync-progress mt-2 {% if not is_running %}hidden{% endif %}">
+              <div class="w-full max-w-[220px] bg-slate-200 rounded-full h-1.5">
+                <div class="progress-bar bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p class="progress-text text-xs text-slate-500 mt-1 max-w-[260px] truncate">—</p>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-slate-600 whitespace-nowrap">{{ s.last_sync_at_fmt }}</td>
+          <td class="px-4 py-3 text-xs text-slate-500">{{ s.next_schedule_hint }}</td>
+          <td class="px-4 py-3 run-status-cell">
+            {% set rs = s.last_run_status %}
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium run-status-badge
+              {% if rs == 'success' %}bg-emerald-50 text-emerald-700
+              {% elif rs == 'running' %}bg-blue-50 text-blue-700
+              {% elif rs == 'failed' %}bg-red-50 text-red-700
+              {% elif rs == 'cancelled' %}bg-amber-50 text-amber-700
+              {% else %}bg-slate-100 text-slate-600{% endif %}">
+              {{ s.last_run_status_label }}
+            </span>
+            {% if s.last_run_started_fmt != '—' %}
+            <div class="text-xs text-slate-400 mt-0.5 run-started-fmt">{{ s.last_run_started_fmt }}</div>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            <span class="font-medium text-slate-700">{{ s.items_count }}</span>
+            {% if s.new_count_display > 0 %}
+            <span class="text-xs text-emerald-600">(+{{ s.new_count_display }})</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+            <a href="/crawl-rules/{{ s.site_id }}"
+               class="inline-flex items-center rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium px-2.5 py-1.5 transition">
+              规则
+            </a>
+            {% if is_running and s.active_run_id %}
+            <a href="/tasks/runs/{{ s.active_run_id }}"
+               class="inline-flex items-center rounded-lg border border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-1.5 transition view-log-link">
+              查看日志
+            </a>
+            {% elif s.last_run_id and not is_running %}
+            <a href="/tasks/{{ s.site_id }}"
+               class="inline-flex items-center rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium px-2.5 py-1.5 transition">
+              日志
+            </a>
+            {% endif %}
+            {% if is_running %}
+            <button type="button"
+                    onclick="cancelSite('{{ s.site_id }}', this)"
+                    class="inline-flex items-center rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium px-2.5 py-1.5 transition">
+              中止
+            </button>
+            {% if s.sync_stale %}
+            <button type="button"
+                    onclick="resetSyncStatus('{{ s.site_id }}', this)"
+                    class="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-medium px-2.5 py-1.5 transition">
+              重置状态
+            </button>
+            {% endif %}
+            {% elif s.status == 'failed' or s.last_run_status == 'failed' %}
+            <button type="button"
+                    onclick="retrySite('{{ s.site_id }}', this)"
+                    class="inline-flex items-center rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium px-2.5 py-1.5 transition">
+              重试
+            </button>
+            {% endif %}
+            <button type="button"
+                    onclick="triggerSite('{{ s.site_id }}', this)"
+                    class="inline-flex items-center rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white text-xs font-medium px-2.5 py-1.5 transition trigger-btn"
+                    {% if is_running %}disabled{% endif %}>
+              立即执行
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if recent_agent_actions %}
+<section class="mt-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+  <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+    <h3 class="text-sm font-semibold text-slate-800">最近 Agent 动作</h3>
+    <p class="text-xs text-slate-500 mt-0.5">Hermes / 守护进程 / Web 写入的审计记录 · 数据来自 <code class="text-xs bg-white/80 px-1 rounded">GET /api/crawl-agent/actions</code></p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">时间</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">站点</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">来源</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">动作</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">详情</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for a in recent_agent_actions %}
+        <tr class="hover:bg-slate-50/80 transition">
+          <td class="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">{{ a.timestamp_fmt }}</td>
+          <td class="px-4 py-2 font-mono text-xs text-slate-700">{{ a.site_id }}</td>
+          <td class="px-4 py-2">
+            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+              {% if a.source == 'hermes' %}bg-indigo-50 text-indigo-700
+              {% elif a.source == 'daemon' %}bg-violet-50 text-violet-700
+              {% else %}bg-slate-100 text-slate-600{% endif %}">
+              {{ a.source_label }}
+            </span>
+          </td>
+          <td class="px-4 py-2 text-slate-800">{{ a.action }}</td>
+          <td class="px-4 py-2 text-xs text-slate-600 max-w-md truncate" title="{{ a.detail }}">{{ a.detail or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+<script>
+const STEP_LABELS = {
+  fetch_list: '抓取列表',
+  fetch_detail: '抓取详情',
+  parse: '解析列表',
+  paginate: '翻页',
+  rule_step: '规则步骤',
+  navigate: '导航',
+  delay: '等待',
+  save: '入库',
+  intelligent: '智能扩展',
+};
+
+function formatProgressText(progress) {
+  if (!progress) return '—';
+  const items = progress.progress_items || 0;
+  const maxItems = progress.max_items || 0;
+  const step = STEP_LABELS[progress.current_step] || progress.current_step || progress.latest_event_type || '运行中';
+  const elapsed = progress.elapsed_seconds || 0;
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeText = mins > 0 ? `${mins}分${secs}秒` : `${secs}秒`;
+  if (maxItems > 0) {
+    return `已抓取 ${items}/${maxItems} 条 · 当前：${step} · ${timeText}`;
+  }
+  return `当前：${step} · ${timeText}`;
+}
+
+function updateRowRunningState(row, site) {
+  const triggerBtn = row.querySelector('.trigger-btn');
+  if (triggerBtn) triggerBtn.disabled = true;
+  const runBadge = row.querySelector('.run-status-badge');
+  if (runBadge) {
+    runBadge.textContent = site.last_run_status_label || '运行中';
+    runBadge.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium run-status-badge bg-blue-50 text-blue-700';
+  }
+  if (site.active_run_id) {
+    let logLink = row.querySelector('.view-log-link');
+    if (!logLink) {
+      const actions = row.querySelector('td:last-child');
+      const rulesLink = actions?.querySelector('a[href^="/crawl-rules/"]');
+      if (actions && rulesLink) {
+        logLink = document.createElement('a');
+        logLink.href = `/tasks/runs/${site.active_run_id}`;
+        logLink.className = 'inline-flex items-center rounded-lg border border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-1.5 transition view-log-link';
+        logLink.textContent = '查看日志';
+        rulesLink.insertAdjacentElement('afterend', logLink);
+      }
+    } else {
+      logLink.href = `/tasks/runs/${site.active_run_id}`;
+    }
+  }
+}
+
+function applyProgressToRow(siteId, progress) {
+  const row = document.getElementById(`row-${siteId}`);
+  if (!row) return;
+  const bar = row.querySelector('.progress-bar');
+  const text = row.querySelector('.progress-text');
+  const box = row.querySelector('.sync-progress');
+  if (!bar || !text || !box) return;
+  box.classList.remove('hidden');
+  const pct = progress && progress.progress_percent != null ? progress.progress_percent : 0;
+  bar.style.width = `${Math.min(pct, 100)}%`;
+  text.textContent = formatProgressText(progress);
+  text.title = progress?.latest_event_message || '';
+}
+
+async function refreshRunningProgress() {
+  const runningRows = [...document.querySelectorAll('tr[data-running="1"]')];
+  if (!runningRows.length) return;
+  try {
+    const res = await fetch('/api/tasks/sites');
+    const data = await res.json();
+    let stillRunning = false;
+    for (const site of data.sites || []) {
+      const row = document.getElementById(`row-${site.site_id}`);
+      if (!row) continue;
+      const isRunning = site.is_running;
+      row.dataset.running = isRunning ? '1' : '0';
+      if (isRunning) {
+        stillRunning = true;
+        applyProgressToRow(site.site_id, site.sync_progress);
+        updateRowRunningState(row, site);
+      }
+    }
+    if (!stillRunning) {
+      clearInterval(window.__tasksPollTimer);
+      window.__tasksPollTimer = null;
+      setTimeout(() => location.reload(), 1200);
+    }
+  } catch (e) {
+    console.warn('进度刷新失败', e);
+  }
+}
+
+function startTasksPolling() {
+  if (window.__tasksPollTimer) return;
+  refreshRunningProgress();
+  window.__tasksPollTimer = setInterval(refreshRunningProgress, 3000);
+}
+
+async function triggerSite(siteId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '提交中…';
+  try {
+    const res = await fetch(`/api/sync/${siteId}/trigger`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('已加入执行队列', 'success');
+      const row = document.getElementById(`row-${siteId}`);
+      if (row) row.dataset.running = '1';
+      startTasksPolling();
+      if (data.run_id) {
+        setTimeout(() => { window.location.href = `/tasks/runs/${data.run_id}`; }, 800);
+      } else {
+        setTimeout(() => location.reload(), 1500);
+      }
+    } else {
+      showToast(data.message || data.detail || '触发失败', 'error');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function resetSyncStatus(siteId, btn) {
+  if (!confirm('确定要重置该站点的同步状态吗？这将清理残留的「同步中」标记。')) return;
+  if (btn) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+  }
+  try {
+    const res = await fetch(`/api/sync/${encodeURIComponent(siteId)}/reset`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      showToast(data.message || '已重置同步状态', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast(data.detail || data.message || '重置失败', 'error');
+      if (btn) btn.disabled = false;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function cancelSite(siteId, btn) {
+  if (!confirm('确定要中止该站点的同步任务吗？')) return;
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '中止中…';
+  try {
+    const res = await fetch(`/api/sync/${encodeURIComponent(siteId)}/cancel`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      showToast(data.stale ? (data.message || '已清理残留同步状态') : '已发送中止信号', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      const msg = data.detail || data.message || '中止失败';
+      showToast(msg, 'error');
+      if (confirm('任务可能已结束或服务已重启。是否重置同步状态？')) {
+        await resetSyncStatus(siteId, null);
+      } else {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+async function retrySite(siteId, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '重试中…';
+  try {
+    const res = await fetch(`/api/sync/${siteId}/retry`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.status === 'started') {
+      showToast('重试已启动', 'success');
+      if (data.run_id) {
+        setTimeout(() => { window.location.href = `/tasks/runs/${data.run_id}`; }, 800);
+      } else {
+        setTimeout(() => location.reload(), 2000);
+      }
+    } else {
+      showToast(data.detail || data.message || '重试失败', 'error');
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  } catch (e) {
+    showToast('请求失败: ' + e, 'error');
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+if (document.querySelector('tr[data-running="1"]')) {
+  startTasksPolling();
+}
+</script>
+{% endblock %}

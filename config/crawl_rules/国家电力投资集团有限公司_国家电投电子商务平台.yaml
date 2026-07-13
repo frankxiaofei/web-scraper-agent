@@ -1,0 +1,55 @@
+version: 1
+site_id: 国家电力投资集团有限公司_国家电投电子商务平台
+name: 国家电投电子商务平台
+enabled: true
+entry_url: https://ebid.espic.com.cn/newgdtcms/category/bulletinListNew.html?dates=300&categoryId=2&tenderMethod=01&tabName=招标信息&page=1
+entry_steps: []
+note: "双层WAF: SafeLine JS Challenge + 自研滑块验证码(remoteUrl=null,仅客户端校验)"
+bypass_method: "通过evaluate手动设置Successfully cookie绕过滑块,直接iframe.html"
+cookie_expiry_seconds: 300
+list_page:
+  strategy: dom
+  url_pattern: iframe.html
+  container: "a[href*='/sdny_bulletin/']"
+  item: "a[href*='/sdny_bulletin/']"
+  title: "a[href*='/sdny_bulletin/']"
+  link: "a[href*='/sdny_bulletin/']"
+  date: ".date"
+  note: "从iframe.html提取,每页约14条"
+pagination:
+  type: page_number
+  page_size: 14
+  max_pages: 50
+  stop_when_empty: true
+  url_template: "https://ebid.espic.com.cn/newgdtcms/category/iframe.html?dates=300&categoryId=2&tenderMethod=01&tabName=&page={page}&time={time}"
+  note: "page递增,time=YYYY/M/D,需在cookie 5分钟有效期内"
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "/sdny_bulletin/"
+  content_selector: ".detail-content, .bulletin-detail, .article-content, .main-content, #content"
+  wait_for: ".detail-content, .bulletin-detail"
+  note: "详情页无WAF,可直接HTTP访问"
+limits:
+  max_pages: 50
+  max_items: 500
+  max_depth: 2
+  rate_limit_seconds: 2.0
+search:
+  enabled: true
+  type: webbridge_interactive
+  steps:
+    - action: navigate
+      url: "https://ebid.espic.com.cn/newgdtcms/category/demo2.html?dates=300&categoryId=2&tenderMethod=01&tabName={tabName}&page=1"
+      label: "直接访问demo2.html(触发滑块验证码)"
+    - action: evaluate
+      code: "(function(){var d=new Date();d.setTime(d.getTime()+5*60*1000);document.cookie='Successfully=Successfully;expires='+d.toUTCString()+';path=/';document.cookie='Successfully=Successfully;path=/';var n=new Date();var t=n.getFullYear()+'/'+(n.getMonth()+1)+'/'+n.getDate();return 'cookie set for '+t;})()"
+      label: "手动设置Successfully cookie绕过滑块(remoteUrl=null)"
+    - action: navigate
+      url: "https://ebid.espic.com.cn/newgdtcms/category/iframe.html?dates=300&categoryId=2&tenderMethod=01&tabName=&page=1&time={today}"
+      label: "跳转到iframe.html获取列表"
+    - action: wait
+      seconds: 3
+    - action: evaluate
+      code: "(function(){var items=[];document.querySelectorAll('a[href*=\"/sdny_bulletin/\"]').forEach(function(a){var t=a.textContent.trim().replace(/[\\n\\t]/g,' ').replace(/\\s+/g,' ').trim();if(t&&t.length>5){items.push({title:t,url:a.href})}});return JSON.stringify(items,null,2)})()"
+      label: "提取全部公告列表"

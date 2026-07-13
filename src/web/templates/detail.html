@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — {{ notice.title[:40] }}…{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="/" class="inline-flex items-center text-sm text-slate-500 hover:text-brand-700 transition-colors duration-200 cursor-pointer">
+    ← 返回列表
+  </a>
+</div>
+
+<article class="app-card overflow-hidden">
+  <header class="px-6 sm:px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-brand-50/90 via-white to-white">
+    <div class="flex flex-wrap gap-2 mb-3 text-xs">
+      <span class="px-2.5 py-1 rounded-full bg-brand-100 text-brand-700 font-medium">{{ notice.source_site_name }}</span>
+      {% if notice.region != '—' %}
+      <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">{{ notice.region }}</span>
+      {% endif %}
+      <span class="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700">depth {{ notice.depth }}</span>
+      <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">{{ notice.page_type }}</span>
+      <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">{{ notice.category }}</span>
+    </div>
+    <div id="notice-tags-section" class="mb-4">
+      <div class="flex flex-wrap items-center gap-2 mb-2">
+        <span class="text-xs font-medium text-slate-500">标签</span>
+        <div id="notice-tags-list" class="flex flex-wrap gap-1.5 min-h-[1.75rem]">
+          {% for tag in notice.tags %}
+          <span class="notice-tag-chip inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-medium border border-amber-200/80"
+                data-tag="{{ tag }}" data-locked="{% if notice.is_wechat and tag == '微信公众号' %}true{% else %}false{% endif %}">
+            {{ tag }}
+            {% if not (notice.is_wechat and tag == '微信公众号') %}
+            <button type="button" class="notice-tag-remove ml-0.5 text-amber-600/70 hover:text-amber-900 leading-none" aria-label="移除标签 {{ tag }}">&times;</button>
+            {% endif %}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <input type="text" id="notice-tag-input" list="notice-tag-suggestions" placeholder="输入或选择标签"
+               class="rounded-lg border-slate-300 text-sm focus:ring-brand-500 focus:border-brand-500 w-full sm:w-48">
+        <datalist id="notice-tag-suggestions">
+          {% for t in all_tags %}
+          <option value="{{ t }}"></option>
+          {% endfor %}
+        </datalist>
+        <button type="button" id="notice-tag-add"
+                class="app-btn app-btn-secondary px-3 py-2">
+          添加
+        </button>
+        <button type="button" id="notice-tag-save"
+                class="app-btn app-btn-primary px-3 py-2">
+          保存标签
+        </button>
+        <span id="notice-tag-status" class="text-xs text-slate-400"></span>
+      </div>
+    </div>
+    <h2 class="text-xl sm:text-2xl font-bold text-slate-900 leading-snug">{{ notice.title }}</h2>
+    <p class="text-sm text-slate-500 mt-2">发布时间：{{ notice.publish_date_fmt }}</p>
+  </header>
+
+  {% set ki = notice.key_info %}
+  {% if ki.budget_amount != '—' or ki.tender_party != '—' or ki.project_period != '—' or ki.bid_deadline != '—' or ki.key_summary != '—' %}
+  <section class="px-6 sm:px-8 py-5 border-b border-slate-100 bg-slate-50/60">
+    <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">关键信息</h3>
+    <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+      {% if ki.budget_amount != '—' %}
+      <div>
+        <dt class="text-xs text-slate-500">预算 / 最高限价</dt>
+        <dd class="mt-0.5 font-medium text-slate-900">{{ ki.budget_amount }}</dd>
+      </div>
+      {% endif %}
+      {% if ki.contract_amount != '—' %}
+      <div>
+        <dt class="text-xs text-slate-500">合同金额</dt>
+        <dd class="mt-0.5 font-medium text-slate-900">{{ ki.contract_amount }}</dd>
+      </div>
+      {% endif %}
+      {% if ki.tender_party != '—' %}
+      <div>
+        <dt class="text-xs text-slate-500">招标方 / 采购人</dt>
+        <dd class="mt-0.5 font-medium text-slate-900">{{ ki.tender_party }}</dd>
+      </div>
+      {% endif %}
+      {% if ki.agency != '—' %}
+      <div>
+        <dt class="text-xs text-slate-500">代理机构</dt>
+        <dd class="mt-0.5 font-medium text-slate-900">{{ ki.agency }}</dd>
+      </div>
+      {% endif %}
+      {% if ki.project_period != '—' %}
+      <div>
+        <dt class="text-xs text-slate-500">项目周期 / 工期</dt>
+        <dd class="mt-0.5 font-medium text-slate-900">{{ ki.project_period }}</dd>
+      </div>
+      {% endif %}
+      {% if ki.bid_deadline != '—' %}
+      <div>
+        <dt class="text-xs text-slate-500">投标截止时间</dt>
+        <dd class="mt-0.5 font-medium text-amber-800">{{ ki.bid_deadline }}</dd>
+      </div>
+      {% endif %}
+      {% if ki.open_time != '—' %}
+      <div>
+        <dt class="text-xs text-slate-500">开标时间</dt>
+        <dd class="mt-0.5 font-medium text-amber-800">{{ ki.open_time }}</dd>
+      </div>
+      {% endif %}
+      {% if ki.contact != '—' %}
+      <div>
+        <dt class="text-xs text-slate-500">联系人 / 电话</dt>
+        <dd class="mt-0.5 font-medium text-slate-900">{{ ki.contact }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+    {% if ki.key_summary != '—' %}
+    <div class="mt-4 pt-4 border-t border-slate-200/80">
+      <dt class="text-xs text-slate-500 mb-1">招标关键内容</dt>
+      <dd class="text-sm text-slate-700 leading-relaxed">{{ ki.key_summary }}</dd>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if notice.is_agri_related is not none %}
+  <section class="px-6 sm:px-8 py-5 border-b border-slate-100 bg-emerald-50/40">
+    <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">数字农业判定</h3>
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+      <div>
+        <dt class="text-xs text-slate-500">是否农业数字化相关</dt>
+        <dd class="mt-0.5 font-medium">
+          {% if notice.is_agri_related %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">是</span>
+          {% else %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">否</span>
+          {% endif %}
+        </dd>
+      </div>
+      {% if notice.agri_confidence is not none %}
+      <div>
+        <dt class="text-xs text-slate-500">相关度</dt>
+        <dd class="mt-0.5 font-medium text-slate-900">{{ "%.0f"|format(notice.agri_confidence * 100) }}%</dd>
+      </div>
+      {% endif %}
+    </dl>
+    {% if notice.agri_reason %}
+    <div class="mt-4">
+      <dt class="text-xs text-slate-500 mb-1">判定理由</dt>
+      <dd class="text-sm text-slate-700 leading-relaxed">{{ notice.agri_reason }}</dd>
+    </div>
+    {% endif %}
+    {% if notice.agri_tags %}
+    <div class="mt-4 flex flex-wrap gap-2">
+      {% for tag in notice.agri_tags %}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-xs font-medium">{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <div class="px-6 sm:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 space-y-6">
+      <section id="notice-content">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">正文内容</h3>
+          <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs" role="tablist">
+            <button type="button" id="btn-html" class="content-tab px-3 py-1.5 rounded-md font-medium bg-white shadow-sm text-brand-700" data-mode="html">HTML</button>
+            <button type="button" id="btn-text" class="content-tab px-3 py-1.5 rounded-md font-medium text-slate-500 hover:text-slate-700" data-mode="text">纯文本</button>
+          </div>
+        </div>
+        <div id="content-html" class="content-panel {% if notice.is_wechat %}wechat-article-body{% else %}notice-body max-w-none{% endif %} rounded-xl border border-slate-200 bg-white {% if not notice.is_wechat %}p-5 sm:p-6 leading-relaxed{% endif %} overflow-x-auto">
+          {% if notice.content_html %}
+          {{ notice.content_html | safe }}
+          {% else %}
+          <p class="text-slate-400 italic">暂无 HTML 正文（列表页抓取或未开启详情抓取）</p>
+          {% endif %}
+        </div>
+        <div id="content-text" class="content-panel hidden rounded-xl border border-slate-200 bg-slate-50/50 p-5 text-sm leading-relaxed whitespace-pre-wrap text-slate-700">
+          {% if notice.content_text %}
+          {{ notice.content_text }}
+          {% else %}
+          <span class="text-slate-400 italic">暂无纯文本正文</span>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if notice.attachments %}
+      <section>
+        <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">附件</h3>
+        <ul class="space-y-2">
+          {% for att in notice.attachments %}
+          <li>
+            <a href="{{ att.url }}" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:border-brand-200 hover:bg-brand-50 text-sm text-brand-700 transition w-full sm:w-auto">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
+              {{ att.name or att.url }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="space-y-4">
+      <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-5 space-y-4 text-sm">
+        <h3 class="font-semibold text-slate-800">元数据</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-xs text-slate-500">采购人</dt>
+            <dd class="mt-0.5 text-slate-800">{{ notice.purchaser }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500">代理机构</dt>
+            <dd class="mt-0.5 text-slate-800">{{ notice.agency }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500">预算</dt>
+            <dd class="mt-0.5 text-slate-800">{{ notice.budget }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500">爬取时间</dt>
+            <dd class="mt-0.5 text-slate-800">{{ notice.scraped_at_fmt }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-slate-500">详情 URL</dt>
+            <dd class="mt-0.5 break-all">
+              {% if notice.detail_url %}
+              <a href="{{ notice.detail_url }}" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline">{{ notice.detail_url }}</a>
+              {% else %}
+              <span class="text-slate-400">—</span>
+              {% endif %}
+            </dd>
+          </div>
+          {% if notice.parent_url %}
+          <div>
+            <dt class="text-xs text-slate-500">父页面 URL</dt>
+            <dd class="mt-0.5 break-all">
+              <a href="{{ notice.parent_url }}" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline">{{ notice.parent_url }}</a>
+            </dd>
+          </div>
+          {% endif %}
+          {% if notice.content_hash %}
+          <div>
+            <dt class="text-xs text-slate-500">内容指纹</dt>
+            <dd class="mt-0.5 font-mono text-xs text-slate-600">{{ notice.content_hash }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </aside>
+  </div>
+</article>
+
+<script>
+  const NOTICE_ID = {{ notice.id | tojson }};
+  const IS_WECHAT = {{ notice.is_wechat | tojson }};
+  const WECHAT_TAG = '微信公众号';
+
+  function currentNoticeTags() {
+    return Array.from(document.querySelectorAll('#notice-tags-list .notice-tag-chip'))
+      .map(el => el.dataset.tag)
+      .filter(Boolean);
+  }
+
+  function renderNoticeTags(tags) {
+    const list = document.getElementById('notice-tags-list');
+    if (!list) return;
+    list.innerHTML = '';
+    tags.forEach(tag => {
+      const locked = IS_WECHAT && tag === WECHAT_TAG;
+      const chip = document.createElement('span');
+      chip.className = 'notice-tag-chip inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-medium border border-amber-200/80';
+      chip.dataset.tag = tag;
+      chip.dataset.locked = locked ? 'true' : 'false';
+      chip.textContent = tag;
+      if (!locked) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'notice-tag-remove ml-0.5 text-amber-600/70 hover:text-amber-900 leading-none';
+        btn.setAttribute('aria-label', '移除标签 ' + tag);
+        btn.textContent = '×';
+        btn.addEventListener('click', () => {
+          chip.remove();
+        });
+        chip.appendChild(btn);
+      }
+      list.appendChild(chip);
+    });
+  }
+
+  function addNoticeTag(raw) {
+    const tag = (raw || '').trim();
+    if (!tag) return;
+    const tags = currentNoticeTags();
+    if (tags.includes(tag)) return;
+    renderNoticeTags(tags.concat(tag));
+  }
+
+  document.getElementById('notice-tag-add')?.addEventListener('click', () => {
+    const input = document.getElementById('notice-tag-input');
+    addNoticeTag(input?.value || '');
+    if (input) input.value = '';
+  });
+
+  document.getElementById('notice-tag-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('notice-tag-add')?.click();
+    }
+  });
+
+  document.getElementById('notice-tags-list')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('notice-tag-remove')) {
+      e.target.closest('.notice-tag-chip')?.remove();
+    }
+  });
+
+  document.getElementById('notice-tag-save')?.addEventListener('click', async () => {
+    const status = document.getElementById('notice-tag-status');
+    const btn = document.getElementById('notice-tag-save');
+    if (status) status.textContent = '保存中…';
+    if (btn) btn.disabled = true;
+    try {
+      const resp = await fetch('/api/notices/' + encodeURIComponent(NOTICE_ID) + '/tags', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: currentNoticeTags() }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data.detail || data.error || '保存失败');
+      }
+      renderNoticeTags(data.tags || []);
+      if (typeof showToast === 'function') showToast('标签已保存', 'success');
+      if (status) status.textContent = '已保存';
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(String(err.message || err), 'error');
+      if (status) status.textContent = '保存失败';
+    } finally {
+      if (btn) btn.disabled = false;
+      setTimeout(() => { if (status) status.textContent = ''; }, 2500);
+    }
+  });
+
+  document.querySelectorAll('.content-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      document.getElementById('content-html').classList.toggle('hidden', mode !== 'html');
+      document.getElementById('content-text').classList.toggle('hidden', mode !== 'text');
+      document.querySelectorAll('.content-tab').forEach(b => {
+        const active = b.dataset.mode === mode;
+        b.classList.toggle('bg-white', active);
+        b.classList.toggle('shadow-sm', active);
+        b.classList.toggle('text-brand-700', active);
+        b.classList.toggle('text-slate-500', !active);
+      });
+    });
+  });
+</script>
+{% endblock %}

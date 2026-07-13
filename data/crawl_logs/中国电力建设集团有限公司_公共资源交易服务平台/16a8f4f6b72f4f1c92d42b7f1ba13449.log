@@ -1,0 +1,9 @@
+2026-07-12 07:14:53 [INFO] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [start] 开始爬取 公共资源交易服务平台 url=https://bid.powerchina.cn
+2026-07-12 07:14:53 [INFO] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [fetch_list] 开始抓取列表 (max_items=30, detail=True, intelligent=False) url=https://bid.powerchina.cn
+2026-07-12 07:14:53 [INFO] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [fetch_list] 抓取列表页 (尝试 1/3) url=https://bid.powerchina.cn/search
+2026-07-12 07:14:53 [INFO] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [fetch_list] 纯 HTTP API 抓取列表 (max_items=30) url=https://bid.powerchina.cn/newcbs/recpro-newmember/BidAnnouncementSummary/allList
+2026-07-12 07:14:53 [INFO] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [paginate] API 分页 1/5 (HTTP) url=https://bid.powerchina.cn/newcbs/recpro-newmember/BidAnnouncementSummary/allList
+2026-07-12 07:14:53 [INFO] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [parse] 解析 API 第 1 页: 0 条 url=https://bid.powerchina.cn/newcbs/recpro-newmember/BidAnnouncementSummary/allList
+2026-07-12 07:14:53 [INFO] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [parse] 解析完成: 0 条公告
+2026-07-12 07:14:53 [INFO] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [save] 入库: 新增 0, 更新 0
+2026-07-12 07:14:53 [SUCCESS] run_id=16a8f4f6b72f4f1c92d42b7f1ba13449 site_id=中国电力建设集团有限公司_公共资源交易服务平台 [done] 爬取完成: 0 条公告, 新增/更新 0

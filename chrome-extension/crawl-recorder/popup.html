@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爬取步骤录制器</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>爬取步骤录制器</h1>
+    <p class="subtitle">录制操作 → 导出 JSON → 生成 YAML</p>
+  </header>
+
+  <section class="field">
+    <label for="site-id">站点 ID</label>
+    <input id="site-id" type="text" placeholder="如 zycg_national">
+  </section>
+
+  <section class="field">
+    <label>当前页面</label>
+    <div id="current-url" class="url-box">—</div>
+  </section>
+
+  <section class="controls">
+    <button id="btn-start" class="btn primary">开始录制</button>
+    <button id="btn-stop" class="btn danger" disabled>停止录制</button>
+  </section>
+
+  <p class="hint">
+    <strong>Alt + 点击</strong> 记录元素选择器；翻页按钮会自动标记 <code>pagination</code>
+  </p>
+
+  <section class="steps-section">
+    <div class="steps-header">
+      <h2>已录步骤 <span id="step-count" class="badge">0</span></h2>
+      <button id="btn-clear" class="btn text" title="清空">清空</button>
+    </div>
+    <ul id="steps-list" class="steps-list"></ul>
+  </section>
+
+  <section class="export">
+    <button id="btn-copy" class="btn">复制 JSON</button>
+    <button id="btn-export" class="btn">导出 JSON</button>
+  </section>
+
+  <p id="status" class="status"></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

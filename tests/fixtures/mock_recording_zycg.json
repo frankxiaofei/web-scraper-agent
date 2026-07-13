@@ -1,0 +1,40 @@
+{
+  "site_id": "zycg_national",
+  "entry_url": "https://www.zycg.gov.cn/freecms/site/zygjjgzfcgzx/cggg/index.html",
+  "recorded_at": "2026-06-14T08:00:00.000Z",
+  "steps": [
+    {
+      "action": "navigate",
+      "url": "https://www.zycg.gov.cn/freecms/site/zygjjgzfcgzx/cggg/index.html",
+      "timestamp": "2026-06-14T08:00:01.000Z"
+    },
+    {
+      "action": "wait_network",
+      "url_pattern": "selectInfoMore.do",
+      "timestamp": "2026-06-14T08:00:03.000Z"
+    },
+    {
+      "action": "pick_selector",
+      "selector": "#noticeShow",
+      "text": "采购公告列表",
+      "tag": "div",
+      "timestamp": "2026-06-14T08:00:05.000Z",
+      "note": "Alt+点击选中元素"
+    },
+    {
+      "action": "click",
+      "selector": "#page .next-page",
+      "text": "下一页",
+      "tag": "a",
+      "timestamp": "2026-06-14T08:00:10.000Z",
+      "note": "pagination"
+    }
+  ],
+  "hints": {
+    "list_container": "#noticeShow",
+    "sample_links": [
+      "https://www.zycg.gov.cn/ggxx/info/123",
+      "https://www.zycg.gov.cn/ggxx/info/456"
+    ]
+  }
+}

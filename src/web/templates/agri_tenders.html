@@ -1,0 +1,122 @@
+{% extends "agri_base.html" %}
+
+{% block title %}WebScraperAgent — 招标商机{% endblock %}
+
+{% block content %}
+<section class="stats-page">
+  <header class="stats-page-header">
+    <div>
+      <h2 class="stats-page-title text-emerald-900">招标商机</h2>
+      <p class="stats-page-subtitle">近 {{ days }} 天 · 按关键词/金额/公告类型综合评分 · 共 {{ tenders.total or 0 }} 条</p>
+    </div>
+    <a href="/" class="stats-btn stats-btn-secondary border-emerald-200 text-emerald-800 hover:bg-emerald-50 text-sm">← 返回洞察分析</a>
+  </header>
+
+  <form method="get" action="/tenders" class="stats-panel border-emerald-100 mb-6 p-4">
+    <div class="grid md:grid-cols-4 gap-3 text-sm">
+      <label class="flex flex-col gap-1">
+        <span class="text-slate-600">关键词</span>
+        <input type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="智慧农业"
+               class="rounded-lg border border-emerald-200 px-3 py-2">
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-slate-600">地区</span>
+        <input type="text" name="region" value="{{ filters.region or '' }}" placeholder="广东"
+               class="rounded-lg border border-emerald-200 px-3 py-2">
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-slate-600">最低评分</span>
+        <input type="number" name="min_score" min="0" max="100" value="{{ filters.min_score or 0 }}"
+               class="rounded-lg border border-emerald-200 px-3 py-2">
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-slate-600">商机等级</span>
+        <select name="tier" class="app-select app-select-sm">
+          <option value="">全部</option>
+          <option value="high" {% if filters.tier == 'high' %}selected{% endif %}>高</option>
+          <option value="medium" {% if filters.tier == 'medium' %}selected{% endif %}>中</option>
+          <option value="low" {% if filters.tier == 'low' %}selected{% endif %}>低</option>
+        </select>
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-slate-600">窗口（天）</span>
+        <input type="number" name="days" min="1" max="90" value="{{ days }}"
+               class="rounded-lg border border-emerald-200 px-3 py-2">
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-slate-600">排序</span>
+        <select name="sort" class="app-select app-select-sm">
+          <option value="score" {% if filters.sort != 'date' %}selected{% endif %}>评分优先</option>
+          <option value="date" {% if filters.sort == 'date' %}selected{% endif %}>时间优先</option>
+        </select>
+      </label>
+      <div class="md:col-span-2 flex items-end gap-2">
+        <button type="submit" class="stats-btn stats-btn-primary bg-emerald-600 text-white hover:bg-emerald-700">筛选</button>
+        <a href="/tenders" class="stats-btn stats-btn-secondary border-emerald-200 text-emerald-800">重置</a>
+      </div>
+    </div>
+  </form>
+
+  {% if tenders.tier_summary %}
+  <div class="flex flex-wrap gap-2 mb-4 text-xs">
+    {% for tier_name, cnt in tenders.tier_summary.items() %}
+    <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
+      {{ tier_name }}: {{ cnt }}
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="stats-panel border-emerald-100">
+      {% if tenders['items'] %}
+      <div class="overflow-x-auto">
+        <table class="stats-distribution-table">
+          <thead>
+            <tr>
+              <th scope="col">评分</th>
+              <th scope="col">标题</th>
+              <th scope="col">地区</th>
+              <th scope="col">预算</th>
+              <th scope="col">类型</th>
+              <th scope="col">标签</th>
+              <th scope="col">时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in tenders['items'] %}
+          <tr>
+            <td class="whitespace-nowrap">
+              <span class="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-0.5 rounded-full text-xs font-semibold
+                {% if n.opportunity_tier == 'high' %}bg-amber-100 text-amber-800
+                {% elif n.opportunity_tier == 'medium' %}bg-emerald-100 text-emerald-800
+                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                {{ n.opportunity_score }}
+              </span>
+            </td>
+            <td>
+              {% if n.url %}
+              <a href="{{ n.url }}" target="_blank" rel="noopener" class="text-emerald-700 hover:underline">
+                {{ n.title[:70] }}{% if n.title|length > 70 %}…{% endif %}
+              </a>
+              {% else %}
+              {{ n.title[:70] }}
+              {% endif %}
+            </td>
+            <td class="text-sm text-slate-600">{{ n.region or '—' }}</td>
+            <td class="text-sm whitespace-nowrap">{{ n.budget_amount or '—' }}</td>
+            <td class="text-xs text-slate-500">{{ n.category or '—' }}</td>
+            <td class="text-xs text-emerald-600 max-w-[140px] truncate" title="{{ (n.agri_keywords or [])|join(', ') }}">
+              {{ (n.agri_keywords or [])[:3]|join(', ') or '—' }}
+            </td>
+            <td class="text-sm text-slate-500 whitespace-nowrap">{{ n.scraped_at_fmt }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-500 py-6 text-center">暂无符合条件的招标商机。可放宽筛选条件或先执行「立即同步」。</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

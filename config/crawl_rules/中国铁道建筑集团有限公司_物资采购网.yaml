@@ -1,0 +1,26 @@
+version: 1
+site_id: 中国铁道建筑集团有限公司_物资采购网
+name: 物资采购网
+enabled: true
+# dlzb style-kw 模板（destoon CMS），与 zgjtjs 共用结构
+entry_url: https://tjbid.dlzb.com/v1/
+list_page:
+  strategy: dom
+  wait_for: ".pdbox ul li a[href*='d-zb-']"
+  container: ".pdbox ul"
+  item: "li"
+  title: "a[href*='d-zb-']"
+  link: "a[href*='d-zb-']"
+  date: "span.fr"
+pagination:
+  type: page_number
+  url_style: path_suffix
+  max_pages: 500
+  wait_after_ms: 1500
+detail:
+  fetch_detail: false
+limits:
+  max_pages: 500
+  max_items: 10000
+  max_depth: 1
+  rate_limit_seconds: 1.0

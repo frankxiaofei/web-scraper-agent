@@ -1,0 +1,385 @@
+{% extends "stock_base.html" %}
+
+{% block title %}WebScraperAgent — 个股 · {{ stock_name or code }}{% endblock %}
+
+{% block content %}
+<section class="stats-page">
+  <header class="stats-page-header">
+    <div>
+      <nav class="text-sm text-slate-500 mb-2">
+        <a href="/insights" class="hover:text-blue-600">洞察分析</a>
+        <span class="mx-1">/</span>
+        <span class="text-slate-700">个股详情</span>
+      </nav>
+      <h2 class="stats-page-title text-blue-900">
+        <span id="detail-name">{{ stock_name or code }}</span>
+        <span id="detail-code" class="text-base font-mono text-slate-500 ml-2">{{ code }}</span>
+      </h2>
+      <p id="detail-industry" class="stats-page-subtitle">加载中…</p>
+      <div id="detail-quote" class="mt-2 flex flex-wrap gap-4 text-sm"></div>
+      <p class="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 inline-block">
+        {{ disclaimer or '行情数据仅供参考，不构成投资建议。' }}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2 items-center">
+      <a id="detail-kline-link" href="/stock/kline/{{ code }}"
+         class="stats-btn stats-btn-primary bg-blue-600 text-white hover:bg-blue-700 border-blue-600">
+        完整 K 线
+      </a>
+      <button type="button" id="detail-refresh-btn"
+              class="stats-btn border border-slate-300 text-slate-700 hover:bg-slate-50">
+        刷新
+      </button>
+    </div>
+  </header>
+
+  <div class="stats-section mb-4">
+    <div class="inline-flex rounded-lg border border-slate-200 overflow-hidden text-sm" id="detail-tabs">
+      <button type="button" data-tab="overview" class="detail-tab px-4 py-2 bg-blue-600 text-white">概览</button>
+      <button type="button" data-tab="kline" class="detail-tab px-4 py-2 bg-white text-slate-600 hover:bg-slate-50">K 线</button>
+      <button type="button" data-tab="finance" class="detail-tab px-4 py-2 bg-white text-slate-600 hover:bg-slate-50">财务</button>
+    </div>
+  </div>
+
+  <div id="tab-overview" class="detail-panel space-y-6">
+    <div class="stats-panel border-blue-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-blue-800">公司介绍</h3>
+      </div>
+      <div id="detail-intro" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">加载中…</div>
+    </div>
+    <div class="stats-panel border-amber-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-amber-800">主要产品 / 主营业务</h3>
+      </div>
+      <div id="detail-main-business-text" class="text-sm text-slate-600 mb-3 hidden"></div>
+      <div id="detail-products" class="overflow-x-auto"></div>
+    </div>
+  </div>
+
+  <div id="tab-kline" class="detail-panel hidden">
+    <div class="stats-panel border-blue-100">
+      <div class="flex flex-wrap gap-2 items-center justify-between mb-3">
+        <h3 class="stats-panel-title text-blue-800">日 K 线</h3>
+        <div class="inline-flex rounded-lg border border-slate-200 overflow-hidden text-sm">
+          <button type="button" data-period="daily" class="detail-kline-period px-3 py-1 bg-blue-600 text-white">日K</button>
+          <button type="button" data-period="weekly" class="detail-kline-period px-3 py-1 bg-white text-slate-600">周K</button>
+          <button type="button" data-period="monthly" class="detail-kline-period px-3 py-1 bg-white text-slate-600">月K</button>
+        </div>
+      </div>
+      <div id="detail-kline-loading" class="text-sm text-slate-500 py-12 text-center">正在加载 K 线…</div>
+      <div id="detail-kline-error" class="hidden text-sm text-red-600 py-6 text-center"></div>
+      <div id="detail-kline-chart" class="hidden w-full" style="height: 420px;"></div>
+    </div>
+  </div>
+
+  <div id="tab-finance" class="detail-panel hidden">
+    <div class="stats-panel border-green-100">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title text-green-800">{% if market == 'HK' or market == 'US' %}财务指标{% else %}资产负债表（最近报告期）{% endif %}</h3>
+        <span id="detail-bs-meta" class="stats-panel-badge bg-green-100 text-green-700">加载中…</span>
+      </div>
+      <div id="detail-bs-loading" class="text-sm text-slate-500 py-8 text-center">正在加载财务数据…</div>
+      <div id="detail-bs-error" class="hidden text-sm text-red-600 py-4"></div>
+      <div id="detail-bs-wrap" class="hidden overflow-x-auto"></div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+(function() {
+  var code = {{ code|tojson }};
+  var initialName = {{ (stock_name or '')|tojson }};
+  var market = {{ (market or '')|tojson }};
+  var activeTab = 'overview';
+  var klinePeriod = 'daily';
+  var klineChart = null;
+  var detailData = null;
+
+  function fmtPct(v) {
+    if (v == null || isNaN(v)) return '—';
+    var cls = v >= 0 ? 'stock-up' : 'stock-down';
+    return '<span class="' + cls + '">' + (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%</span>';
+  }
+
+  function fmtMoney(v) {
+    if (v == null || isNaN(v)) return '—';
+    var abs = Math.abs(v);
+    if (abs >= 1e12) return (v / 1e12).toFixed(2) + ' 万亿';
+    if (abs >= 1e8) return (v / 1e8).toFixed(2) + ' 亿';
+    if (abs >= 1e4) return (v / 1e4).toFixed(2) + ' 万';
+    return Number(v).toFixed(2);
+  }
+
+  function fmtRatio(v) {
+    if (v == null || isNaN(v)) return '—';
+    var pct = v <= 1 ? v * 100 : v;
+    return pct.toFixed(2) + '%';
+  }
+
+  function setActiveTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.detail-tab').forEach(function(btn) {
+      var active = btn.dataset.tab === tab;
+      btn.className = 'detail-tab px-4 py-2 ' +
+        (active ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50');
+    });
+    document.querySelectorAll('.detail-panel').forEach(function(el) { el.classList.add('hidden'); });
+    var panel = document.getElementById('tab-' + tab);
+    if (panel) panel.classList.remove('hidden');
+    if (tab === 'kline' && !klineChart) loadEmbeddedKline();
+  }
+
+  function marketQuery() {
+    return market ? ('&market=' + encodeURIComponent(market)) : '';
+  }
+
+  function renderHeader(data) {
+    var name = data.name || initialName || code;
+    market = data.market || market || '';
+    document.getElementById('detail-name').textContent = name;
+    document.getElementById('detail-code').textContent = (market ? market + ' · ' : '') + (data.code || code);
+    var syncLabel = (data.last_sync || data.fetched_at || '').replace('T', ' ').slice(0, 19);
+    var storageLabel = data.storage || (data.meta && data.meta.storage) || '';
+    document.getElementById('detail-industry').textContent =
+      (data.industry ? '行业：' + data.industry + ' · ' : '') +
+      (syncLabel ? '更新：' + syncLabel : '') +
+      (storageLabel ? ' · ' + storageLabel : '') +
+      (data.cached ? ' · 内存缓存' : '') +
+      (data.persisted ? ' · 本地' : '') +
+      (data.offline ? ' · 离线' : '') +
+      (data.degraded ? ' · 部分降级' : '');
+
+    var q = data.quote || {};
+    var quoteEl = document.getElementById('detail-quote');
+    var parts = [];
+    if (q.price != null) parts.push('<span class="text-lg font-semibold">' + Number(q.price).toFixed(2) + '</span>');
+    if (q.change_pct != null) parts.push(fmtPct(q.change_pct));
+    if (q.change_amount != null) parts.push('<span class="text-slate-500">涨跌 ' + Number(q.change_amount).toFixed(2) + '</span>');
+    if (q.market_cap != null) parts.push('<span class="text-slate-500">市值 ' + fmtMoney(q.market_cap) + '</span>');
+    quoteEl.innerHTML = parts.length ? parts.join(' ') : '<span class="text-slate-400">暂无实时行情</span>';
+
+    var klineLink = document.getElementById('detail-kline-link');
+    if (klineLink) {
+      klineLink.href = '/stock/kline/' + encodeURIComponent(code) + '?name=' + encodeURIComponent(name) + marketQuery();
+    }
+  }
+
+  function renderFinancialSummary(summary) {
+    var wrap = document.getElementById('detail-bs-wrap');
+    var loading = document.getElementById('detail-bs-loading');
+    var errBox = document.getElementById('detail-bs-error');
+    var meta = document.getElementById('detail-bs-meta');
+    loading.classList.add('hidden');
+    if (!summary || !Object.keys(summary).length) {
+      errBox.textContent = (market === 'HK' || market === 'US')
+        ? '暂无详细资产负债表，以下为核心财务指标（若有）'
+        : '暂无资产负债表数据（部分股票或接口限流时可能为空）';
+      errBox.classList.remove('hidden');
+      meta.textContent = '无数据';
+      return;
+    }
+    errBox.classList.add('hidden');
+    wrap.classList.remove('hidden');
+    meta.textContent = '核心财务指标';
+    var labels = {
+      operating_income: '营业总收入',
+      net_profit: '净利润',
+      roe: '股东权益回报率',
+      roa: '总资产回报率',
+      eps: '基本每股收益',
+      bps: '每股净资产'
+    };
+    var html = '<table class="stats-distribution-table w-full text-sm"><tbody>';
+    Object.keys(labels).forEach(function(key) {
+      if (summary[key] == null) return;
+      html += '<tr><td class="font-medium text-slate-800">' + labels[key] + '</td>' +
+        '<td class="text-right text-slate-600">' + fmtMoney(summary[key]) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function renderOverview(data) {
+    var profile = data.profile || {};
+    var intro = profile.introduction || profile.main_business || '暂无公司介绍';
+    document.getElementById('detail-intro').textContent = intro;
+
+    var mbText = profile.main_business;
+    var mbEl = document.getElementById('detail-main-business-text');
+    if (mbText && mbText !== intro) {
+      mbEl.textContent = '主营业务：' + mbText;
+      mbEl.classList.remove('hidden');
+    } else {
+      mbEl.classList.add('hidden');
+    }
+
+    var products = data.main_products || [];
+    var prodEl = document.getElementById('detail-products');
+    if (!products.length) {
+      prodEl.innerHTML = '<p class="text-sm text-slate-400">暂无主营构成数据</p>';
+      return;
+    }
+    var html = '<table class="stats-distribution-table w-full text-sm"><thead><tr>' +
+      '<th>主营构成</th><th>分类</th><th>收入比例</th><th>主营收入</th><th>毛利率</th></tr></thead><tbody>';
+    products.forEach(function(p) {
+      html += '<tr><td class="font-medium">' + (p.name || '—') + '</td>' +
+        '<td class="text-slate-600">' + (p.category || '—') + '</td>' +
+        '<td>' + fmtRatio(p.income_ratio) + '</td>' +
+        '<td class="text-slate-600">' + fmtMoney(p.income) + '</td>' +
+        '<td class="text-slate-600">' + fmtRatio(p.gross_margin) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    prodEl.innerHTML = html;
+  }
+
+  function renderBalanceSheet(bs) {
+    var loading = document.getElementById('detail-bs-loading');
+    var errBox = document.getElementById('detail-bs-error');
+    var wrap = document.getElementById('detail-bs-wrap');
+    var meta = document.getElementById('detail-bs-meta');
+    loading.classList.add('hidden');
+
+    if (!bs || !bs.rows || !bs.rows.length) {
+      errBox.textContent = '暂无资产负债表数据（部分股票或接口限流时可能为空）';
+      errBox.classList.remove('hidden');
+      meta.textContent = '无数据';
+      return;
+    }
+    errBox.classList.add('hidden');
+    wrap.classList.remove('hidden');
+    meta.textContent = (bs.periods || []).join(' · ');
+
+    var html = '<table class="stats-distribution-table w-full text-sm"><thead><tr><th>科目</th>';
+    (bs.periods || []).forEach(function(p) { html += '<th class="text-right">' + p + '</th>'; });
+    html += '</tr></thead><tbody>';
+    bs.rows.forEach(function(row) {
+      html += '<tr><td class="font-medium text-slate-800">' + row.label + '</td>';
+      (row.values || []).forEach(function(v) {
+        html += '<td class="text-right text-slate-600">' + fmtMoney(v) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function splitKlineData(items) {
+    var category = [], values = [], volumes = [];
+    items.forEach(function(it) {
+      category.push(it.date);
+      values.push([it.open, it.close, it.low, it.high]);
+      volumes.push(it.volume != null ? it.volume : 0);
+    });
+    return { category: category, values: values, volumes: volumes };
+  }
+
+  function renderKlineChart(items) {
+    var el = document.getElementById('detail-kline-chart');
+    var loading = document.getElementById('detail-kline-loading');
+    var errBox = document.getElementById('detail-kline-error');
+    if (!items || !items.length) {
+      loading.classList.add('hidden');
+      el.classList.add('hidden');
+      errBox.textContent = '暂无 K 线数据';
+      errBox.classList.remove('hidden');
+      return;
+    }
+    loading.classList.add('hidden');
+    errBox.classList.add('hidden');
+    el.classList.remove('hidden');
+    if (!klineChart) {
+      klineChart = echarts.init(el);
+      window.addEventListener('resize', function() { if (klineChart) klineChart.resize(); });
+    }
+    var data = splitKlineData(items);
+    var upColor = '#ef4444', downColor = '#22c55e';
+    klineChart.setOption({
+      animation: false,
+      grid: [
+        { left: '8%', right: '3%', top: '8%', height: '62%' },
+        { left: '8%', right: '3%', top: '78%', height: '14%' }
+      ],
+      xAxis: [
+        { type: 'category', data: data.category, boundaryGap: true, axisLabel: { fontSize: 10 } },
+        { type: 'category', gridIndex: 1, data: data.category, axisLabel: { show: false }, axisTick: { show: false } }
+      ],
+      yAxis: [{ scale: true }, { scale: true, gridIndex: 1, splitLine: { show: false }, axisLabel: { show: false } }],
+      dataZoom: [{ type: 'inside', xAxisIndex: [0, 1], start: 60, end: 100 }],
+      series: [
+        { type: 'candlestick', data: data.values,
+          itemStyle: { color: upColor, color0: downColor, borderColor: upColor, borderColor0: downColor } },
+        { type: 'bar', xAxisIndex: 1, yAxisIndex: 1, data: data.volumes,
+          itemStyle: { color: '#94a3b8' } }
+      ]
+    }, true);
+    klineChart.resize();
+  }
+
+  function loadEmbeddedKline() {
+    var loading = document.getElementById('detail-kline-loading');
+    var errBox = document.getElementById('detail-kline-error');
+    loading.classList.remove('hidden');
+    errBox.classList.add('hidden');
+    document.getElementById('detail-kline-chart').classList.add('hidden');
+    document.querySelectorAll('.detail-kline-period').forEach(function(btn) {
+      var active = btn.dataset.period === klinePeriod;
+      btn.className = 'detail-kline-period px-3 py-1 ' +
+        (active ? 'bg-blue-600 text-white' : 'bg-white text-slate-600');
+    });
+    fetch('/api/stock/kline?code=' + encodeURIComponent(code) + '&period=' + klinePeriod + '&limit=90&auto_fetch=true' + marketQuery())
+      .then(function(r) { return r.json(); })
+      .then(function(data) { renderKlineChart(data.items || []); })
+      .catch(function(e) {
+        loading.classList.add('hidden');
+        errBox.textContent = 'K 线加载失败: ' + e;
+        errBox.classList.remove('hidden');
+      });
+  }
+
+  function loadDetail(force) {
+    var btn = document.getElementById('detail-refresh-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '加载中…'; }
+    var url = '/api/stock/company/' + encodeURIComponent(code) + '?periods=4' + marketQuery();
+    if (force) url += '&refresh=true';
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        detailData = data;
+        renderHeader(data);
+        renderOverview(data);
+        if (market === 'HK' || data.market === 'HK' || market === 'US' || data.market === 'US') {
+          renderFinancialSummary(data.financial_summary || {});
+        } else {
+          renderBalanceSheet(data.balance_sheet);
+        }
+      })
+      .catch(function(e) {
+        document.getElementById('detail-intro').textContent = '加载失败: ' + e;
+      })
+      .finally(function() {
+        if (btn) { btn.disabled = false; btn.textContent = '刷新'; }
+      });
+  }
+
+  document.querySelectorAll('.detail-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() { setActiveTab(btn.dataset.tab); });
+  });
+  document.querySelectorAll('.detail-kline-period').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      klinePeriod = btn.dataset.period;
+      klineChart = null;
+      loadEmbeddedKline();
+    });
+  });
+  document.getElementById('detail-refresh-btn').addEventListener('click', function() {
+    klineChart = null;
+    loadDetail(true);
+  });
+
+  setActiveTab('overview');
+  loadDetail(false);
+})();
+</script>
+{% endblock %}

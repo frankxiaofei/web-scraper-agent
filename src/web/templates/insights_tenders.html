@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 招标商机{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/insights.css">
+{% endblock %}
+
+{% block content %}
+<section class="stats-page insights-page insights-tenders-page">
+  <header class="stats-page-header insights-header">
+    <div class="insights-header-main">
+      <h2 class="stats-page-title insights-title">
+        <span class="insights-page-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </span>
+        招标商机
+      </h2>
+      <p class="stats-page-subtitle">近 {{ days }} 天 · 按关键词/金额/公告类型综合评分 · 共 {{ tenders.total or 0 }} 条</p>
+    </div>
+    <div class="insights-header-actions">
+      <a href="/insights" class="stats-btn stats-btn-secondary">← 返回洞察分析</a>
+    </div>
+  </header>
+
+  <div class="stats-section">
+    <form method="get" action="/insights/tenders" class="stats-panel insights-filter-form">
+      <div class="insights-filter-field">
+        <label class="insights-filter-label" for="tender-keyword">关键词</label>
+        <input id="tender-keyword" type="text" name="keyword" value="{{ filters.keyword or '' }}" placeholder="智慧农业"
+               class="app-input px-3 py-2">
+      </div>
+      <div class="insights-filter-field">
+        <label class="insights-filter-label" for="tender-region">地区</label>
+        <input id="tender-region" type="text" name="region" value="{{ filters.region or '' }}" placeholder="广东"
+               class="app-input px-3 py-2">
+      </div>
+      <div class="insights-filter-field">
+        <label class="insights-filter-label" for="tender-min-score">最低评分</label>
+        <input id="tender-min-score" type="number" name="min_score" min="0" max="100" value="{{ filters.min_score or 0 }}"
+               class="app-input px-3 py-2">
+      </div>
+      <div class="insights-filter-field">
+        <label class="insights-filter-label" for="tender-tier">商机等级</label>
+        <select id="tender-tier" name="tier" class="form-select form-select-sm">
+          <option value="">全部</option>
+          <option value="high" {% if filters.tier == 'high' %}selected{% endif %}>高</option>
+          <option value="medium" {% if filters.tier == 'medium' %}selected{% endif %}>中</option>
+          <option value="low" {% if filters.tier == 'low' %}selected{% endif %}>低</option>
+        </select>
+      </div>
+      <div class="insights-filter-field">
+        <label class="insights-filter-label" for="tender-days">窗口（天）</label>
+        <input id="tender-days" type="number" name="days" min="1" max="90" value="{{ days }}"
+               class="app-input px-3 py-2">
+      </div>
+      <div class="insights-filter-field">
+        <label class="insights-filter-label" for="tender-sort">排序</label>
+        <select id="tender-sort" name="sort" class="form-select form-select-sm">
+          <option value="score" {% if filters.sort != 'date' %}selected{% endif %}>评分优先</option>
+          <option value="date" {% if filters.sort == 'date' %}selected{% endif %}>时间优先</option>
+        </select>
+      </div>
+      <div class="insights-filter-actions">
+        <button type="submit" class="stats-btn stats-btn-primary">筛选</button>
+        <a href="/insights/tenders" class="stats-btn stats-btn-secondary">重置</a>
+      </div>
+    </form>
+  </div>
+
+  {% if tenders.tier_summary %}
+  <div class="insights-tier-summary" aria-label="等级汇总">
+    {% for tier_name, cnt in tenders.tier_summary.items() %}
+    <span class="insights-tier-pill">
+      {{ tier_name }}
+      <span class="insights-tier-pill-count">{{ cnt }}</span>
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="stats-panel">
+    {% if tenders['items'] %}
+    <div class="overflow-x-auto">
+      <table class="stats-distribution-table">
+        <thead>
+          <tr>
+            <th scope="col">评分</th>
+            <th scope="col">标题</th>
+            <th scope="col">地区</th>
+            <th scope="col">预算</th>
+            <th scope="col">类型</th>
+            <th scope="col">标签</th>
+            <th scope="col">时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in tenders['items'] %}
+          <tr>
+            <td class="whitespace-nowrap">
+              <span class="inline-flex items-center justify-center min-w-[2.5rem] px-2 py-0.5 rounded-full text-xs font-semibold
+                {% if n.opportunity_tier == 'high' %}bg-amber-50 text-amber-800 border border-amber-200
+                {% elif n.opportunity_tier == 'medium' %}bg-blue-50 text-blue-800 border border-blue-200
+                {% else %}bg-slate-50 text-slate-600 border border-slate-200{% endif %}">
+                {{ n.opportunity_score }}
+              </span>
+            </td>
+            <td>
+              {% if n.url %}
+              <a href="{{ n.url }}" target="_blank" rel="noopener noreferrer">
+                {{ n.title[:70] }}{% if n.title|length > 70 %}…{% endif %}
+              </a>
+              {% else %}
+              {{ n.title[:70] }}
+              {% endif %}
+            </td>
+            <td class="text-sm text-slate-600">{{ n.region or '—' }}</td>
+            <td class="text-sm whitespace-nowrap">{{ n.budget_amount or '—' }}</td>
+            <td class="text-xs text-slate-500">{{ n.category or '—' }}</td>
+            <td class="text-xs text-slate-600 max-w-[140px] truncate" title="{{ (n.agri_keywords or [])|join(', ') }}">
+              {{ (n.agri_keywords or [])[:3]|join(', ') or '—' }}
+            </td>
+            <td class="text-sm text-slate-500 whitespace-nowrap">{{ n.scraped_at_fmt }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="insights-empty" role="status">
+      <div class="insights-empty-icon" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+      <p class="insights-empty-title">暂无符合条件的招标商机</p>
+      <p class="insights-empty-desc">可放宽筛选条件，或返回洞察页执行「同步最新数据」。</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

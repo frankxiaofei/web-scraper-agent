@@ -1,0 +1,26 @@
+version: 1
+site_id: tjbid
+name: tjbid
+enabled: true
+entry_url: https://tjbid.dlzb.com/
+entry_steps:
+  - action: click_text
+    text: "中国铁建招标"
+list_page:
+  strategy: dom
+  container: ".list"
+  item: "li"
+  title: "a"
+  link: "a"
+  date: "span.date"
+pagination:
+  type: next_button
+  next_button:
+    selector: "a:contains('下一页')"
+detail:
+  fetch_detail: false
+limits:
+  max_pages: 10
+  max_items: 100
+  max_depth: 1
+  rate_limit_seconds: 2.0

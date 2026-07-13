@@ -1,0 +1,1230 @@
+{% extends "stock_base.html" %}
+{% block title %}WebScraperAgent — 模拟交易{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-semibold text-slate-800 mb-1">模拟交易</h2>
+      <p class="text-sm text-slate-500">虚拟资金练习买卖，设定止损止盈与仓位规则，统计模拟收益</p>
+    </div>
+    <button id="btnResetAccount" type="button"
+            class="px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm hover:bg-red-50 transition">
+      重置账户
+    </button>
+  </div>
+  <p class="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+    ⚠️ {{ disclaimer or '本功能为模拟交易，不构成投资建议，实盘交易请自行承担风险。' }}
+  </p>
+  <p class="mt-2 text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+    经典选股策略（价值/成长/GARP/动量/双均线/质量/行业轮动）为简化规则演示，非专业量化产品，回测与预览结果仅供参考。
+  </p>
+</section>
+
+<!-- Tab 切换 -->
+<div class="flex gap-2 mb-6 border-b border-blue-100">
+  <button type="button" id="tabManual" data-tab="manual"
+          class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-stock-600 text-stock-700 -mb-px">
+    手动模拟
+  </button>
+  <button type="button" id="tabBacktest" data-tab="backtest"
+          class="tab-btn px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-stock-600 -mb-px">
+    自动回测 / Agent 模拟
+  </button>
+</div>
+
+<div id="panelManual">
+
+<!-- 账户概览 KPI -->
+<div id="kpiCards" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stats-kpi-card-blue bg-white rounded-2xl shadow-sm border border-blue-100 p-4 border-t-4">
+    <p class="text-xs text-slate-500 mb-1">总资产</p>
+    <p id="kpiTotalAssets" class="stats-kpi-value text-2xl font-bold">—</p>
+  </div>
+  <div class="stats-kpi-card-sky bg-white rounded-2xl shadow-sm border border-blue-100 p-4 border-t-4">
+    <p class="text-xs text-slate-500 mb-1">可用资金</p>
+    <p id="kpiCash" class="stats-kpi-value text-2xl font-bold">—</p>
+  </div>
+  <div class="stats-kpi-card-indigo bg-white rounded-2xl shadow-sm border border-blue-100 p-4 border-t-4">
+    <p class="text-xs text-slate-500 mb-1">总收益</p>
+    <p id="kpiTotalPnl" class="stats-kpi-value text-2xl font-bold">—</p>
+    <p id="kpiReturnRate" class="text-xs text-slate-400 mt-1">—</p>
+  </div>
+  <div class="stats-kpi-card-amber bg-white rounded-2xl shadow-sm border border-blue-100 p-4 border-t-4">
+    <p class="text-xs text-slate-500 mb-1">已实现 / 未实现</p>
+    <p id="kpiRealizedUnrealized" class="stats-kpi-value text-lg font-bold">—</p>
+    <p id="kpiTradeCount" class="text-xs text-slate-400 mt-1">—</p>
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-6 mb-6">
+  <!-- 规则设置 -->
+  <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-5">
+    <h3 class="text-sm font-semibold text-slate-700 mb-4">交易规则</h3>
+    <form id="rulesForm" class="space-y-3 text-sm">
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-xs text-slate-500">止损 %</span>
+          <input name="stop_loss_pct" type="number" step="0.1" min="0" max="100"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+        </label>
+        <label class="block">
+          <span class="text-xs text-slate-500">止盈 %</span>
+          <input name="take_profit_pct" type="number" step="0.1" min="0" max="500"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+        </label>
+      </div>
+      <label class="block">
+        <span class="text-xs text-slate-500">最大单票仓位 %</span>
+        <input name="max_position_pct" type="number" step="1" min="1" max="100"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input name="ma_cross_enabled" type="checkbox" class="rounded border-blue-200 text-stock-600" />
+        <span class="text-slate-600">启用 MA 金叉/死叉信号</span>
+      </label>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input name="change_pct_enabled" type="checkbox" class="rounded border-blue-200 text-stock-600" />
+        <span class="text-slate-600">启用涨跌幅触发</span>
+      </label>
+      <label class="block">
+        <span class="text-xs text-slate-500">涨跌幅触发阈值 %</span>
+        <input name="change_pct_trigger" type="number" step="0.1" min="0" max="50"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+      </label>
+      <div class="flex gap-2 pt-1">
+        <button type="submit"
+                class="flex-1 px-4 py-2 rounded-xl bg-stock-600 hover:bg-stock-700 text-white font-medium transition">
+          保存规则
+        </button>
+        <button type="button" id="btnEvaluate"
+                class="px-4 py-2 rounded-xl border border-blue-200 text-stock-600 hover:bg-blue-50 transition">
+          规则检查
+        </button>
+      </div>
+    </form>
+    <div id="evaluateResult" class="mt-4 hidden">
+      <p class="text-xs font-medium text-slate-500 mb-2">规则检查结果</p>
+      <div id="evaluateSignals" class="space-y-2 text-xs"></div>
+    </div>
+  </div>
+
+  <!-- 买入 -->
+  <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-5">
+    <h3 class="text-sm font-semibold text-slate-700 mb-4">买入</h3>
+    <form id="buyForm" class="space-y-3 text-sm">
+      <div class="relative">
+        <label class="block">
+          <span class="text-xs text-slate-500">股票代码 / 名称</span>
+          <input id="buySearchInput" type="search" autocomplete="off" placeholder="000001 / 平安"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+        </label>
+        <input type="hidden" id="buyCode" name="code" />
+        <input type="hidden" id="buyMarket" name="market" />
+        <input type="hidden" id="buyName" name="name" />
+        <div id="buySearchDropdown"
+             class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-blue-100 max-h-48 overflow-y-auto z-10"></div>
+        <p id="buySelected" class="text-xs text-slate-400 mt-1 hidden"></p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-xs text-slate-500">数量（股）</span>
+          <input name="quantity" type="number" min="1" step="100" placeholder="100"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+        </label>
+        <label class="block">
+          <span class="text-xs text-slate-500">或 金额（元）</span>
+          <input name="amount" type="number" min="0" step="1000" placeholder="10000"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+        </label>
+      </div>
+      <label class="block">
+        <span class="text-xs text-slate-500">指定价格（留空用现价）</span>
+        <input name="price" type="number" min="0" step="0.01" placeholder="自动"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+      </label>
+      <button type="submit"
+              class="w-full px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition">
+        模拟买入
+      </button>
+    </form>
+  </div>
+
+  <!-- 卖出 -->
+  <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-5">
+    <h3 class="text-sm font-semibold text-slate-700 mb-4">卖出</h3>
+    <form id="sellForm" class="space-y-3 text-sm">
+      <label class="block">
+        <span class="text-xs text-slate-500">选择持仓</span>
+        <select id="sellPositionSelect" name="position_key" class="app-select mt-1">
+          <option value="">— 请先买入或刷新 —</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="text-xs text-slate-500">卖出数量（股）</span>
+        <input name="quantity" type="number" min="1" step="100" placeholder="100"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+      </label>
+      <label class="block">
+        <span class="text-xs text-slate-500">指定价格（留空用现价）</span>
+        <input name="price" type="number" min="0" step="0.01" placeholder="自动"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+      </label>
+      <button type="submit"
+              class="w-full px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition">
+        模拟卖出
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- 手动 Tab：经典策略选股 -->
+<section class="mb-6 bg-white rounded-2xl shadow-sm border border-blue-100 p-5">
+  <h3 class="text-sm font-semibold text-slate-700 mb-1">经典策略选股</h3>
+  <p class="text-xs text-slate-400 mb-4">预览选股结果后可填入买入表单；回测请切换至「自动回测」Tab</p>
+  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+    <label class="block md:col-span-2">
+      <span class="text-xs text-slate-500">选股方式</span>
+      <select id="mnPickStrategy" name="pick_strategy" class="app-select mt-1">
+        <option value="rules">加载中…</option>
+      </select>
+    </label>
+    <label class="block">
+      <span class="text-xs text-slate-500">板块分类</span>
+      <select id="mnClassify" name="classify" class="app-select mt-1">
+        <option value="concept">概念板块</option>
+        <option value="industry">行业板块</option>
+        <option value="sw_l1">申万一级</option>
+      </select>
+    </label>
+    <label class="block">
+      <span class="text-xs text-slate-500">选股数量</span>
+      <input id="mnPickLimit" type="number" value="5" min="1" max="20"
+             class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+    </label>
+    <label class="block md:col-span-2">
+      <span class="text-xs text-slate-500">板块（留空自动选热点）</span>
+      <select id="mnSectorSelect" class="app-select mt-1">
+        <option value="">— 自动选取热点板块 —</option>
+      </select>
+    </label>
+    <label class="block">
+      <span class="text-xs text-slate-500">决策时点</span>
+      <input id="mnAsOfDate" type="date"
+             class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+    </label>
+    <div class="flex items-end">
+      <button type="button" id="btnMnPreviewPick"
+              class="w-full px-3 py-2 rounded-lg border border-blue-200 text-stock-700 hover:bg-blue-50 text-sm">
+        预览选股
+      </button>
+    </div>
+  </div>
+  <details class="mt-3 text-sm">
+    <summary class="cursor-pointer text-xs text-slate-500 hover:text-stock-600">高级选项（动量窗口 / 估值参数）</summary>
+    <div class="grid md:grid-cols-4 gap-3 mt-2 pt-2 border-t border-blue-50">
+      <label class="block">
+        <span class="text-xs text-slate-500">动量窗口（日）</span>
+        <select id="mnMomentumLookback" class="app-select mt-1">
+          <option value="5">5</option>
+          <option value="20" selected>20</option>
+          <option value="60">60</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="text-xs text-slate-500">PE 上限</span>
+        <input id="mnPeMax" type="number" value="25" min="1" step="1"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+      </label>
+      <label class="block">
+        <span class="text-xs text-slate-500">PB 上限</span>
+        <input id="mnPbMax" type="number" value="3" min="0.1" step="0.1"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+      </label>
+      <label class="block">
+        <span class="text-xs text-slate-500">ROE 下限 %</span>
+        <input id="mnRoeMin" type="number" value="10" min="0" step="1"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+      </label>
+      <label class="block">
+        <span class="text-xs text-slate-500">PEG 上限</span>
+        <input id="mnPegMax" type="number" value="1.5" min="0.1" step="0.1"
+               class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+      </label>
+    </div>
+  </details>
+  <div id="mnPickedPreview" class="hidden mt-3 text-xs bg-blue-50/60 border border-blue-100 rounded-lg p-2 text-slate-600"></div>
+</section>
+
+<!-- 持仓表 -->
+<section class="mb-6">
+  <h3 class="text-sm font-semibold text-slate-700 mb-3">当前持仓</h3>
+  <div class="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-blue-50/50 text-slate-500 text-xs">
+        <tr>
+          <th class="text-left px-4 py-3 font-medium">代码</th>
+          <th class="text-left px-4 py-3 font-medium">名称</th>
+          <th class="text-right px-4 py-3 font-medium">数量</th>
+          <th class="text-right px-4 py-3 font-medium">成本价</th>
+          <th class="text-right px-4 py-3 font-medium">现价</th>
+          <th class="text-right px-4 py-3 font-medium">市值</th>
+          <th class="text-right px-4 py-3 font-medium">浮动盈亏</th>
+        </tr>
+      </thead>
+      <tbody id="positionsBody">
+        <tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">暂无持仓</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 流水表 -->
+<section>
+  <h3 class="text-sm font-semibold text-slate-700 mb-3">交易流水</h3>
+  <div class="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-blue-50/50 text-slate-500 text-xs">
+        <tr>
+          <th class="text-left px-4 py-3 font-medium">时间</th>
+          <th class="text-left px-4 py-3 font-medium">方向</th>
+          <th class="text-left px-4 py-3 font-medium">代码</th>
+          <th class="text-left px-4 py-3 font-medium">名称</th>
+          <th class="text-right px-4 py-3 font-medium">数量</th>
+          <th class="text-right px-4 py-3 font-medium">价格</th>
+          <th class="text-right px-4 py-3 font-medium">金额</th>
+          <th class="text-right px-4 py-3 font-medium">已实现盈亏</th>
+        </tr>
+      </thead>
+      <tbody id="tradesBody">
+        <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">暂无流水</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</div><!-- /panelManual -->
+
+<div id="panelBacktest" class="hidden">
+  <p class="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-4">
+    ⚠️ 回测结果基于历史数据模拟，不代表未来收益。Agent 模式需配置 OPENAI_API_KEY，不可用时自动降级为规则策略。经典策略为简化规则，非专业量化产品。
+  </p>
+
+  <div class="grid lg:grid-cols-3 gap-6 mb-6">
+    <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-blue-100 p-5">
+      <h3 class="text-sm font-semibold text-slate-700 mb-4">回测参数</h3>
+      <form id="backtestForm" class="space-y-3 text-sm">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="btAutoPick" name="auto_pick" type="checkbox" class="rounded border-blue-200 text-stock-600" />
+          <span class="text-slate-700 font-medium">自动选股</span>
+        </label>
+        <div id="btAutoPickPanel" class="hidden space-y-3 pl-1 border-l-2 border-blue-100">
+          <label class="block">
+            <span class="text-xs text-slate-500">选股方式</span>
+            <select id="btPickStrategy" name="pick_strategy" class="app-select mt-1">
+              <option value="rules">加载中…</option>
+            </select>
+          </label>
+          <details class="text-sm">
+            <summary class="cursor-pointer text-xs text-slate-500 hover:text-stock-600">高级选项（动量窗口 / 估值参数）</summary>
+            <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-blue-50">
+              <label class="block col-span-2">
+                <span class="text-xs text-slate-500">动量窗口（日）</span>
+                <select id="btMomentumLookback" class="app-select mt-1">
+                  <option value="5">5</option>
+                  <option value="20" selected>20</option>
+                  <option value="60">60</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-500">PE 上限</span>
+                <input id="btPeMax" type="number" value="25" min="1" step="1"
+                       class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-500">PB 上限</span>
+                <input id="btPbMax" type="number" value="3" min="0.1" step="0.1"
+                       class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-500">ROE 下限 %</span>
+                <input id="btRoeMin" type="number" value="10" min="0" step="1"
+                       class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-500">PEG 上限</span>
+                <input id="btPegMax" type="number" value="1.5" min="0.1" step="0.1"
+                       class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+              </label>
+            </div>
+          </details>
+          <label class="block">
+            <span class="text-xs text-slate-500">板块分类</span>
+            <select id="btClassify" name="classify" class="app-select mt-1">
+              <option value="concept">概念板块</option>
+              <option value="industry">行业板块</option>
+              <option value="sw_l1">申万一级</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="text-xs text-slate-500">板块（留空则自动选涨幅首位）</span>
+            <select id="btSectorSelect" name="sector_symbol" class="app-select mt-1">
+              <option value="">— 自动选取热点板块 —</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="text-xs text-slate-500">选股数量</span>
+            <input id="btPickLimit" name="pick_limit" type="number" value="5" min="1" max="20"
+                   class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+          </label>
+          <button type="button" id="btnPreviewPick"
+                  class="w-full px-3 py-2 rounded-lg border border-blue-200 text-stock-700 hover:bg-blue-50 text-sm">
+            预览选股
+          </button>
+          <div id="btPickedPreview" class="hidden text-xs bg-blue-50/60 border border-blue-100 rounded-lg p-2 text-slate-600"></div>
+        </div>
+        <label class="block" id="btCodesWrap">
+          <span class="text-xs text-slate-500">股票代码（逗号分隔）</span>
+          <input name="codes" type="text" value="000001" placeholder="000001,600519"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-slate-500">起始日期</span>
+            <input name="start_date" type="date" id="btStartDate"
+                   class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+          </label>
+          <label class="block">
+            <span class="text-xs text-slate-500">结束日期</span>
+            <input id="btEndDate" name="end_date" type="date"
+                   class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-xs text-slate-500">初始资金（元）</span>
+          <input name="initial_cash" type="number" value="1000000" min="1000" step="10000"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/40" />
+        </label>
+        <label class="block">
+          <span class="text-xs text-slate-500">策略</span>
+          <select name="strategy" class="app-select mt-1">
+            <option value="rules">规则策略（MA/动量/止损止盈）</option>
+            <option value="agent">Agent 策略（LLM 决策）</option>
+          </select>
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-slate-500">止损 %</span>
+            <input name="stop_loss_pct" type="number" value="5" step="0.1" min="0"
+                   class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+          </label>
+          <label class="block">
+            <span class="text-xs text-slate-500">止盈 %</span>
+            <input name="take_profit_pct" type="number" value="10" step="0.1" min="0"
+                   class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-xs text-slate-500">最大单票仓位 %</span>
+          <input name="max_position_pct" type="number" value="30" min="1" max="100"
+                 class="mt-1 w-full px-3 py-2 rounded-lg border border-blue-100 bg-blue-50/30" />
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input name="ma_cross_enabled" type="checkbox" checked class="rounded border-blue-200 text-stock-600" />
+          <span class="text-slate-600">MA 金叉/死叉</span>
+        </label>
+        <button type="submit" id="btnRunBacktest"
+                class="w-full px-4 py-2.5 rounded-xl bg-stock-600 hover:bg-stock-700 text-white font-medium transition">
+          开始回测
+        </button>
+      </form>
+      <p id="backtestPickedSummary" class="mt-2 text-xs text-stock-700 hidden"></p>
+      <p id="backtestStatus" class="mt-3 text-xs text-slate-400 hidden"></p>
+    </div>
+
+    <div class="lg:col-span-2 space-y-4">
+      <div id="backtestSummary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 hidden">
+        <div class="bg-white rounded-xl border border-blue-100 p-3">
+          <p class="text-xs text-slate-500">总收益</p>
+          <p id="btTotalReturn" class="text-lg font-bold">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-blue-100 p-3">
+          <p class="text-xs text-slate-500">年化收益</p>
+          <p id="btAnnReturn" class="text-lg font-bold">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-blue-100 p-3">
+          <p class="text-xs text-slate-500">最大回撤</p>
+          <p id="btMaxDD" class="text-lg font-bold">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-blue-100 p-3">
+          <p class="text-xs text-slate-500">夏普 / 交易数</p>
+          <p id="btSharpe" class="text-lg font-bold">—</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-4">
+        <h3 class="text-sm font-semibold text-slate-700 mb-2">净值曲线</h3>
+        <div id="backtestChart" style="height: 320px;" class="text-center text-slate-400 text-sm flex items-center justify-center">
+          提交回测后展示收益曲线
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-x-auto">
+        <div class="flex items-center gap-2 px-4 pt-4 pb-2 border-b border-blue-50">
+          <button type="button" id="btTabTrades" class="bt-result-tab px-3 py-1 text-xs rounded-lg bg-stock-600 text-white">交易流水</button>
+          <button type="button" id="btTabDaily" class="bt-result-tab px-3 py-1 text-xs rounded-lg text-slate-500 hover:bg-blue-50">每日操作</button>
+        </div>
+        <div id="backtestTradesPanel">
+          <table class="w-full text-sm">
+            <thead class="bg-blue-50/50 text-slate-500 text-xs">
+              <tr>
+                <th class="text-left px-4 py-2">日期</th>
+                <th class="text-left px-4 py-2">方向</th>
+                <th class="text-left px-4 py-2">代码</th>
+                <th class="text-right px-4 py-2">数量</th>
+                <th class="text-right px-4 py-2">价格</th>
+                <th class="text-left px-4 py-2">原因</th>
+              </tr>
+            </thead>
+            <tbody id="backtestTradesBody">
+              <tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="backtestDailyPanel" class="hidden">
+          <div id="backtestDailyList" class="divide-y divide-blue-50 text-sm"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /panelBacktest -->
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl shadow-lg text-sm text-white hidden z-50"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+(function () {
+  var positionsCache = [];
+
+  function fmtMoney(n) {
+    if (n == null || isNaN(n)) return '—';
+    return Number(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmtPct(n) {
+    if (n == null || isNaN(n)) return '';
+    var sign = n >= 0 ? '+' : '';
+    return sign + Number(n).toFixed(2) + '%';
+  }
+
+  function pnlClass(n) {
+    if (n == null || n === 0) return 'text-slate-600';
+    return n > 0 ? 'stock-up' : 'stock-down';
+  }
+
+  function showToast(msg, ok) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl shadow-lg text-sm text-white z-50 ' +
+      (ok ? 'bg-emerald-600' : 'bg-red-600');
+    el.classList.remove('hidden');
+    setTimeout(function () { el.classList.add('hidden'); }, 3200);
+  }
+
+  function renderAccount(data) {
+    document.getElementById('kpiTotalAssets').textContent = fmtMoney(data.total_assets);
+    document.getElementById('kpiCash').textContent = fmtMoney(data.cash);
+    var totalPnl = (data.stats && data.stats.total_pnl) || 0;
+    var elPnl = document.getElementById('kpiTotalPnl');
+    elPnl.textContent = fmtMoney(totalPnl);
+    elPnl.className = 'stats-kpi-value text-2xl font-bold ' + pnlClass(totalPnl);
+    var rate = (data.stats && data.stats.return_rate_pct) || 0;
+    document.getElementById('kpiReturnRate').textContent = '收益率 ' + fmtPct(rate);
+    var realized = (data.stats && data.stats.realized_pnl) || 0;
+    var unrealized = (data.stats && data.stats.unrealized_pnl) || 0;
+    document.getElementById('kpiRealizedUnrealized').innerHTML =
+      '<span class="' + pnlClass(realized) + '">' + fmtMoney(realized) + '</span>' +
+      ' / <span class="' + pnlClass(unrealized) + '">' + fmtMoney(unrealized) + '</span>';
+    var tc = (data.stats && data.stats.trade_count) || 0;
+    document.getElementById('kpiTradeCount').textContent = '交易 ' + tc + ' 次';
+
+    var rules = data.rules || {};
+    var form = document.getElementById('rulesForm');
+    form.stop_loss_pct.value = rules.stop_loss_pct != null ? rules.stop_loss_pct : 5;
+    form.take_profit_pct.value = rules.take_profit_pct != null ? rules.take_profit_pct : 10;
+    form.max_position_pct.value = rules.max_position_pct != null ? rules.max_position_pct : 30;
+    form.ma_cross_enabled.checked = !!rules.ma_cross_enabled;
+    form.change_pct_enabled.checked = !!rules.change_pct_enabled;
+    form.change_pct_trigger.value = rules.change_pct_trigger != null ? rules.change_pct_trigger : 3;
+
+    positionsCache = data.positions || [];
+    var tbody = document.getElementById('positionsBody');
+    if (!positionsCache.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">暂无持仓</td></tr>';
+    } else {
+      tbody.innerHTML = positionsCache.map(function (p) {
+        return '<tr class="border-t border-blue-50 hover:bg-blue-50/30">' +
+          '<td class="px-4 py-3 font-mono text-stock-700">' + p.code + '</td>' +
+          '<td class="px-4 py-3">' + (p.name || '') + '</td>' +
+          '<td class="px-4 py-3 text-right">' + p.quantity + '</td>' +
+          '<td class="px-4 py-3 text-right">' + fmtMoney(p.avg_cost) + '</td>' +
+          '<td class="px-4 py-3 text-right">' + fmtMoney(p.current_price) + '</td>' +
+          '<td class="px-4 py-3 text-right">' + fmtMoney(p.market_value) + '</td>' +
+          '<td class="px-4 py-3 text-right ' + pnlClass(p.unrealized_pnl) + '">' +
+            fmtMoney(p.unrealized_pnl) + ' <span class="text-xs">(' + fmtPct(p.unrealized_pnl_pct) + ')</span></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    var sel = document.getElementById('sellPositionSelect');
+    sel.innerHTML = positionsCache.length
+      ? positionsCache.map(function (p) {
+          return '<option value="' + p.key + '" data-code="' + p.code + '" data-market="' + p.market + '" data-qty="' + p.quantity + '">' +
+            p.code + ' ' + (p.name || '') + '（' + p.quantity + ' 股）</option>';
+        }).join('')
+      : '<option value="">— 暂无持仓 —</option>';
+  }
+
+  function renderTrades(items) {
+    var tbody = document.getElementById('tradesBody');
+    if (!items || !items.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">暂无流水</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(function (t) {
+      var sideCls = t.side === 'buy' ? 'text-red-600' : 'text-emerald-600';
+      var sideLabel = t.side === 'buy' ? '买入' : '卖出';
+      var rpnl = t.realized_pnl != null ? fmtMoney(t.realized_pnl) : '—';
+      return '<tr class="border-t border-blue-50 hover:bg-blue-50/30">' +
+        '<td class="px-4 py-3 text-xs text-slate-500">' + (t.created_at || '') + '</td>' +
+        '<td class="px-4 py-3 ' + sideCls + ' font-medium">' + sideLabel + '</td>' +
+        '<td class="px-4 py-3 font-mono">' + t.code + '</td>' +
+        '<td class="px-4 py-3">' + (t.name || '') + '</td>' +
+        '<td class="px-4 py-3 text-right">' + t.quantity + '</td>' +
+        '<td class="px-4 py-3 text-right">' + fmtMoney(t.price) + '</td>' +
+        '<td class="px-4 py-3 text-right">' + fmtMoney(t.amount) + '</td>' +
+        '<td class="px-4 py-3 text-right ' + pnlClass(t.realized_pnl) + '">' + rpnl + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function loadAccount() {
+    return fetch('/api/stock/simulator/account')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok !== false) renderAccount(data);
+        return data;
+      });
+  }
+
+  function loadTrades() {
+    return fetch('/api/stock/simulator/trades?limit=50')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        renderTrades(data.items || []);
+      });
+  }
+
+  function refreshAll() {
+    return Promise.all([loadAccount(), loadTrades()]);
+  }
+
+  document.getElementById('rulesForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = e.target;
+    var body = {
+      stop_loss_pct: parseFloat(f.stop_loss_pct.value),
+      take_profit_pct: parseFloat(f.take_profit_pct.value),
+      max_position_pct: parseFloat(f.max_position_pct.value),
+      ma_cross_enabled: f.ma_cross_enabled.checked,
+      change_pct_enabled: f.change_pct_enabled.checked,
+      change_pct_trigger: parseFloat(f.change_pct_trigger.value)
+    };
+    fetch('/api/stock/simulator/rules', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        showToast(data.message || '规则已保存', true);
+        if (data.rules) renderAccount(data);
+      })
+      .catch(function () { showToast('保存失败', false); });
+  });
+
+  document.getElementById('btnEvaluate').addEventListener('click', function () {
+    fetch('/api/stock/simulator/evaluate', { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var box = document.getElementById('evaluateResult');
+        var list = document.getElementById('evaluateSignals');
+        box.classList.remove('hidden');
+        if (!data.signals || !data.signals.length) {
+          list.innerHTML = '<p class="text-slate-400">当前无触发信号</p>';
+          return;
+        }
+        list.innerHTML = data.signals.map(function (s) {
+          var actCls = s.action === 'sell' ? 'text-red-600' : 'text-blue-600';
+          return '<div class="p-2 rounded-lg bg-blue-50/50 border border-blue-100">' +
+            '<span class="font-mono text-stock-700">' + s.code + '</span> ' +
+            '<span class="' + actCls + ' font-medium">' + (s.action === 'sell' ? '建议卖出' : '关注') + '</span>' +
+            '<p class="text-slate-500 mt-0.5">' + (s.reason || '') + '</p></div>';
+        }).join('');
+      });
+  });
+
+  document.getElementById('btnResetAccount').addEventListener('click', function () {
+    if (!confirm('确定重置模拟账户？持仓与流水将被清空。')) return;
+    fetch('/api/stock/simulator/account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reset: true, initial_cash: 1000000 })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function () {
+        showToast('账户已重置', true);
+        refreshAll();
+      });
+  });
+
+  /* 买入搜索 */
+  var buyInput = document.getElementById('buySearchInput');
+  var buyDropdown = document.getElementById('buySearchDropdown');
+  var buyTimer = null;
+  var buyReqId = 0;
+
+  function selectBuy(item) {
+    document.getElementById('buyCode').value = item.code;
+    document.getElementById('buyMarket').value = item.market || 'SZ';
+    document.getElementById('buyName').value = item.name || '';
+    buyInput.value = item.code + ' ' + (item.name || '');
+    document.getElementById('buySelected').textContent = '已选：' + item.code + ' ' + (item.name || '');
+    document.getElementById('buySelected').classList.remove('hidden');
+    buyDropdown.classList.add('hidden');
+  }
+
+  buyInput.addEventListener('input', function () {
+    clearTimeout(buyTimer);
+    var q = buyInput.value.trim();
+    if (!q) { buyDropdown.classList.add('hidden'); return; }
+    buyTimer = setTimeout(function () {
+      var req = ++buyReqId;
+      fetch('/api/stock/search?q=' + encodeURIComponent(q) + '&limit=8')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (req !== buyReqId) return;
+          var items = data.items || [];
+          if (!items.length) {
+            buyDropdown.innerHTML = '<p class="px-3 py-2 text-xs text-slate-400">无结果</p>';
+          } else {
+            buyDropdown.innerHTML = items.map(function (item) {
+              return '<button type="button" class="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm flex gap-2">' +
+                '<span class="font-mono text-stock-700">' + item.code + '</span>' +
+                '<span>' + item.name + '</span></button>';
+            }).join('');
+            buyDropdown.querySelectorAll('button').forEach(function (btn, i) {
+              btn.addEventListener('click', function () { selectBuy(items[i]); });
+            });
+          }
+          buyDropdown.classList.remove('hidden');
+        });
+    }, 280);
+  });
+
+  document.getElementById('buyForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = document.getElementById('buyCode').value || buyInput.value.trim();
+    if (!code) { showToast('请选择股票', false); return; }
+    var f = e.target;
+    var body = {
+      code: code.split(/\s+/)[0],
+      market: document.getElementById('buyMarket').value || null,
+      name: document.getElementById('buyName').value || null,
+      quantity: f.quantity.value ? parseInt(f.quantity.value, 10) : null,
+      amount: f.amount.value ? parseFloat(f.amount.value) : null,
+      price: f.price.value ? parseFloat(f.price.value) : null
+    };
+    if (!body.quantity && !body.amount) {
+      showToast('请填写数量或金额', false);
+      return;
+    }
+    fetch('/api/stock/simulator/buy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          showToast(res.data.error || '买入失败', false);
+          return;
+        }
+        showToast('买入成功', true);
+        f.quantity.value = '';
+        f.amount.value = '';
+        refreshAll();
+      })
+      .catch(function () { showToast('买入请求失败', false); });
+  });
+
+  document.getElementById('sellForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var sel = document.getElementById('sellPositionSelect');
+    var opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) { showToast('请选择持仓', false); return; }
+    var f = e.target;
+    var qty = parseInt(f.quantity.value, 10);
+    if (!qty || qty <= 0) { showToast('请填写卖出数量', false); return; }
+    var body = {
+      code: opt.getAttribute('data-code'),
+      market: opt.getAttribute('data-market'),
+      quantity: qty,
+      price: f.price.value ? parseFloat(f.price.value) : null
+    };
+    fetch('/api/stock/simulator/sell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          showToast(res.data.error || '卖出失败', false);
+          return;
+        }
+        showToast('卖出成功，已实现盈亏 ' + fmtMoney((res.data.trade && res.data.trade.realized_pnl) || 0), true);
+        f.quantity.value = '';
+        refreshAll();
+      })
+      .catch(function () { showToast('卖出请求失败', false); });
+  });
+
+  document.getElementById('sellPositionSelect').addEventListener('change', function (e) {
+    var opt = e.target.options[e.target.selectedIndex];
+    if (opt && opt.getAttribute('data-qty')) {
+      e.target.form.quantity.placeholder = '最多 ' + opt.getAttribute('data-qty') + ' 股';
+    }
+  });
+
+  refreshAll();
+
+  /* Tab 切换 */
+  var panelManual = document.getElementById('panelManual');
+  var panelBacktest = document.getElementById('panelBacktest');
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tab = btn.getAttribute('data-tab');
+      document.querySelectorAll('.tab-btn').forEach(function (b) {
+        b.classList.remove('border-stock-600', 'text-stock-700');
+        b.classList.add('border-transparent', 'text-slate-500');
+      });
+      btn.classList.add('border-stock-600', 'text-stock-700');
+      btn.classList.remove('border-transparent', 'text-slate-500');
+      panelManual.classList.toggle('hidden', tab !== 'manual');
+      panelBacktest.classList.toggle('hidden', tab !== 'backtest');
+      if (tab === 'backtest' && backtestChart) backtestChart.resize();
+    });
+  });
+
+  /* 回测默认日期：近 120 日 */
+  (function () {
+    var end = new Date();
+    var start = new Date();
+    start.setDate(start.getDate() - 120);
+    function fmt(d) {
+      return d.toISOString().slice(0, 10);
+    }
+    document.getElementById('btEndDate').value = fmt(end);
+    document.getElementById('btStartDate').value = fmt(start);
+  })();
+
+  var backtestChart = null;
+  var btSectorCache = {};
+  var mnSectorCache = {};
+  var strategyCatalog = [];
+
+  function renderStrategySelect(selectEl) {
+    if (!selectEl || !strategyCatalog.length) return;
+    var groups = { basic: [], classic: [] };
+    strategyCatalog.forEach(function (s) {
+      var g = s.group === 'classic' ? 'classic' : 'basic';
+      groups[g].push(s);
+    });
+    var html = '';
+    if (groups.basic.length) {
+      html += '<optgroup label="基础策略">';
+      groups.basic.forEach(function (s) {
+        html += '<option value="' + s.id + '" title="' + (s.desc || '') + '">' + s.name + '</option>';
+      });
+      html += '</optgroup>';
+    }
+    if (groups.classic.length) {
+      html += '<optgroup label="经典策略">';
+      groups.classic.forEach(function (s) {
+        html += '<option value="' + s.id + '" title="' + (s.desc || '') + '">' + s.name + '</option>';
+      });
+      html += '</optgroup>';
+    }
+    var prev = selectEl.value;
+    selectEl.innerHTML = html;
+    if (prev) selectEl.value = prev;
+  }
+
+  var DEFAULT_STRATEGY_CATALOG = [
+    { id: 'rules', name: '板块动量（规则）', desc: '在指定板块内按 N 日涨幅排序，取 Top 标的', group: 'basic' },
+    { id: 'sector_momentum', name: '板块涨幅 Top', desc: '同板块动量规则，强调板块内涨幅排名', group: 'basic' },
+    { id: 'agent', name: 'Agent 智能选股', desc: 'LLM 结合板块与 K 线推断；不可用时降级板块动量', group: 'basic' },
+    { id: 'value', name: '价值投资', desc: '低 PE/PB 筛选，优先估值更低的标的', group: 'classic' },
+    { id: 'growth', name: '成长策略', desc: '按营收/净利润同比增速排序，偏好高成长', group: 'classic' },
+    { id: 'garp', name: 'GARP', desc: 'PEG 合理区间（PE/增速），兼顾估值与成长', group: 'classic' },
+    { id: 'momentum', name: '动量策略', desc: '全市场或候选池按 N 日动量排序（可配 5/20/60 日）', group: 'classic' },
+    { id: 'dual_ma', name: '双均线', desc: '收盘价 > MA20 且 MA5 > MA20，再按动量排序', group: 'classic' },
+    { id: 'quality', name: '质量策略', desc: 'ROE 达标过滤，按 ROE 从高到低选取', group: 'classic' },
+    { id: 'sector_rotation', name: '行业轮动', desc: '选取动量 Top 板块，合并成分股后再排序', group: 'classic' },
+    { id: 'low_volatility', name: '低波动', desc: '历史波动率升序，偏好波动更低的标的', group: 'classic' }
+  ];
+
+  function applyStrategyCatalog(catalog) {
+    strategyCatalog = catalog && catalog.length ? catalog : DEFAULT_STRATEGY_CATALOG;
+    renderStrategySelect(document.getElementById('btPickStrategy'));
+    renderStrategySelect(document.getElementById('mnPickStrategy'));
+  }
+
+  function loadStrategyCatalog() {
+    return fetch('/api/stock/simulator/strategies')
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || !data.strategies || !data.strategies.length) throw new Error('empty strategies');
+        applyStrategyCatalog(data.strategies);
+      })
+      .catch(function () {
+        applyStrategyCatalog(DEFAULT_STRATEGY_CATALOG);
+      });
+  }
+
+  function pickConstraints(prefix) {
+    var p = prefix || 'bt';
+    var c = {};
+    var pe = document.getElementById(p + 'PeMax');
+    var pb = document.getElementById(p + 'PbMax');
+    var roe = document.getElementById(p + 'RoeMin');
+    var peg = document.getElementById(p + 'PegMax');
+    if (pe && pe.value) c.pe_max = parseFloat(pe.value);
+    if (pb && pb.value) c.pb_max = parseFloat(pb.value);
+    if (roe && roe.value) c.roe_min = parseFloat(roe.value);
+    if (peg && peg.value) c.peg_max = parseFloat(peg.value);
+    return Object.keys(c).length ? c : null;
+  }
+
+  function buildPickUniverse(prefix) {
+    var p = prefix || 'bt';
+    var cache = p === 'mn' ? mnSectorCache : btSectorCache;
+    var sectorName = document.getElementById(p + 'SectorSelect').value;
+    var sector = cache[sectorName] || {};
+    return {
+      classify: document.getElementById(p + 'Classify').value,
+      symbol: sectorName,
+      code: sector.code || null,
+      limit: parseInt(document.getElementById(p + 'PickLimit').value, 10) || 5,
+      universe: 'sector'
+    };
+  }
+
+  function buildPickRequestBody(prefix) {
+    var p = prefix || 'bt';
+    var lookbackEl = document.getElementById(p + 'MomentumLookback');
+    var body = {
+      pick_strategy: document.getElementById(p + 'PickStrategy').value,
+      universe: buildPickUniverse(p),
+      momentum_lookback: lookbackEl ? parseInt(lookbackEl.value, 10) || 20 : 20,
+      constraints: pickConstraints(p)
+    };
+    if (p === 'bt') {
+      body.start_date = document.getElementById('btStartDate').value;
+      body.end_date = document.getElementById('btEndDate').value;
+    } else {
+      var asOf = document.getElementById('mnAsOfDate').value;
+      if (asOf) body.as_of_date = asOf;
+    }
+    return body;
+  }
+
+  function loadSectors(prefix) {
+    var p = prefix || 'bt';
+    var classify = document.getElementById(p + 'Classify').value;
+    var sel = document.getElementById(p + 'SectorSelect');
+    var cache = p === 'mn' ? mnSectorCache : btSectorCache;
+    var prev = sel.value;
+    sel.innerHTML = '<option value="">— 加载中… —</option>';
+    fetch('/api/stock/sectors?classify=' + encodeURIComponent(classify) + '&limit=80&sort_by=change_pct&order=desc')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var items = data.items || [];
+        Object.keys(cache).forEach(function (k) { delete cache[k]; });
+        var opts = ['<option value="">— 自动选取热点板块 —</option>'];
+        items.forEach(function (it) {
+          cache[it.name] = it;
+          var chg = it.change_pct != null ? ' (' + Number(it.change_pct).toFixed(2) + '%)' : '';
+          opts.push('<option value="' + (it.name || '') + '">' + (it.name || '') + chg + '</option>');
+        });
+        sel.innerHTML = opts.join('');
+        if (prev && cache[prev]) sel.value = prev;
+      })
+      .catch(function () {
+        sel.innerHTML = '<option value="">— 板块加载失败 —</option>';
+      });
+  }
+
+  function toggleAutoPickUI() {
+    var on = document.getElementById('btAutoPick').checked;
+    document.getElementById('btAutoPickPanel').classList.toggle('hidden', !on);
+    document.getElementById('btCodesWrap').classList.toggle('hidden', on);
+    if (on) loadSectors('bt');
+  }
+
+  function loadBtSectors() {
+    loadSectors('bt');
+  }
+
+  function renderPickedStocks(items, containerId) {
+    var el = document.getElementById(containerId);
+    if (!items || !items.length) {
+      el.classList.add('hidden');
+      el.textContent = '';
+      return;
+    }
+    el.classList.remove('hidden');
+    el.innerHTML = items.map(function (p) {
+      return '<span class="inline-block mr-2 mb-1 px-1.5 py-0.5 rounded bg-white border border-blue-100">' +
+        (p.code || '') + ' ' + (p.name || '') +
+        (p.reason ? '<span class="text-slate-400"> · ' + p.reason + '</span>' : '') +
+        '</span>';
+    }).join('');
+  }
+
+  document.getElementById('btAutoPick').addEventListener('change', toggleAutoPickUI);
+  document.getElementById('btClassify').addEventListener('change', function () { loadSectors('bt'); });
+  document.getElementById('mnClassify').addEventListener('change', function () { loadSectors('mn'); });
+
+  function runPreviewPick(prefix, btnId, previewId) {
+    var btn = document.getElementById(btnId);
+    btn.disabled = true;
+    btn.textContent = '选股中…';
+    fetch('/api/stock/simulator/pick-stocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildPickRequestBody(prefix))
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        btn.textContent = '预览选股';
+        if (!res.ok) {
+          showToast(res.data.error || '选股失败', false);
+          return;
+        }
+        renderPickedStocks(res.data.items, previewId);
+        var msg = '已选出 ' + (res.data.items || []).length + ' 只';
+        if (res.data.strategy) msg += '（' + res.data.strategy + '）';
+        if (res.data.fallback || res.data.degraded) msg += '，已降级';
+        if (res.data.degraded_reason) msg += '：' + res.data.degraded_reason;
+        showToast(msg, true);
+        if (prefix === 'mn' && res.data.items && res.data.items[0]) {
+          var first = res.data.items[0];
+          document.getElementById('buyCode').value = first.code || '';
+          document.getElementById('buyMarket').value = first.market || '';
+          document.getElementById('buyName').value = first.name || '';
+          document.getElementById('buySearchInput').value = (first.code || '') + ' ' + (first.name || '');
+          document.getElementById('buySelected').textContent = '已填入首只：' + first.code + ' ' + first.name;
+          document.getElementById('buySelected').classList.remove('hidden');
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = '预览选股';
+        showToast('选股请求失败', false);
+      });
+  }
+
+  document.getElementById('btnPreviewPick').addEventListener('click', function () {
+    runPreviewPick('bt', 'btnPreviewPick', 'btPickedPreview');
+  });
+  document.getElementById('btnMnPreviewPick').addEventListener('click', function () {
+    runPreviewPick('mn', 'btnMnPreviewPick', 'mnPickedPreview');
+  });
+
+  loadStrategyCatalog().then(function () {
+    loadSectors('mn');
+    document.getElementById('mnAsOfDate').value = new Date().toISOString().slice(0, 10);
+  });
+
+  function renderBacktestResult(data) {
+    var summary = data.summary || {};
+    document.getElementById('backtestSummary').classList.remove('hidden');
+    var tr = summary.total_return_pct;
+    var elTr = document.getElementById('btTotalReturn');
+    elTr.textContent = fmtPct(tr);
+    elTr.className = 'text-lg font-bold ' + pnlClass(tr);
+    document.getElementById('btAnnReturn').textContent = fmtPct(summary.annualized_return_pct);
+    document.getElementById('btMaxDD').textContent = (summary.max_drawdown_pct != null ? '-' + summary.max_drawdown_pct.toFixed(2) + '%' : '—');
+    document.getElementById('btSharpe').textContent =
+      (summary.sharpe_ratio != null ? summary.sharpe_ratio : '—') + ' / ' + (summary.trade_count || 0);
+
+    var curve = data.equity_curve || [];
+    var chartEl = document.getElementById('backtestChart');
+    chartEl.className = '';
+    chartEl.style.height = '320px';
+    if (typeof echarts !== 'undefined' && curve.length) {
+      if (!backtestChart) backtestChart = echarts.init(chartEl);
+      backtestChart.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 60, right: 20, top: 20, bottom: 40 },
+        xAxis: { type: 'category', data: curve.map(function (p) { return p.date; }), axisLabel: { rotate: 45, fontSize: 10 } },
+        yAxis: { type: 'value', scale: true },
+        series: [{
+          name: '净值',
+          type: 'line',
+          smooth: true,
+          data: curve.map(function (p) { return p.equity; }),
+          areaStyle: { color: 'rgba(37,99,235,0.08)' },
+          lineStyle: { color: '#2563eb', width: 2 },
+          itemStyle: { color: '#2563eb' }
+        }]
+      });
+    }
+
+    var tbody = document.getElementById('backtestTradesBody');
+    var trades = data.trades || [];
+    if (!trades.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">回测期间无交易</td></tr>';
+    } else {
+      tbody.innerHTML = trades.map(function (t) {
+        var sideCls = t.side === 'buy' ? 'text-red-600' : 'text-emerald-600';
+        return '<tr class="border-t border-blue-50">' +
+          '<td class="px-4 py-2 text-xs">' + (t.date || '') + '</td>' +
+          '<td class="px-4 py-2 ' + sideCls + '">' + (t.side === 'buy' ? '买入' : '卖出') + '</td>' +
+          '<td class="px-4 py-2 font-mono">' + t.code + '</td>' +
+          '<td class="px-4 py-2 text-right">' + t.quantity + '</td>' +
+          '<td class="px-4 py-2 text-right">' + fmtMoney(t.price) + '</td>' +
+          '<td class="px-4 py-2 text-xs text-slate-500">' + (t.reason || '') + '</td></tr>';
+      }).join('');
+    }
+
+    var dailyList = document.getElementById('backtestDailyList');
+    var dailyLog = data.daily_log || [];
+    if (!dailyLog.length) {
+      dailyList.innerHTML = '<p class="px-4 py-6 text-center text-slate-400">暂无每日操作记录</p>';
+    } else {
+      dailyList.innerHTML = dailyLog.map(function (day, idx) {
+        var actions = (day.actions || []).map(function (a) {
+          var typeMap = { buy: '买入', sell: '卖出', pick: '选股', hold: '持有' };
+          var cls = a.type === 'buy' ? 'text-red-600' : (a.type === 'sell' ? 'text-emerald-600' : 'text-slate-600');
+          var qtyPrice = a.type === 'pick' || a.type === 'hold'
+            ? ''
+            : (' · ' + (a.qty || 0) + '股 @ ' + fmtMoney(a.price));
+          return '<li class="' + cls + '">' + (typeMap[a.type] || a.type) + ' ' +
+            (a.code || '') + qtyPrice + (a.reason ? ' — ' + a.reason : '') + '</li>';
+        }).join('');
+        var posSnap = (day.positions_snapshot || []).map(function (p) {
+          return p.code + '×' + p.quantity;
+        }).join(', ') || '空仓';
+        return '<details class="group"' + (idx < 3 ? ' open' : '') + '>' +
+          '<summary class="px-4 py-3 cursor-pointer hover:bg-blue-50/40 flex flex-wrap gap-x-4 gap-y-1">' +
+          '<span class="font-medium text-stock-700">' + day.date + '</span>' +
+          '<span class="text-slate-500">净值 ' + fmtMoney(day.equity) + '</span>' +
+          '<span class="text-slate-400">现金 ' + fmtMoney(day.cash) + '</span>' +
+          '<span class="text-xs text-slate-400">' + (day.actions || []).length + ' 项操作</span>' +
+          '</summary>' +
+          '<div class="px-4 pb-3 text-xs">' +
+          '<ul class="space-y-1 mb-2">' + actions + '</ul>' +
+          '<p class="text-slate-500">持仓：' + posSnap + '</p></div></details>';
+      }).join('');
+    }
+
+    var status = document.getElementById('backtestStatus');
+    status.classList.remove('hidden');
+    var msg = '策略: ' + (data.strategy || 'rules');
+    if (data.agent_fallback) msg += '（已降级规则）';
+    status.textContent = msg + ' · run_id: ' + (data.run_id || '');
+
+    var pickedEl = document.getElementById('backtestPickedSummary');
+    var picked = data.picked_stocks || [];
+    if (picked.length) {
+      pickedEl.classList.remove('hidden');
+      pickedEl.textContent = '本次选中：' + picked.map(function (p) {
+        return (p.code || '') + ' ' + (p.name || '');
+      }).join('、');
+    } else {
+      pickedEl.classList.add('hidden');
+    }
+  }
+
+  document.getElementById('btTabTrades').addEventListener('click', function () {
+    document.getElementById('backtestTradesPanel').classList.remove('hidden');
+    document.getElementById('backtestDailyPanel').classList.add('hidden');
+    document.getElementById('btTabTrades').className = 'bt-result-tab px-3 py-1 text-xs rounded-lg bg-stock-600 text-white';
+    document.getElementById('btTabDaily').className = 'bt-result-tab px-3 py-1 text-xs rounded-lg text-slate-500 hover:bg-blue-50';
+  });
+  document.getElementById('btTabDaily').addEventListener('click', function () {
+    document.getElementById('backtestTradesPanel').classList.add('hidden');
+    document.getElementById('backtestDailyPanel').classList.remove('hidden');
+    document.getElementById('btTabDaily').className = 'bt-result-tab px-3 py-1 text-xs rounded-lg bg-stock-600 text-white';
+    document.getElementById('btTabTrades').className = 'bt-result-tab px-3 py-1 text-xs rounded-lg text-slate-500 hover:bg-blue-50';
+  });
+
+  document.getElementById('backtestForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = e.target;
+    var autoPick = document.getElementById('btAutoPick').checked;
+    var codes = f.codes.value.split(/[,，\s]+/).map(function (c) { return c.trim(); }).filter(Boolean);
+    if (!autoPick && !codes.length) { showToast('请填写股票代码或开启自动选股', false); return; }
+    var body = {
+      auto_pick: autoPick,
+      pick_strategy: document.getElementById('btPickStrategy').value,
+      universe: buildPickUniverse('bt'),
+      momentum_lookback: parseInt(document.getElementById('btMomentumLookback').value, 10) || 20,
+      pick_constraints: pickConstraints('bt'),
+      start_date: f.start_date.value,
+      end_date: f.end_date.value,
+      initial_cash: parseFloat(f.initial_cash.value) || 1000000,
+      strategy: f.strategy.value,
+      rules: {
+        stop_loss_pct: parseFloat(f.stop_loss_pct.value),
+        take_profit_pct: parseFloat(f.take_profit_pct.value),
+        max_position_pct: parseFloat(f.max_position_pct.value),
+        ma_cross_enabled: f.ma_cross_enabled.checked
+      }
+    };
+    if (!autoPick) body.codes = codes;
+    var url = body.strategy === 'agent' ? '/api/stock/simulator/backtest/agent' : '/api/stock/simulator/backtest';
+    var btn = document.getElementById('btnRunBacktest');
+    btn.disabled = true;
+    btn.textContent = '回测中…';
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        btn.textContent = '开始回测';
+        if (!res.ok) {
+          showToast(res.data.error || '回测失败', false);
+          return;
+        }
+        renderBacktestResult(res.data);
+        showToast('回测完成', true);
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = '开始回测';
+        showToast('回测请求失败', false);
+      });
+  });
+})();
+</script>
+{% endblock %}

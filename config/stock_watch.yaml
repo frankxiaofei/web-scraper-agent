@@ -1,0 +1,126 @@
+# 股票专题监测配置（AKShare + bid_notices 关键词 + mock 演示）
+version: 2
+description: AKShare 财经快讯 + 招采公告库关键词筛选，支撑产业发展分析与中长线投资计划
+scope_label: AKShare 财经快讯 + 招采公告库关键词筛选
+
+# 演示用示例条目（真实数据源未配置时补充展示）
+use_mock_when_empty: true
+mock_items:
+  - title: "某上市公司 2025 年度业绩预告修正公告"
+    url: "https://example.com/stock/mock-earnings"
+    source_site_name: "演示数据"
+    category: "公告"
+    theme: "财报"
+    stock_keywords: ["业绩预告", "财报"]
+    content_text: "预计净利润同比增长 15%-20%，受益于主营业务扩张。"
+  - title: "关于向特定对象发行股票（定增）的申请获受理"
+    url: "https://example.com/stock/mock-placement"
+    source_site_name: "演示数据"
+    category: "公告"
+    theme: "定增"
+    stock_keywords: ["定增", "定向增发"]
+    content_text: "募集资金拟用于产能扩建与研发投入。"
+  - title: "股权激励计划（草案）摘要"
+    url: "https://example.com/stock/mock-incentive"
+    source_site_name: "演示数据"
+    category: "公告"
+    theme: "股权激励"
+    stock_keywords: ["股权激励", "限制性股票"]
+    content_text: "向核心管理人员及技术骨干授予限制性股票。"
+
+# 新闻采集（见 .env STOCK_NEWS_SOURCES；默认 akshare + bid_notices）
+news:
+  request_interval_seconds: 2
+  max_items_per_source: 20
+  default_sources:
+    - akshare
+    - bid_notices
+  sources:
+    - id: akshare
+      type: akshare
+      name: 东方财富全球快讯
+    - id: mock
+      type: mock
+      name: 演示财经
+    - id: bid_notices
+      type: bid_notices
+      name: 招采公告库（上市公司公告/定增/并购类）
+    # RSS 源需自行验证可用性，遵守 robots.txt 与访问频率
+    - id: xinhua_finance
+      type: rss
+      name: 新华社财经
+      url: http://www.xinhuanet.com/fortune/news_fortune.xml
+      enabled: false
+    - id: eastmoney_roll
+      type: rss
+      name: 东方财富滚动
+      url: https://feed.eastmoney.com/rss/cjxw.xml
+      enabled: false
+
+# 关注产业/板块（产业发展分析用）
+industries:
+  - id: new_energy
+    name: 新能源
+    keywords: [新能源, 光伏, 储能, 锂电池, 风电, 氢能, 充电桩, 绿电]
+  - id: semiconductor
+    name: 半导体
+    keywords: [半导体, 芯片, 集成电路, IC, 封测, 光刻, EDA, 先进制程]
+  - id: smart_agri
+    name: 智慧农业
+    keywords: [智慧农业, 数字农业, 农业物联网, 精准灌溉, 种业, 农机智能化]
+  - id: soe_reform
+    name: 央企改革
+    keywords: [央企改革, 国企改革, 资产重组, 专业化整合, 市值管理, 央企控股]
+  - id: ai_compute
+    name: 人工智能
+    keywords: [人工智能, AI, 大模型, 算力, 智算中心, 数据中心]
+  - id: healthcare
+    name: 医药生物
+    keywords: [医药, 创新药, 医疗器械, 生物医药, CXO, 集采]
+
+# 关注板块 / 主题（公告关键词）
+themes:
+  - id: a_share
+    name: A股
+    keywords: [A股, 沪深, 上交所, 深交所, 科创板, 创业板]
+  - id: hk_share
+    name: 港股
+    keywords: [港股, 港交所, H股]
+  - id: earnings
+    name: 财报
+    keywords: [财报, 年度报告, 季度报告, 业绩预告, 业绩快报, 分红]
+  - id: placement
+    name: 定增
+    keywords: [定增, 定向增发, 非公开发行]
+  - id: mna
+    name: 并购
+    keywords: [并购, 收购, 重组, 资产重组, 借壳]
+  - id: incentive
+    name: 股权激励
+    keywords: [股权激励, 限制性股票, 员工持股, 期权激励]
+
+# 全局匹配关键词（未命中主题时使用）
+match_keywords:
+  - 股票
+  - 证券
+  - 上市公司
+  - 董事会
+  - 股东大会
+  - 信息披露
+  - 投资者关系
+  - 路演
+  - 回购
+  - 增持
+  - 减持
+
+# 示例关注代码（展示用，MVP 不做行情 API）
+watch_symbols:
+  - code: "600519"
+    name: 贵州茅台
+    market: A股
+  - code: "00700"
+    name: 腾讯控股
+    market: 港股
+  - code: "000001"
+    name: 平安银行
+    market: A股

@@ -1,0 +1,287 @@
+INFO:     Started server process [53570]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8092 (Press CTRL+C to quit)
+股票领域分析: http://0.0.0.0:8092/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+农业专题（8091）: http://127.0.0.1:8091/
+数据源: bid_notices 关键词筛选 + mock 演示（需配置专用股票数据源）
+INFO:     127.0.0.1:64098 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64125 - "GET /insights HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64126 - "GET /api/stock/health HTTP/1.1" 200 OK
+  0%|          | 0/6 [00:00<?, ?it/s]                                     AKShare stock_hk_ggt_components_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_ggt_components_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_ggt_components_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_ggt_components_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+INFO:     127.0.0.1:64434 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64435 - "GET /static/logo.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64494 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64613 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64614 - "GET /insights HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64615 - "GET /api/stock/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64618 - "GET /static/logo.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64645 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64646 - "GET /static/logo.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64683 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64997 - "GET / HTTP/1.1" 200 OK
+INFO:     Started server process [57114]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8092 (Press CTRL+C to quit)
+股票领域分析: http://0.0.0.0:8092/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+农业专题（8091）: http://127.0.0.1:8091/
+数据源: bid_notices 关键词筛选 + mock 演示（需配置专用股票数据源）
+  0%|          | 0/6 [00:00<?, ?it/s] 17%|█▋        | 1/6 [00:01<00:06,  1.25s/it] 33%|███▎      | 2/6 [00:02<00:05,  1.44s/it]INFO:     127.0.0.1:65054 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65058 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65059 - "GET /insights HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65060 - "GET /insights HTTP/1.1" 200 OK
+ 50%|█████     | 3/6 [00:05<00:06,  2.06s/it]                                             AKShare stock_hk_ggt_components_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_ggt_components_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+INFO:     127.0.0.1:65137 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65138 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65139 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65140 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65141 - "GET /insights HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65142 - "GET /insights HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65143 - "GET /insights HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65144 - "GET /insights HTTP/1.1" 200 OK
+AKShare stock_hk_ggt_components_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_ggt_components_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(科技类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(金融类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(医药食品类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(媒体类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(汽车能源类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(制造零售类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+INFO:     127.0.0.1:49597 - "GET /workflow HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49598 - "GET /crawl-rules/wechat_36kr/workflow HTTP/1.1" 404 Not Found
+INFO:     Started server process [93473]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8092 (Press CTRL+C to quit)
+AKShare stock_hk_ggt_components_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+股票领域分析: http://0.0.0.0:8092/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+商机洞察专题（8091）: http://127.0.0.1:8091/
+数据源: bid_notices 关键词筛选 + mock 演示（需配置专用股票数据源）
+INFO:     127.0.0.1:52170 - "GET /insights HTTP/1.1" 200 OK
+AKShare stock_hk_ggt_components_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_ggt_components_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_ggt_components_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(科技类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(金融类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(医药食品类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(媒体类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(汽车能源类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(制造零售类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+INFO:     Started server process [24494]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8092 (Press CTRL+C to quit)
+股票领域分析: http://0.0.0.0:8092/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+商机洞察专题（8091）: http://127.0.0.1:8091/
+数据源: bid_notices 关键词筛选 + mock 演示（需配置专用股票数据源）
+  0%|          | 0/6 [00:00<?, ?it/s] 17%|█▋        | 1/6 [00:01<00:05,  1.16s/it] 33%|███▎      | 2/6 [00:02<00:04,  1.10s/it] 50%|█████     | 3/6 [00:03<00:03,  1.31s/it]INFO:     127.0.0.1:60679 - "GET / HTTP/1.1" 200 OK
+                                             AKShare stock_hk_ggt_components_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_ggt_components_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_ggt_components_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_ggt_components_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(科技类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(金融类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(医药食品类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(媒体类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(汽车能源类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(制造零售类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+INFO:     Started server process [75720]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8092 (Press CTRL+C to quit)
+AKShare stock_hk_ggt_components_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+股票领域分析: http://0.0.0.0:8092/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+商机洞察专题（8091）: http://127.0.0.1:8091/
+数据源: bid_notices 关键词筛选 + mock 演示（需配置专用股票数据源）
+INFO:     127.0.0.1:60899 - "GET / HTTP/1.1" 200 OK
+AKShare stock_hk_ggt_components_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_ggt_components_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_ggt_components_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(科技类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(金融类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(医药食品类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(媒体类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(汽车能源类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(制造零售类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+INFO:     127.0.0.1:64087 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64193 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50166 - "GET / HTTP/1.1" 200 OK
+INFO:     Started server process [30022]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8092 (Press CTRL+C to quit)
+AKShare stock_hk_ggt_components_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+股票领域分析: http://0.0.0.0:8092/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+商机洞察专题（8091）: http://127.0.0.1:8091/
+数据源: bid_notices 关键词筛选 + mock 演示（需配置专用股票数据源）
+INFO:     127.0.0.1:50937 - "GET / HTTP/1.1" 200 OK
+AKShare stock_hk_ggt_components_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_ggt_components_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_ggt_components_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_hk_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股列表 stock_hk_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+港股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_spot_em 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_spot_em 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(科技类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(科技类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(金融类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(金融类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(医药食品类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(医药食品类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(媒体类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(媒体类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(汽车能源类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(汽车能源类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 1/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 2/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+AKShare stock_us_famous_spot_em(制造零售类) 第 3/3 次失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股列表 stock_us_famous_spot_em(制造零售类) 失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+美股直通检索列表失败: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+INFO:     127.0.0.1:64968 - "GET / HTTP/1.1" 200 OK

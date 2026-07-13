@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}WebScraperAgent — 商机洞察{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/logo.svg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            agri: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46' }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .agri-header { background: linear-gradient(135deg, #065f46 0%, #047857 50%, #6d28d9 100%); }
+    .stats-kpi-card-emerald { border-top-color: #10b981; }
+    .stats-kpi-card-green { border-top-color: #059669; }
+    .stats-kpi-card-teal { border-top-color: #14b8a6; }
+    .stats-kpi-card-lime { border-top-color: #84cc16; }
+    .stats-kpi-card-emerald .stats-kpi-value { color: #059669; }
+    .stats-kpi-card-green .stats-kpi-value { color: #047857; }
+    .stats-kpi-card-teal .stats-kpi-value { color: #0d9488; }
+    .stats-kpi-card-lime .stats-kpi-value { color: #65a30d; }
+    .stats-bar-fill-emerald { background: linear-gradient(90deg, #10b981, #059669); }
+    .stats-bar-fill-green { background: linear-gradient(90deg, #34d399, #10b981); }
+    .agri-badge { background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="bg-emerald-50/40 text-slate-800 min-h-screen flex flex-col">
+  <header class="agri-header text-white shadow-lg sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <a href="/" class="flex items-center gap-3 group">
+        <img src="/static/logo.svg" alt="WebScraperAgent" width="40" height="40" class="w-10 h-10 rounded-xl shadow-md group-hover:opacity-90 transition">
+        <div>
+          <h1 class="text-lg font-semibold leading-tight">WebScraperAgent</h1>
+          <p class="text-xs text-emerald-100/90">商机洞察 · 基于采集数据，智能发现商业商机 · :{{ agri_ui_port or 8091 }}</p>
+        </div>
+      </a>
+      <nav class="flex items-center gap-2 text-sm flex-wrap">
+        <a href="/" class="px-3 py-1.5 rounded-lg transition {% if active_nav == 'insights' or not active_nav %}bg-white/25 font-medium{% else %}text-emerald-100 hover:bg-white/15{% endif %}">Agent 分析</a>
+        <a href="/tenders" class="px-3 py-1.5 rounded-lg transition {% if active_nav == 'tenders' %}bg-white/25 font-medium{% else %}text-emerald-100 hover:bg-white/15{% endif %}">招标列表</a>
+        <a href="/hermes" class="px-3 py-1.5 rounded-lg transition {% if active_nav == 'hermes' %}bg-white/25 font-medium{% else %}text-emerald-100 hover:bg-white/15{% endif %}">分析 Agent</a>
+        <a href="http://127.0.0.1:{{ main_ui_port or 8090 }}/" target="_blank" rel="noopener"
+           class="px-3 py-1.5 rounded-lg agri-badge text-emerald-50 hover:bg-white/25 transition text-xs">
+          主 UI :{{ main_ui_port or 8090 }} ↗
+        </a>
+      </nav>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="agri-badge px-2.5 py-1 rounded-full font-medium {% if data_source == 'mongodb' %}text-emerald-50{% else %}text-amber-100{% endif %}">
+          {% if data_source == 'mongodb' %}MongoDB{% else %}JSONL{% endif %}
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-emerald-100 bg-white/80 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-slate-400">
+      WebScraperAgent · 商机洞察专题 · 端口 {{ agri_ui_port or 8091 }}
+    </div>
+  </footer>
+</body>
+</html>

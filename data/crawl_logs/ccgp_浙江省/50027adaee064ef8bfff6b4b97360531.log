@@ -1,0 +1,37 @@
+2026-07-13 08:21:23 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [start] 开始爬取 浙江省政府采购网 url=http://www.ccgp-zhejiang.gov.cn/
+2026-07-13 08:21:23 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_list] 开始抓取列表 (max_items=30, detail=True, intelligent=False) url=http://www.ccgp-zhejiang.gov.cn/
+2026-07-13 08:21:23 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [delay] 请求前等待 2.0s
+2026-07-13 08:21:25 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_list] 抓取列表页 (尝试 1/3) url=http://www.ccgp-zhejiang.gov.cn/
+2026-07-13 08:21:31 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (1/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600002&articleId=Yxdyhr%2FgF9%2FoZVfwCl1pPQ%3D%3D
+2026-07-13 08:21:49 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (2/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600002&articleId=IDRlcpp83QpR4DUO9lK3HQ%3D%3D
+2026-07-13 08:22:07 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (3/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600002&articleId=i6YnBVBKcp5b7H6X1zibRQ%3D%3D
+2026-07-13 08:22:38 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (4/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600002&articleId=%2F%2BgLh2ubiHsDnTRrmLdoqQ%3D%3D
+2026-07-13 08:22:56 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (5/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600002&articleId=FJIJxiZHKITe5%2F0Z760glw%3D%3D
+2026-07-13 08:23:14 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (6/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600002&articleId=riMweAFDOpU9OYajDtC2yw%3D%3D
+2026-07-13 08:23:32 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (7/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600002&articleId=nRWsk5UoMRuh5fGsTqI5lQ%3D%3D
+2026-07-13 08:23:50 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (8/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600002&articleId=gm3TxCti1WSUWA0XBUHBgA%3D%3D
+2026-07-13 08:24:08 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (9/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600233&articleId=NJaSQ%2BzbBRNg4fs6OQICqw%3D%3D
+2026-07-13 08:24:26 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (10/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600233&articleId=RUGmfQn0S66ZGRHLiOy7ZQ%3D%3D
+2026-07-13 08:24:44 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (11/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600233&articleId=kuoAV9dasNSYqi1Styeyug%3D%3D
+2026-07-13 08:25:03 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (12/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600233&articleId=HLF47GDmVDJjjbRvAh8UFg%3D%3D
+2026-07-13 08:25:21 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (13/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600233&articleId=mEVwiA4y4AuCUw93zjf9mw%3D%3D
+2026-07-13 08:25:39 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (14/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600233&articleId=AdT7aPSbeFxKzb5PHoMdQA%3D%3D
+2026-07-13 08:25:58 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (15/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600233&articleId=ewZLVMJEyg6glgqVp3r5%2Bg%3D%3D
+2026-07-13 08:26:16 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (16/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600233&articleId=nsTLH%2F98WZANfa4Be5fIfQ%3D%3D
+2026-07-13 08:26:34 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (17/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=xKUdjIMEAF92Wb9qe5sk%2Bg%3D%3D
+2026-07-13 08:26:53 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (18/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=nFiL6tpVVpVgSQp8tpnI8g%3D%3D
+2026-07-13 08:27:12 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (19/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=28S%2FrQDoTuS44HREdDeEiw%3D%3D
+2026-07-13 08:27:30 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (20/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=KDAcaPECY9TZpIkruGQnbA%3D%3D
+2026-07-13 08:27:49 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (21/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=N8g8e6jSQfT%2F1tLlCJMxYA%3D%3D
+2026-07-13 08:28:08 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (22/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=ZXqyhjUqUTGHCIenDndxaQ%3D%3D
+2026-07-13 08:28:27 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (23/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=UYnRIDB6eQJasdLZdbSXFA%3D%3D
+2026-07-13 08:28:46 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (24/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=0VyxEPqR%2BILoQRK%2BSilI0g%3D%3D
+2026-07-13 08:29:04 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (25/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=Bo78bP%2BLfvfZV2sCIire3Q%3D%3D
+2026-07-13 08:29:23 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (26/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=9kimFB73dbIXcsZkZMyVSw%3D%3D
+2026-07-13 08:29:42 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (27/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=4CG%2B8BMnpW%2Fswn8YmIbTTw%3D%3D
+2026-07-13 08:30:02 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (28/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=YrbcZoiuWKdnx20RX3AbFA%3D%3D
+2026-07-13 08:30:20 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (29/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=03nmCDedXGEFpQTYzGGEsA%3D%3D
+2026-07-13 08:30:38 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [fetch_detail] 抓取详情页 (30/30) url=http://www.ccgp-zhejiang.gov.cn/site/detail?parentId=600007&articleId=U7W6RTx3vfJju38xtgUZlQ%3D%3D
+2026-07-13 08:30:54 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [parse] 解析完成: 30 条公告
+2026-07-13 08:30:54 [INFO] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [save] 入库: 新增 0, 更新 0
+2026-07-13 08:30:54 [SUCCESS] run_id=50027adaee064ef8bfff6b4b97360531 site_id=ccgp_浙江省 [done] 爬取完成: 30 条公告, 新增/更新 0

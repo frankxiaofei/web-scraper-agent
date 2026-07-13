@@ -1,0 +1,113 @@
+# 镜像：app 使用 reg.hdec.com 构建；基础设施仍用官方 tag（可配置 daemon registry-mirrors 加速拉取）
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: web_scraper_pg
+    environment:
+      POSTGRES_USER: scraper
+      POSTGRES_PASSWORD: scraper_pass
+      POSTGRES_DB: bid_scraper
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scraper -d bid_scraper"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: web_scraper_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    container_name: web_scraper_agent_mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  influxdb:
+    image: ${INFLUXDB_IMAGE:-influxdb:2.7}
+    container_name: web_scraper_agent_influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: scraper_influx_pass
+      DOCKER_INFLUXDB_INIT_ORG: web_scraper
+      DOCKER_INFLUXDB_INIT_BUCKET: stock_ts
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: web_scraper-admin-token-change-me
+    volumes:
+      - influx_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:-reg.hdec.com/library/python:3.11-slim}
+    image: ${DOCKER_REGISTRY:-reg.hdec.com}/${DOCKER_IMAGE:-web_scraper_agent}:${IMAGE_TAG:-latest}
+    container_name: web_scraper_agent_app
+    ports:
+      - "8091:8091"
+      - "8092:8092"
+    env_file:
+      - ../.env
+    environment:
+      HOST_UI: "0.0.0.0"
+      # 容器内使用 Playwright 内置 Chromium，忽略 .env 中的 macOS 路径
+      CHROMIUM_EXECUTABLE_PATH: ""
+      PLAYWRIGHT_CHROMIUM_EXECUTABLE: ""
+      PLAYWRIGHT_BROWSERS_PATH: /app/.playwright
+      MONGODB_URI: mongodb://mongo:27017/bid_scraper
+      INFLUXDB_URL: http://influxdb:8086
+      DATABASE_URL: postgresql://scraper:scraper_pass@postgres:5432/bid_scraper
+      REDIS_URL: redis://redis:6379/0
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://127.0.0.1:8092}
+      ENABLE_SCHEDULER: ${ENABLE_SCHEDULER:-true}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    volumes:
+      - app_logs:/app/logs
+      - app_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8091/api/agri/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+
+volumes:
+  pg_data:
+  redis_data:
+  mongo_data:
+  influx_data:
+  app_logs:
+  app_data:

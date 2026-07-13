@@ -1,0 +1,371 @@
+{% set _main = main_ui_url|default('', true) %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}WebScraperAgent{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Fira Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+  <header class="app-header sticky top-0 z-20 border-b border-slate-200/80 bg-white/95 backdrop-blur-md shadow-sm">
+    <div class="app-header-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <a href="{{ _main }}/" class="app-brand flex items-center gap-3 group shrink-0 cursor-pointer">
+        <img src="/static/logo.svg" alt="WebScraperAgent" width="40" height="40" class="w-10 h-10 rounded-xl shadow-md shadow-brand-800/20 group-hover:opacity-90 transition-opacity duration-200">
+        <div>
+          <h1 class="text-base sm:text-lg font-semibold text-slate-900 leading-tight tracking-tight">WebScraperAgent</h1>
+          <p class="hidden sm:block text-[11px] text-slate-500 leading-tight mt-0.5">招标与洞察 · 151+ 站点 · Agent 对话爬取</p>
+        </div>
+      </a>
+      <nav class="app-nav flex items-center gap-0.5 text-sm flex-nowrap p-1 rounded-xl bg-slate-100/80 border border-slate-200/60" aria-label="主导航">
+        <a href="{{ _main }}/"
+           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'list' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">数据列表</a>
+        <a href="{{ _main }}/stats"
+           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'stats' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">数据统计</a>
+        <a href="{{ _main }}/insights"
+           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'insights' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">商机洞察</a>
+        <a href="{{ _main }}/tasks"
+           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'tasks' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">任务状态</a>
+        <a href="{{ _main }}/scheduled-tasks"
+           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'scheduled_tasks' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">通知任务</a>
+        <a href="{{ _main }}/sites"
+           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'sites' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">站点列表</a>
+        <a href="{{ _main }}/hermes"
+           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'hermes' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">智能采集</a>
+      </nav>
+      <div class="app-header-meta flex items-center gap-2 sm:gap-3 text-xs shrink-0">
+        <span class="hidden sm:inline text-slate-500 font-medium">数据源</span>
+        <span class="app-badge px-2.5 py-1 rounded-full font-medium {% if data_source == 'mongodb' %}bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80{% else %}bg-amber-50 text-amber-800 ring-1 ring-amber-200/80{% endif %}">
+          {% if data_source == 'mongodb' %}MongoDB{% else %}JSONL{% endif %}
+        </span>
+        {% if current_user_id %}
+        <div class="app-user-chip flex items-center gap-2 pl-1 pr-2.5 sm:pr-3 py-1 rounded-xl border border-slate-200/80 bg-white/80"
+             title="飞书账号：{{ current_user_id }}">
+          <span class="app-user-avatar inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-600 bg-gradient-to-br from-brand-600 to-brand-800 text-white text-xs font-bold shadow-sm">
+            {{ current_user_initial }}
+          </span>
+          <span class="hidden sm:flex flex-col leading-tight min-w-0">
+            <span class="text-sm font-medium text-slate-800 truncate max-w-[8rem]">{{ current_user_id }}</span>
+            <span class="text-[10px] text-slate-500">飞书账号</span>
+          </span>
+        </div>
+        {% endif %}
+        <button type="button"
+                id="btn-settings"
+                class="btn-settings"
+                aria-label="设置"
+                title="系统设置">
+          <svg class="btn-settings-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-slate-200/80 bg-white/80 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-slate-500">
+      WebScraperAgent · 招标与洞察
+    </div>
+  </footer>
+  <div id="toast-root" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <div id="settings-modal" class="app-modal" hidden>
+    <div class="app-modal-backdrop"></div>
+    <div class="app-modal-dialog app-modal-dialog--settings" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+      <h3 id="settings-modal-title">系统设置</h3>
+      <form id="settings-form" class="settings-form" novalidate>
+        <fieldset class="settings-fieldset">
+          <legend class="settings-legend">Hermes Agent</legend>
+          <div class="settings-field">
+            <label class="settings-label" for="settings-hermes-url">Agent URL</label>
+            <input type="url" id="settings-hermes-url" name="hermes_agent_url" class="app-input settings-input" placeholder="http://127.0.0.1:8080" autocomplete="off">
+          </div>
+          <div class="settings-field">
+            <label class="settings-label" for="settings-hermes-chat-url">Chat URL</label>
+            <input type="url" id="settings-hermes-chat-url" name="hermes_agent_chat_url" class="app-input settings-input" placeholder="http://127.0.0.1:8642" autocomplete="off">
+          </div>
+          <div class="settings-field">
+            <label class="settings-label" for="settings-hermes-api-key">API Key <span class="settings-optional">（可选）</span></label>
+            <input type="password" id="settings-hermes-api-key" name="hermes_agent_api_key" class="app-input settings-input" placeholder="留空则不修改" autocomplete="off">
+          </div>
+        </fieldset>
+        <fieldset class="settings-fieldset">
+          <legend class="settings-legend">大模型配置</legend>
+          <div class="settings-field">
+            <label class="settings-label" for="settings-llm-model">模型名称</label>
+            <input type="text" id="settings-llm-model" name="llm_model" class="app-input settings-input" placeholder="kimi-k2 / gpt-4o-mini" autocomplete="off">
+          </div>
+          <div class="settings-field">
+            <label class="settings-label" for="settings-llm-api-key">API Key</label>
+            <input type="password" id="settings-llm-api-key" name="llm_api_key" class="app-input settings-input" placeholder="留空则不修改" autocomplete="off">
+          </div>
+        </fieldset>
+      </form>
+      <p id="settings-error" class="app-modal-error" hidden></p>
+      <div class="app-modal-actions">
+        <button type="button" class="btn btn-secondary" data-action="cancel">取消</button>
+        <button type="button" class="btn btn-primary" data-action="confirm" id="settings-save-btn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+      function getFocusables(dialog) {
+        return Array.prototype.slice.call(dialog.querySelectorAll(FOCUSABLE))
+          .filter(function(el) { return el.offsetParent !== null || el === document.activeElement; });
+      }
+
+      window.AppModal = {
+        _openModals: [],
+
+        open: function(modalEl, options) {
+          if (!modalEl) return;
+          options = options || {};
+          var dialog = modalEl.querySelector('.app-modal-dialog');
+          if (!dialog) return;
+
+          modalEl.removeAttribute('hidden');
+          document.body.style.overflow = 'hidden';
+
+          var previousFocus = document.activeElement;
+          modalEl._appModalPreviousFocus = previousFocus;
+          this._openModals.push(modalEl);
+
+          var focusTarget = options.focusSelector
+            ? dialog.querySelector(options.focusSelector)
+            : (dialog.querySelector('[data-action="cancel"]') || getFocusables(dialog)[0]);
+          if (focusTarget) focusTarget.focus();
+
+          modalEl._appModalKeydown = function(e) {
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              window.AppModal.close(modalEl);
+              return;
+            }
+            if (e.key === 'Tab' && dialog.contains(document.activeElement)) {
+              var items = getFocusables(dialog);
+              if (!items.length) return;
+              var first = items[0];
+              var last = items[items.length - 1];
+              if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+              } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+              }
+            }
+          };
+          document.addEventListener('keydown', modalEl._appModalKeydown);
+
+          var backdrop = modalEl.querySelector('.app-modal-backdrop');
+          if (backdrop && options.closeOnBackdrop !== false) {
+            backdrop._appModalClick = function() { window.AppModal.close(modalEl); };
+            backdrop.addEventListener('click', backdrop._appModalClick);
+          }
+        },
+
+        close: function(modalEl) {
+          if (!modalEl) return;
+          modalEl.setAttribute('hidden', '');
+          document.removeEventListener('keydown', modalEl._appModalKeydown);
+          var backdrop = modalEl.querySelector('.app-modal-backdrop');
+          if (backdrop && backdrop._appModalClick) {
+            backdrop.removeEventListener('click', backdrop._appModalClick);
+            backdrop._appModalClick = null;
+          }
+          var idx = this._openModals.indexOf(modalEl);
+          if (idx >= 0) this._openModals.splice(idx, 1);
+          if (!this._openModals.length) document.body.style.overflow = '';
+
+          var prev = modalEl._appModalPreviousFocus;
+          if (prev && typeof prev.focus === 'function') {
+            try { prev.focus(); } catch (_) {}
+          }
+          modalEl._appModalPreviousFocus = null;
+        },
+
+        bind: function(modalEl, options) {
+          if (!modalEl) return;
+          options = options || {};
+          var dialog = modalEl.querySelector('.app-modal-dialog');
+          if (!dialog) return;
+
+          dialog.querySelectorAll('[data-action="cancel"]').forEach(function(btn) {
+            btn.addEventListener('click', function() { window.AppModal.close(modalEl); });
+          });
+
+          var confirmBtn = dialog.querySelector('[data-action="confirm"]');
+          if (confirmBtn && typeof options.onConfirm === 'function') {
+            confirmBtn.addEventListener('click', function() { options.onConfirm(confirmBtn); });
+          }
+        }
+      };
+    })();
+
+    function showToast(message, type) {
+      type = type || 'info';
+      var root = document.getElementById('toast-root');
+      if (!root) return;
+      var el = document.createElement('div');
+      var colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-red-600 text-white',
+        info: 'bg-slate-800 text-white'
+      };
+      el.className = 'app-toast pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium transition-opacity duration-300 ' + (colors[type] || colors.info);
+      el.textContent = message;
+      root.appendChild(el);
+      setTimeout(function() {
+        el.style.opacity = '0';
+        setTimeout(function() { el.remove(); }, 300);
+      }, 3000);
+    }
+  </script>
+  {% block page_scripts %}{% endblock %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('tr.notice-row-clickable[data-href]').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+          if (e.target.closest('a[href], button, input, select, textarea, label')) return;
+          window.location.href = row.getAttribute('data-href');
+        });
+        row.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.target.closest('a[href], button, input, select, textarea')) {
+            window.location.href = row.getAttribute('data-href');
+          }
+        });
+      });
+
+      (function initSettingsUI() {
+        if (typeof window.AppModal === 'undefined') return;
+
+        var settingsBtn = document.getElementById('btn-settings');
+        var settingsModal = document.getElementById('settings-modal');
+        var settingsForm = document.getElementById('settings-form');
+        var settingsError = document.getElementById('settings-error');
+        var saveBtn = document.getElementById('settings-save-btn');
+        if (!settingsBtn || !settingsModal || !settingsForm) return;
+
+        function showSettingsError(message) {
+          if (!settingsError) {
+            showToast(message, 'error');
+            return;
+          }
+          settingsError.textContent = message;
+          settingsError.hidden = false;
+        }
+
+        function clearSettingsError() {
+          if (!settingsError) return;
+          settingsError.textContent = '';
+          settingsError.hidden = true;
+        }
+
+        function fillSettingsForm(data) {
+          var hermesUrl = document.getElementById('settings-hermes-url');
+          var hermesChatUrl = document.getElementById('settings-hermes-chat-url');
+          var hermesKey = document.getElementById('settings-hermes-api-key');
+          var llmModel = document.getElementById('settings-llm-model');
+          var llmKey = document.getElementById('settings-llm-api-key');
+          if (hermesUrl) hermesUrl.value = data.hermes_agent_url || '';
+          if (hermesChatUrl) hermesChatUrl.value = data.hermes_agent_chat_url || '';
+          if (hermesKey) hermesKey.value = data.hermes_agent_api_key || '';
+          if (llmModel) llmModel.value = data.llm_model || '';
+          if (llmKey) llmKey.value = data.llm_api_key || '';
+        }
+
+        async function openSettingsModal() {
+          clearSettingsError();
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = '保存';
+          }
+          try {
+            var res = await fetch('/api/settings');
+            if (!res.ok) throw new Error('加载配置失败（HTTP ' + res.status + '）');
+            var data = await res.json();
+            fillSettingsForm(data);
+            AppModal.open(settingsModal, { focusSelector: '#settings-hermes-url' });
+          } catch (err) {
+            showToast(err && err.message ? err.message : '加载配置失败', 'error');
+          }
+        }
+
+        async function saveSettings() {
+          if (!saveBtn) return;
+          clearSettingsError();
+          saveBtn.disabled = true;
+          saveBtn.textContent = '保存中…';
+
+          var payload = {
+            hermes_agent_url: (document.getElementById('settings-hermes-url') || {}).value || '',
+            hermes_agent_chat_url: (document.getElementById('settings-hermes-chat-url') || {}).value || '',
+            hermes_agent_api_key: (document.getElementById('settings-hermes-api-key') || {}).value || '',
+            llm_model: (document.getElementById('settings-llm-model') || {}).value || '',
+            llm_api_key: (document.getElementById('settings-llm-api-key') || {}).value || ''
+          };
+
+          try {
+            var res = await fetch('/api/settings', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            var data = await res.json().catch(function() { return {}; });
+            if (!res.ok || !data.ok) {
+              throw new Error((data && data.detail) || (data && data.message) || '保存失败（HTTP ' + res.status + '）');
+            }
+            AppModal.close(settingsModal);
+            showToast('设置已保存，部分配置需重启服务后生效', 'success');
+          } catch (err) {
+            showSettingsError(err && err.message ? err.message : '保存失败');
+            saveBtn.disabled = false;
+            saveBtn.textContent = '保存';
+          }
+        }
+
+        settingsBtn.addEventListener('click', openSettingsModal);
+        AppModal.bind(settingsModal, { onConfirm: saveSettings });
+      })();
+    });
+  </script>
+</body>
+</html>

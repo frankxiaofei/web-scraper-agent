@@ -1,0 +1,95 @@
+# 商机专用信息源（P0/P1 官方站点，引用 config/sites.yaml）
+version: 1
+description: 数字农业商机线索优先信息源
+scope_label: P0/P1 政府采购与公共资源交易平台
+
+# 每站最多尝试的搜索关键词数（业务词×阶段词轮换）
+max_search_keywords_per_site: 3
+default_max_items: 30
+
+# 搜索关键词池（与 biz_clue.yaml product_lines + stages 交叉使用）
+search_keywords:
+  - 数字农业
+  - 智慧农业
+  - 农业大数据
+  - 农业物联网
+  - 采购意向
+  - 需求调查
+  - 可研
+  - 立项批复
+  - 专项资金
+  - 巡田
+  - 农事记录
+  - 农业大模型
+
+# P0：官方原始来源（中国政府采购网、公共资源交易平台等）
+P0:
+  description: 官方原始来源
+  site_ids:
+    - ccgp_national
+    - ggzy_national
+    - cebpubservice_national
+    - ccgp_北京市
+    - ggzy_北京市
+    - ccgp_上海市
+    - ggzy_上海市
+    - ccgp_广东省
+    - ggzy_广东省
+    - ccgp_浙江省
+    - ggzy_浙江省
+    - ccgp_江苏省
+    - ggzy_江苏省
+    - ccgp_山东省
+    - ggzy_山东省
+    - ccgp_河南省
+    - ggzy_河南省
+    - ccgp_四川省
+    - ggzy_四川省
+    - ccgp_湖南省
+    - ggzy_湖南省
+    - ccgp_湖北省
+    - ggzy_湖北省
+
+# P1：权威辅助来源（央国企电子采购平台）
+P1:
+  description: 权威辅助来源
+  site_ids:
+    - ecp_sgcc
+    - csg_bidding
+    - sinopec_bidding
+    - chinamobile_bidding
+    - crec_bidding
+    - 中国能源建设集团有限公司_电子采购平台
+    - 中国电力建设集团有限公司_公共资源交易服务平台
+    - zycg_national
+
+# 合并后的默认同步站点（P0 优先，MVP 首批重点省份）
+default_sync_site_ids:
+  - ccgp_national
+  - ggzy_national
+  - cebpubservice_national
+  - ccgp_北京市
+  - ggzy_北京市
+  - ccgp_上海市
+  - ccgp_广东省
+  - ggzy_广东省
+  - ccgp_浙江省
+  - ggzy_浙江省
+  - ccgp_山东省
+  - ggzy_山东省
+  - ccgp_河南省
+  - ggzy_河南省
+
+sites:
+  - id: ccgp_national
+    name: 中国政府采购网
+    level: P0
+    notes: 中央及地方政采公告
+  - id: ggzy_national
+    name: 全国公共资源交易平台
+    level: P0
+    notes: 工程建设与采购交易
+  - id: cebpubservice_national
+    name: 中国招标投标公共服务平台
+    level: P1
+    notes: 权威辅助来源

@@ -1,0 +1,146 @@
+INFO:     Started server process [53531]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 48] error while attempting to bind on address ('0.0.0.0', 8091): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+智慧农业招标洞察: http://0.0.0.0:8091/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+数据源: MongoDB（可用时）→ 降级 data/notices.jsonl
+INFO:     Started server process [55021]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 48] error while attempting to bind on address ('0.0.0.0', 8091): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+智慧农业招标洞察: http://0.0.0.0:8091/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+数据源: MongoDB（可用时）→ 降级 data/notices.jsonl
+INFO:     Started server process [55734]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8091 (Press CTRL+C to quit)
+INFO:     Started server process [60081]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8091 (Press CTRL+C to quit)
+智慧农业招标洞察: http://0.0.0.0:8091/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+数据源: MongoDB（可用时）→ 降级 data/notices.jsonl
+INFO:     127.0.0.1:64629 - "GET /bim HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64635 - "GET /api/agri/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64643 - "GET /api/agri/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64644 - "GET /static/logo.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64682 - "GET /api/agri/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64630 - "GET /bim HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64882 - "GET /bim HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64890 - "GET /bim HTTP/1.1" 404 Not Found
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:65308 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65308 - "GET /static/style.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65308 - "GET /static/logo.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62601 - "GET /bim HTTP/1.1" 404 Not Found
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:62602 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:62756 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:62835 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:63443 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:63447 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:63518 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:64222 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:64371 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:64372 - "GET / HTTP/1.1" 200 OK
+INFO:     Started server process [57085]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8091 (Press CTRL+C to quit)
+智慧农业招标洞察: http://0.0.0.0:8091/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+数据源: MongoDB（可用时）→ 降级 data/notices.jsonl
+INFO:     127.0.0.1:65046 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65051 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65052 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65053 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65128 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65129 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65130 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65131 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65132 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65133 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65134 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65135 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "GET /static/style.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:65218 - "GET /static/logo.svg HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:65218 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "GET /hermes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "GET /static/markdown-render.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "GET /api/crawl-agent/chats?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "POST /api/crawl-agent/chats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "GET /api/crawl-agent/chats?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65219 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET /tenders HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET /hermes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET /api/crawl-agent/chats?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65251 - "GET /api/crawl-agent/chats/33c0b74e-d43c-4357-b180-a826b7358bcb HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49204 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49212 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49219 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49936 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51737 - "GET /hermes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51737 - "GET /api/crawl-agent/chats?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51737 - "GET /api/crawl-agent/chats/33c0b74e-d43c-4357-b180-a826b7358bcb HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51737 - "GET / HTTP/1.1" 200 OK
+LLM 请求失败: <urlopen error timed out>
+INFO:     127.0.0.1:51738 - "GET /?use_llm=true&refresh=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51764 - "GET /hermes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51780 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52043 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52064 - "GET /hermes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52064 - "GET /api/crawl-agent/chats?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52064 - "GET /api/crawl-agent/chats/33c0b74e-d43c-4357-b180-a826b7358bcb HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52112 - "GET /hermes HTTP/1.1" 200 OK
+INFO:     Started server process [93470]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8091 (Press CTRL+C to quit)
+商机洞察: http://0.0.0.0:8091/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+数据源: MongoDB（可用时）→ 降级 data/notices.jsonl
+INFO:     127.0.0.1:52149 - "GET /hermes HTTP/1.1" 200 OK
+商机洞察: http://0.0.0.0:8091/
+主 Web UI（8090）: http://127.0.0.1:8090/ — 爬取/Hermes/任务管理
+数据源: MongoDB（可用时）→ 降级 data/notices.jsonl
+INFO:     Started server process [99862]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8091 (Press CTRL+C to quit)
+INFO:     127.0.0.1:60402 - "GET /api/crawl-agent/skills/execute HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60477 - "GET /api/health HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60488 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53845 - "GET /bim HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53845 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53879 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [99862]

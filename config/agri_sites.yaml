@@ -1,0 +1,66 @@
+# 智慧农业专题监测数据源（7 个央企招采网站，非农业专用平台；不含 ggzy_上海市 等 industry 站）
+version: 1
+description: 从七大央企招采数据源筛选智慧农业相关招标公告
+scope_label: 七大央企招采数据源（云筑/鲁班/电力招标/铁建物资/中交供应链/电建/能建）
+
+# 站点内搜索或列表过滤用关键词（run_agri_keyword_crawl / daily_agri_sync 可选启用）
+search_keywords:
+  - 智慧农业
+  - 数字农业
+  - 农业物联网
+  - 精准农业
+  - 智慧大棚
+  - 农业大数据
+  - 农机智能化
+  - 遥感
+  - 农业SaaS
+  - 智能农机
+  - 三农
+  - 乡村振兴
+  - 数字乡村
+
+# 每站最多尝试的搜索关键词数（0 = 仅默认列表抓取 + Pipeline 关键词分类）
+max_search_keywords_per_site: 0
+
+# 农业 sync 默认每站抓取上限（可被 schedule.yaml daily_agri_sync_max_items 覆盖）
+default_max_items: 30
+
+site_ids:
+  - 中国建筑集团有限公司_云筑网
+  - crec_bidding
+  - dlzb_power
+  - 中国铁道建筑集团有限公司_物资采购网
+  - 中国交通建设集团有限公司_供应链管理信息系统
+  - 中国电力建设集团有限公司_公共资源交易服务平台
+  - 中国能源建设集团有限公司_电子采购平台
+
+sites:
+  - id: 中国建筑集团有限公司_云筑网
+    name: 云筑网
+    parent: 中国建筑集团有限公司
+    notes: 公开门户需登录；规则 enabled 后尝试 jc.yzw.cn 列表
+    search_url_template: null
+  - id: crec_bidding
+    name: 鲁班商务网
+    parent: 中国铁路工程集团有限公司
+    search_url_template: null
+  - id: dlzb_power
+    name: 电力招标网
+    search_url_template: null
+  - id: 中国铁道建筑集团有限公司_物资采购网
+    name: 物资采购网
+    parent: 中国铁道建筑集团有限公司
+    search_url_template: null
+  - id: 中国交通建设集团有限公司_供应链管理信息系统
+    name: 供应链管理信息系统
+    parent: 中国交通建设集团有限公司
+    search_url_template: null
+  - id: 中国电力建设集团有限公司_公共资源交易服务平台
+    name: 公共资源交易服务平台（电建）
+    parent: 中国电力建设集团有限公司
+    search_url_template: null
+    list_only: true
+  - id: 中国能源建设集团有限公司_电子采购平台
+    name: 电子采购平台（能建）
+    parent: 中国能源建设集团有限公司
+    search_url_template: null

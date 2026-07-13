@@ -1,0 +1,154 @@
+{% extends "stock_base.html" %}
+{% block title %}WebScraperAgent — 个股检索{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <h2 class="text-xl font-semibold text-slate-800 mb-1">个股检索</h2>
+  <p class="text-sm text-slate-500">支持 A 股与港股：代码、名称、拼音首字母模糊匹配</p>
+</section>
+
+<div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-6 mb-6">
+  <form id="searchForm" class="flex flex-col sm:flex-row gap-3" action="/search" method="get">
+    <input id="searchPageInput" name="q" type="search" value="{{ query or '' }}"
+           placeholder="输入代码、名称或拼音，如 000001 / 平安 / pa"
+           autocomplete="off"
+           class="flex-1 px-4 py-2.5 rounded-xl border border-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400/40 bg-blue-50/30" />
+    <button type="submit"
+            class="px-5 py-2.5 rounded-xl bg-stock-600 hover:bg-stock-700 text-white font-medium transition">
+      搜索
+    </button>
+  </form>
+</div>
+
+<div id="searchStatus" class="text-sm text-slate-500 mb-4 hidden"></div>
+
+<div id="searchResults" class="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+  <div id="searchEmpty" class="px-6 py-12 text-center text-slate-400 text-sm">
+    {% if query %}正在检索「{{ query }}」…{% else %}输入关键词开始检索{% endif %}
+  </div>
+  <div id="searchList" class="hidden divide-y divide-blue-50"></div>
+</div>
+
+<section id="recentSection" class="mt-8 hidden">
+  <h3 class="text-sm font-medium text-slate-600 mb-3">最近访问</h3>
+  <div id="recentList" class="flex flex-wrap gap-2"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var query = {{ (query or '') | tojson }};
+  var statusEl = document.getElementById('searchStatus');
+  var emptyEl = document.getElementById('searchEmpty');
+  var listEl = document.getElementById('searchList');
+  var recentSection = document.getElementById('recentSection');
+  var recentList = document.getElementById('recentList');
+  var RECENT_KEY = 'stock_search_recent';
+  var MAX_RECENT = 8;
+
+  function marketBadge(market) {
+    var cls = market === 'SH' ? 'bg-red-50 text-red-600'
+      : (market === 'BJ' ? 'bg-purple-50 text-purple-600'
+      : (market === 'HK' ? 'bg-orange-50 text-orange-600'
+      : (market === 'US' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600')));
+    return '<span class="text-[10px] px-1.5 py-0.5 rounded font-medium ' + cls + '">' + (market || 'SZ') + '</span>';
+  }
+
+  function stockUrl(code, name, market) {
+    var url;
+    if (market === 'HK') url = '/stock/hk/' + encodeURIComponent(code);
+    else if (market === 'US') url = '/stock/us/' + encodeURIComponent(code);
+    else url = '/stock/' + encodeURIComponent(code);
+    var params = [];
+    if (name) params.push('name=' + encodeURIComponent(name));
+    if (market && market !== 'HK' && market !== 'US') params.push('market=' + encodeURIComponent(market));
+    if (params.length) url += '?' + params.join('&');
+    return url;
+  }
+
+  function saveRecent(item) {
+    try {
+      var list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      list = list.filter(function (x) { return x.code !== item.code; });
+      list.unshift({ code: item.code, name: item.name, market: item.market });
+      localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, MAX_RECENT)));
+    } catch (e) {}
+  }
+
+  function renderRecent() {
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch (e) {}
+    if (!list.length) {
+      recentSection.classList.add('hidden');
+      return;
+    }
+    recentSection.classList.remove('hidden');
+    recentList.innerHTML = list.map(function (item) {
+      return '<a href="' + stockUrl(item.code, item.name, item.market) + '" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-blue-100 text-sm hover:border-blue-300 transition">' +
+        marketBadge(item.market) +
+        '<span class="font-mono text-slate-700">' + item.code + '</span>' +
+        '<span class="text-slate-600">' + item.name + '</span></a>';
+    }).join('');
+  }
+
+  function renderResults(items, total) {
+    if (!items.length) {
+      emptyEl.textContent = query ? '未找到与「' + query + '」匹配的个股' : '输入关键词开始检索';
+      emptyEl.classList.remove('hidden');
+      listEl.classList.add('hidden');
+      statusEl.classList.add('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    listEl.classList.remove('hidden');
+    statusEl.textContent = '共 ' + total + ' 条匹配，展示前 ' + items.length + ' 条';
+    statusEl.classList.remove('hidden');
+    listEl.innerHTML = items.map(function (item) {
+      return '<a href="' + stockUrl(item.code, item.name, item.market) + '" data-code="' + item.code + '" data-name="' + item.name + '" data-market="' + item.market + '" ' +
+        'class="flex items-center justify-between gap-4 px-5 py-3 hover:bg-blue-50/60 transition group">' +
+        '<div class="flex items-center gap-3 min-w-0">' +
+        marketBadge(item.market) +
+        '<span class="font-mono text-sm text-stock-700 group-hover:text-stock-800">' + item.code + '</span>' +
+        '<span class="text-sm text-slate-700 truncate">' + item.name + '</span></div>' +
+        '<span class="text-xs text-slate-400 shrink-0">查看详情 →</span></a>';
+    }).join('');
+
+    listEl.querySelectorAll('a[data-code]').forEach(function (link) {
+      link.addEventListener('click', function () {
+        saveRecent({
+          code: link.getAttribute('data-code'),
+          name: link.getAttribute('data-name'),
+          market: link.getAttribute('data-market'),
+        });
+      });
+    });
+  }
+
+  function runSearch() {
+    if (!query) {
+      renderRecent();
+      return;
+    }
+    fetch('/api/stock/search?q=' + encodeURIComponent(query) + '&limit=50')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.ok) {
+          emptyEl.textContent = data.error || '检索失败';
+          emptyEl.classList.remove('hidden');
+          listEl.classList.add('hidden');
+          return;
+        }
+        renderResults(data.items || [], data.total || 0);
+      })
+      .catch(function () {
+        emptyEl.textContent = '网络错误，请稍后重试';
+        emptyEl.classList.remove('hidden');
+      });
+    renderRecent();
+  }
+
+  runSearch();
+})();
+</script>
+{% endblock %}

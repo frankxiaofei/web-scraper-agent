@@ -1,0 +1,26 @@
+version: 1
+site_id: ec_ceec
+name: ec_ceec
+enabled: true
+entry_url: https://ec.ceec.net.cn/HomeInfo/ProjectList.aspx?InfoLevel=MQA=&bigType=WgBCAEcARwA=
+list_page:
+  strategy: dom
+  container: "table"
+  item: "tr"
+  title: "td:nth-child(2) a"
+  link: "td:nth-child(2) a"
+  date: "td:nth-child(3)"
+pagination:
+  type: next_button
+  selector: "a:contains('下一页')"
+  disabled_selector: "a:contains('下一页').disabled"
+  wait_after_ms: 1000
+detail:
+  fetch_detail: true
+  url_pattern: "/HomeInfo/ProjectDetail"
+  content_selector: "#content"
+limits:
+  max_pages: 50
+  max_items: 500
+  max_depth: 2
+  rate_limit_seconds: 2.0

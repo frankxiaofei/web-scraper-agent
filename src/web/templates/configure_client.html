@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 客户端配置{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900">客户端配置规则</h2>
+      <p class="text-sm text-slate-500 mt-1">
+        使用桌面客户端内嵌 Chrome 录制站点操作，生成 crawl_rules 工作流
+      </p>
+    </div>
+    <a href="/sites" class="text-sm text-slate-500 hover:text-slate-700">← 站点列表</a>
+  </div>
+</section>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-2xl space-y-6">
+  <div>
+    <h3 class="text-sm font-semibold text-slate-800 mb-2">1. 启动 Web UI</h3>
+    <p class="text-sm text-slate-600">确保后端 API 已运行（默认 <code class="text-xs bg-slate-100 px-1 rounded">http://127.0.0.1:8090</code>）。</p>
+    <pre class="mt-2 text-xs bg-slate-900 text-slate-100 rounded-lg p-3 overflow-x-auto">python scripts/run_web_ui.py --port 8090</pre>
+  </div>
+
+  <div>
+    <h3 class="text-sm font-semibold text-slate-800 mb-2">2. 启动桌面客户端</h3>
+    <p class="text-sm text-slate-600">在项目根目录执行：</p>
+    <pre class="mt-2 text-xs bg-slate-900 text-slate-100 rounded-lg p-3 overflow-x-auto" id="launch-cmd">bash scripts/start_rule_config_client.sh{% if site_id %} {{ site_id }}{% endif %}</pre>
+    <p class="text-xs text-slate-400 mt-2">首次运行会自动 <code>npm install</code>（在 <code>client/</code> 目录）。</p>
+  </div>
+
+  <div>
+    <h3 class="text-sm font-semibold text-slate-800 mb-2">3. 录制与保存</h3>
+    <ol class="text-sm text-slate-600 list-decimal list-inside space-y-1">
+      <li>选择站点，打开入口 URL</li>
+      <li>点击「开始录制」，在左侧浏览器中操作</li>
+      <li>确认列表页弹窗（如有）</li>
+      <li>停止录制 → 编译工作流 → 保存规则 → 试跑</li>
+    </ol>
+  </div>
+
+  {% if site_id %}
+  <div class="rounded-lg bg-violet-50 border border-violet-100 px-4 py-3 text-sm text-violet-800">
+    已预选站点：<code>{{ site_id }}</code> — 启动命令已带上 site-id 参数。
+  </div>
+  {% endif %}
+
+  <p class="text-xs text-slate-400">
+    仍可使用 Web 工作流页（站点列表 → 工作流）与 Chrome 扩展作为备选方案。
+  </p>
+</div>
+{% endblock %}

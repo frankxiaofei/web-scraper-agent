@@ -1,0 +1,11 @@
+2026-07-12 03:31:52 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [start] 开始爬取 中央政府采购网 url=https://www.zycg.gov.cn/
+2026-07-12 03:31:52 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [fetch_list] 开始抓取列表 (max_items=100, detail=False, intelligent=False) url=https://www.zycg.gov.cn/
+2026-07-12 03:31:52 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [delay] 请求前等待 2.0s
+2026-07-12 03:31:54 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [fetch_list] 抓取列表页 (尝试 1/3) url=https://www.zycg.gov.cn/freecms/site/zygjjgzfcgzx/cggg/index.html
+2026-07-12 03:31:54 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [fetch_list] 规则驱动抓取列表 (max_items=100) url=https://www.zycg.gov.cn/freecms/site/zygjjgzfcgzx/cggg/index.html
+2026-07-12 03:31:54 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [rule_step] 入口步骤 1/1: navigate url=https://www.zycg.gov.cn/freecms/site/zygjjgzfcgzx/cggg/index.html
+2026-07-12 03:31:54 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [navigate] 打开 https://www.zycg.gov.cn/freecms/site/zygjjgzfcgzx/cggg/index.html url=https://www.zycg.gov.cn/freecms/site/zygjjgzfcgzx/cggg/index.html
+2026-07-12 03:31:55 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [parse] 解析第 1 页: 0 条 url=https://www.zycg.gov.cn/freecms/site/zygjjgzfcgzx/cggg/index.html
+2026-07-12 03:31:55 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [parse] 解析完成: 0 条公告
+2026-07-12 03:31:55 [INFO] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [save] 入库: 新增 0, 更新 0
+2026-07-12 03:31:55 [SUCCESS] run_id=07db2493bea24b168947d12beef7de05 site_id=zycg_national [done] 爬取完成: 0 条公告, 新增/更新 0

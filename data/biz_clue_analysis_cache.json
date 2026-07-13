@@ -1,0 +1,18 @@
+{
+  "report_date": "2026-07-13",
+  "analyzed_at": "2026-07-13T11:02:39.868175+08:00",
+  "summary": {
+    "new_count": 0,
+    "updated_count": 0,
+    "s_count": 0,
+    "a_count": 0,
+    "high_value_count": 0,
+    "pending_verification_count": 0,
+    "b_count": 0,
+    "c_count": 0,
+    "excluded_count": 0,
+    "by_stage": {},
+    "by_product_line": {}
+  },
+  "lead_count": 0
+}

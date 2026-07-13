@@ -1,0 +1,28 @@
+2026-07-13 07:03:28 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [start] 开始爬取 全国公共资源交易平台 url=https://www.ggzy.gov.cn/
+2026-07-13 07:03:28 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_list] 开始抓取列表 (max_items=30, detail=True, intelligent=False) url=https://www.ggzy.gov.cn/
+2026-07-13 07:03:28 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [delay] 请求前等待 2.0s
+2026-07-13 07:03:30 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_list] 抓取列表页 (尝试 1/3) url=https://www.ggzy.gov.cn/
+2026-07-13 07:04:00 [WARN] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [retry] 1s 后重试 (第 2 次)
+2026-07-13 07:04:01 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_list] 抓取列表页 (尝试 2/3) url=https://www.ggzy.gov.cn/
+2026-07-13 07:04:02 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (1/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042ec58a4a8421d44eeb4a245e69e179858.html
+2026-07-13 07:04:34 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (2/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042cdbcc30d3226454f8cfed729b413efc3.html
+2026-07-13 07:05:22 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (3/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/00420ecca4dd044e4ca38cf14601dbcbff80.html
+2026-07-13 07:05:55 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (4/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042c84dc808b831440ca898863b9e31e136.html
+2026-07-13 07:06:15 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (5/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042d8b4eb9987ea4153bcccff8b467b08b8.html
+2026-07-13 07:06:33 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (6/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042ae752dc511b1491aa889ce2fb6ed4e9e.html
+2026-07-13 07:07:05 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (7/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/00423c2ce922387a47f899291e7616cff217.html
+2026-07-13 07:08:07 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (8/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042ff0abe89a010474e90299f1bb0b83fb4.html
+2026-07-13 07:08:40 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (9/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/004253faad4c1cc242a791e0bd17770f201b.html
+2026-07-13 07:09:42 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (10/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042bd550f63bb864c699388f2465b14ae0c.html
+2026-07-13 07:10:14 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (11/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042dd5f0134349348829f120a7aa1d78168.html
+2026-07-13 07:11:17 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (12/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042d2e35e74946d4e77a7bfa092f45f35a1.html
+2026-07-13 07:12:19 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (13/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/00420924ac09359d4857a82aec83c772101e.html
+2026-07-13 07:12:37 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (14/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042ad9ad176848b4dacbb2a6fb3ad73736a.html
+2026-07-13 07:12:55 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (15/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042756f5a5d7f6c49369279203d62ccee15.html
+2026-07-13 07:13:27 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (16/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/00423a5cd153830d413582873760c3080520.html
+2026-07-13 07:14:30 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (17/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/0042e828c65e65a7477199a9ea0b7b38be09.html
+2026-07-13 07:15:02 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (18/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/00426955b893c8ba4e96a1d860201c5af924.html
+2026-07-13 07:16:04 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [fetch_detail] 抓取详情页 (19/19) url=https://www.ggzy.gov.cn/information/deal/html/a/420000/0203/20260713/004233b4e1d7062a477c875e859ee20b8baf.html
+2026-07-13 07:17:05 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [parse] 解析完成: 19 条公告
+2026-07-13 07:17:05 [INFO] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [save] 入库: 新增 0, 更新 5
+2026-07-13 07:17:05 [SUCCESS] run_id=e7680e8807274a54b5370f5915020b30 site_id=ggzy_national [done] 爬取完成: 19 条公告, 新增/更新 5

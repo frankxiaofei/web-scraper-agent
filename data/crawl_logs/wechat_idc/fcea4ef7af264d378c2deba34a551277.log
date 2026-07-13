@@ -1,0 +1,3 @@
+2026-07-12 01:32:14 [INFO] run_id=fcea4ef7af264d378c2deba34a551277 site_id=wechat_idc [start] 开始爬取 IDC咨询（微信公众号） url=https://mp.weixin.qq.com/s/z3nSmaF7n4_aVsDBCpPLXw
+2026-07-12 01:32:14 [INFO] run_id=fcea4ef7af264d378c2deba34a551277 site_id=wechat_idc [fetch_list] 开始抓取列表 (max_items=500, detail=False, intelligent=False) url=https://mp.weixin.qq.com/s/z3nSmaF7n4_aVsDBCpPLXw
+2026-07-12 01:32:14 [INFO] run_id=fcea4ef7af264d378c2deba34a551277 site_id=wechat_idc [delay] 请求前等待 3.0s

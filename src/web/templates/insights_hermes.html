@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 商机分析 Agent{% endblock %}
+
+{% block content %}
+{% set hermes_theme = 'agri' %}
+{% set agent_profile = 'agri' %}
+{% set insights_home = '/insights' %}
+{% include "crawl_agent_chat_body.html" %}
+{% endblock %}

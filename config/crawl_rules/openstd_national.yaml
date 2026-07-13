@@ -1,0 +1,28 @@
+version: 1
+site_id: openstd_national
+name: 国家标准全文公开系统（强制性）
+enabled: true
+entry_url: https://openstd.samr.gov.cn/bzgk/std/std_list_type?p.p1=1&p.p90=circulation_date&p.p91=desc
+list_page:
+  strategy: dom
+  container: "table.result_list"
+  item: "tr:not(:first-child)"
+  title: "td:nth-child(4) a"
+  link: "td:nth-child(2) a"
+  date: "td:nth-child(6)"
+pagination:
+  type: page_number
+  page_param: p.p1
+  page_size: 10
+  max_pages: 612
+  stop_when_empty: true
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "newGbInfo\\?hcno="
+  content_selector: "#pdfViewer"
+limits:
+  max_pages: 612
+  max_items: 6120
+  max_depth: 2
+  rate_limit_seconds: 2.0
