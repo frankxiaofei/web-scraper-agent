@@ -14,3 +14,5 @@ docs/
 data/wechat_*/images/
 data/crawl_logs/
 logs/
+.cursor/
+.DS_Store
