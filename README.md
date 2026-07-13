@@ -47,6 +47,10 @@ make status            # 端口与 HTTP 健康检查
 
 打开 **http://127.0.0.1:8090/insights**（商机洞察）与 **http://127.0.0.1:8092/**（股票领域分析）。
 
+**商机配置 SOP（标准作业流程）**
+
+在 `/insights/sop` 按五步向导完成领域商机配置：选择领域 → 生成关键词 → 匹配站点 → 创建定时爬取 → 配置飞书总结推送。完成后自动更新 `config/biz_clue_sources.yaml` 并创建通知任务。
+
 **示例：单站爬取**
 
 ```bash
@@ -72,6 +76,7 @@ python scripts/run_scheduler.py
 - **Agent 驱动爬取** — Hermes 对话 Agent + 智能 BFS 发现 + 可选 LLM 增强
 - **真实浏览器自动化** — Playwright 无头池 + WebBridge 扩展，应对登录态与反爬场景
 - **专题洞察** — 数字农业等关键词商机过滤、股票产业分析、LLM 每日简报
+- **商机配置 SOP** — `/insights/sop` 向导式配置：领域模板 → 关键词 → 站点匹配 → 定时爬取 → 推送
 - **定时同步** — 商机洞察央企同步、股票新闻/政策拉取、站点轮询等 cron 任务
 - **多渠道通知** — 飞书、钉钉、企业微信、邮件、短信（通过定时任务配置）
 - **分层持久化** — JSONL → MongoDB → PostgreSQL，Redis 去重，InfluxDB 存储股票 K 线

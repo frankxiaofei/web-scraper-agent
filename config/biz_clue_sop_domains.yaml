@@ -1,0 +1,118 @@
+# 商机 SOP 领域模板 — 规则生成关键词与站点偏好
+version: 1
+
+domains:
+  数字农业:
+    description: 农业数字化、智慧种植、农事管理相关商机
+    keywords:
+      - 数字农业
+      - 智慧农业
+      - 农业大数据
+      - 农业物联网
+      - 农业一张图
+      - 质量追溯
+      - 巡田
+      - 农事记录
+      - 农业大模型
+      - 数字乡村
+    stage_keywords:
+      - 采购意向
+      - 需求调查
+      - 可研
+      - 立项批复
+      - 专项资金
+      - 招标公告
+    exclude_keywords:
+      - 纯农资
+      - 钢材采购
+    site_categories:
+      - national
+      - provincial_gov
+      - provincial_ggzy
+    site_name_hints:
+      - 政府采购
+      - 公共资源
+      - 农业
+      - 招标
+
+  智慧城市:
+    description: 城市大脑、数字孪生、智慧市政类商机
+    keywords:
+      - 智慧城市
+      - 城市大脑
+      - 数字孪生
+      - 智慧市政
+      - 城市运行管理
+      - CIM
+      - 一网统管
+      - 智慧交通
+      - 智慧水务
+      - 智慧园区
+    stage_keywords:
+      - 采购意向
+      - 可研
+      - 设计服务
+      - 招标公告
+      - 竞争性磋商
+    exclude_keywords:
+      - 办公用品
+    site_categories:
+      - national
+      - provincial_gov
+      - provincial_ggzy
+    site_name_hints:
+      - 政府采购
+      - 公共资源
+      - 招标
+
+  BIM工程:
+    description: 建筑信息模型、工程数字化类商机
+    keywords:
+      - BIM
+      - 建筑信息模型
+      - 工程数字化
+      - 智慧工地
+      - 数字建造
+      - 协同设计
+      - 运维平台
+    stage_keywords:
+      - 采购意向
+      - 设计服务
+      - 咨询服务
+      - 招标公告
+    exclude_keywords:
+      - 纯土建
+    site_categories:
+      - national
+      - provincial_gov
+      - provincial_ggzy
+    site_name_hints:
+      - 政府采购
+      - 公共资源
+      - 招标
+      - 电建
+      - 能建
+
+  水利工程:
+    description: 智慧水利、水文监测、灌区数字化类商机
+    keywords:
+      - 智慧水利
+      - 水文监测
+      - 灌区数字化
+      - 水库监测
+      - 水雨情
+      - 防汛
+      - 水资源管理
+    stage_keywords:
+      - 采购意向
+      - 可研
+      - 设计服务
+      - 招标公告
+    site_categories:
+      - national
+      - provincial_gov
+      - provincial_ggzy
+    site_name_hints:
+      - 政府采购
+      - 公共资源
+      - 水利

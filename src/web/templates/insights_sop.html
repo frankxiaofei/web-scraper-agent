@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 商机配置 SOP{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/insights.css">
+{% endblock %}
+
+{% block content %}
+<section class="stats-page insights-page insights-sop-page">
+  <header class="stats-page-header insights-header">
+    <div class="insights-header-main">
+      <h2 class="stats-page-title insights-title">商机配置 SOP</h2>
+      <p class="stats-page-subtitle">标准作业流程：选择领域 → 生成关键词 → 匹配站点 → 创建爬取 → 配置推送</p>
+      <p class="insights-meta">
+        按向导完成配置后，系统将更新商机信息源并创建定时任务。
+        <a href="/insights/config/readonly" class="insights-config-link">查看只读配置</a>
+      </p>
+    </div>
+    <div class="insights-header-actions">
+      <a href="/insights" class="stats-btn stats-btn-secondary">返回洞察页</a>
+    </div>
+  </header>
+
+  <nav class="insights-sop-stepper" aria-label="SOP 步骤">
+    <ol class="insights-sop-steps">
+      <li class="insights-sop-step active" data-step="1"><span class="insights-sop-step-num">1</span><span class="insights-sop-step-label">选择领域</span></li>
+      <li class="insights-sop-step" data-step="2"><span class="insights-sop-step-num">2</span><span class="insights-sop-step-label">关键词</span></li>
+      <li class="insights-sop-step" data-step="3"><span class="insights-sop-step-num">3</span><span class="insights-sop-step-label">匹配站点</span></li>
+      <li class="insights-sop-step" data-step="4"><span class="insights-sop-step-num">4</span><span class="insights-sop-step-label">爬取任务</span></li>
+      <li class="insights-sop-step" data-step="5"><span class="insights-sop-step-num">5</span><span class="insights-sop-step-label">总结推送</span></li>
+    </ol>
+  </nav>
+
+  <div id="sop-alert" class="insights-sop-alert" role="alert" hidden></div>
+
+  <!-- Step 1 -->
+  <div class="insights-sop-panel active" id="sop-panel-1">
+    <div class="stats-panel">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">步骤 1：选择或输入领域</h3>
+      </div>
+      <p class="insights-config-card-desc">选择预设领域模板，或输入自定义领域名称。</p>
+      <div class="insights-sop-domain-grid">
+        {% for d in domains %}
+        <button type="button" class="insights-sop-domain-card" data-domain="{{ d.name }}">
+          <span class="insights-sop-domain-name">{{ d.name }}</span>
+          <span class="insights-sop-domain-desc">{{ d.description or '—' }}</span>
+          <span class="insights-sop-domain-meta">{{ d.keyword_count }} 个预设词</span>
+        </button>
+        {% endfor %}
+      </div>
+      <div class="insights-sop-form-row">
+        <label class="insights-sop-label" for="sop-custom-domain">自定义领域</label>
+        <input type="text" id="sop-custom-domain" class="insights-sop-input" placeholder="如：智慧水利、低空经济">
+      </div>
+      <label class="insights-sop-checkbox">
+        <input type="checkbox" id="sop-use-llm">
+        <span>使用 LLM 增强关键词（需配置 OPENAI_API_KEY）</span>
+      </label>
+      <div class="insights-sop-actions">
+        <button type="button" class="stats-btn stats-btn-primary" id="sop-start-btn">开始配置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="insights-sop-panel" id="sop-panel-2">
+    <div class="stats-panel">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">步骤 2：关键词清单</h3>
+        <span class="stats-panel-badge" id="sop-kw-count">0 词</span>
+      </div>
+      <p class="insights-config-card-desc">基于领域模板生成，可编辑后确认。每行一个关键词。</p>
+      <textarea id="sop-keywords-text" class="insights-sop-textarea" rows="8" placeholder="关键词，每行一个"></textarea>
+      <div class="insights-sop-actions">
+        <button type="button" class="stats-btn stats-btn-secondary" id="sop-regen-kw-btn">重新生成</button>
+        <button type="button" class="stats-btn stats-btn-primary" id="sop-save-kw-btn">确认关键词</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="insights-sop-panel" id="sop-panel-3">
+    <div class="stats-panel">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">步骤 3：匹配相关站点</h3>
+        <span class="stats-panel-badge" id="sop-site-count">0 站</span>
+      </div>
+      <p class="insights-config-card-desc">从站点库中按关键词与类别打分排序，勾选需要定时爬取的站点。</p>
+      <div class="insights-sop-actions insights-sop-actions-inline">
+        <button type="button" class="stats-btn stats-btn-secondary" id="sop-rematch-btn">重新匹配</button>
+        <label class="insights-sop-checkbox"><input type="checkbox" id="sop-select-all-sites"> 全选推荐站点</label>
+      </div>
+      <div class="insights-sop-site-list" id="sop-site-list"></div>
+      <div class="insights-sop-actions">
+        <button type="button" class="stats-btn stats-btn-primary" id="sop-save-sites-btn">确认站点</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="insights-sop-panel" id="sop-panel-4">
+    <div class="stats-panel">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">步骤 4：创建定时爬取任务</h3>
+      </div>
+      <p class="insights-config-card-desc">更新商机信息源配置，并为选中站点创建增量爬取定时任务（最多 10 个）。</p>
+      <div class="insights-sop-form-row">
+        <label class="insights-sop-label" for="sop-sync-cron">爬取 Cron</label>
+        <input type="text" id="sop-sync-cron" class="insights-sop-input" value="30 6 * * *" placeholder="30 6 * * *">
+        <span class="insights-sop-hint">默认每天 06:30，与商机同步调度一致</span>
+      </div>
+      <label class="insights-sop-checkbox">
+        <input type="checkbox" id="sop-apply-sources" checked>
+        <span>写入 config/biz_clue_sources.yaml（合并关键词与同步站点）</span>
+      </label>
+      <label class="insights-sop-checkbox">
+        <input type="checkbox" id="sop-create-tasks" checked>
+        <span>创建增量爬取通知任务（chat_scheduled_tasks）</span>
+      </label>
+      <div class="insights-sop-actions">
+        <button type="button" class="stats-btn stats-btn-primary" id="sop-create-tasks-btn">创建爬取任务</button>
+      </div>
+      <pre class="insights-config-pre" id="sop-tasks-result" hidden></pre>
+    </div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="insights-sop-panel" id="sop-panel-5">
+    <div class="stats-panel">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">步骤 5：配置总结推送</h3>
+      </div>
+      <p class="insights-config-card-desc">创建 Hermes 总结通知任务，定时生成领域商机日报并推送飞书。</p>
+      <div class="insights-sop-form-row">
+        <label class="insights-sop-label" for="sop-notify-name">任务名称</label>
+        <input type="text" id="sop-notify-name" class="insights-sop-input" placeholder="如：数字农业 商机日报">
+      </div>
+      <div class="insights-sop-form-row">
+        <label class="insights-sop-label" for="sop-notify-cron">推送 Cron</label>
+        <input type="text" id="sop-notify-cron" class="insights-sop-input" value="0 8 * * *" placeholder="0 8 * * *">
+        <span class="insights-sop-hint">默认每天 08:00</span>
+      </div>
+      <label class="insights-sop-checkbox">
+        <input type="checkbox" id="sop-feishu-push" checked>
+        <span>启用飞书推送（使用环境变量中的 Webhook）</span>
+      </label>
+      <div class="insights-sop-actions">
+        <button type="button" class="stats-btn stats-btn-primary" id="sop-notify-btn">完成配置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done -->
+  <div class="insights-sop-panel" id="sop-panel-done">
+    <div class="stats-panel insights-sop-done-panel">
+      <h3 class="stats-panel-title">SOP 配置完成</h3>
+      <p class="insights-config-card-desc" id="sop-done-summary">已创建爬取与推送任务，可在通知任务页管理。</p>
+      <div class="insights-sop-actions">
+        <a href="/insights" class="stats-btn stats-btn-primary">查看商机洞察</a>
+        <a href="/scheduled-tasks" class="stats-btn stats-btn-secondary">管理通知任务</a>
+        <button type="button" class="stats-btn stats-btn-secondary" id="sop-restart-btn">新建配置</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  var sessionId = null;
+  var selectedDomain = '';
+  var matchedSites = [];
+  var selectedSiteIds = new Set();
+
+  var steps = document.querySelectorAll('.insights-sop-step');
+  var panels = document.querySelectorAll('.insights-sop-panel');
+  var alertEl = document.getElementById('sop-alert');
+
+  function showAlert(msg, isError) {
+    if (!alertEl) return;
+    alertEl.textContent = msg;
+    alertEl.hidden = false;
+    alertEl.className = 'insights-sop-alert' + (isError ? ' insights-sop-alert-error' : ' insights-sop-alert-success');
+    setTimeout(function() { alertEl.hidden = true; }, 5000);
+  }
+
+  function setStep(n) {
+    steps.forEach(function(s) {
+      var sn = parseInt(s.getAttribute('data-step'), 10);
+      s.classList.toggle('active', sn === n);
+      s.classList.toggle('done', sn < n);
+    });
+    panels.forEach(function(p) { p.classList.remove('active'); });
+    var panel = document.getElementById('sop-panel-' + (n <= 5 ? n : 'done'));
+    if (panel) panel.classList.add('active');
+  }
+
+  function apiPost(url, body) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    }).then(function(r) {
+      return r.json().then(function(data) {
+        if (!r.ok) throw new Error(data.detail || data.error || '请求失败');
+        return data;
+      });
+    });
+  }
+
+  document.querySelectorAll('.insights-sop-domain-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      document.querySelectorAll('.insights-sop-domain-card').forEach(function(c) { c.classList.remove('selected'); });
+      card.classList.add('selected');
+      selectedDomain = card.getAttribute('data-domain') || '';
+      document.getElementById('sop-custom-domain').value = '';
+    });
+  });
+
+  document.getElementById('sop-start-btn').addEventListener('click', function() {
+    var custom = (document.getElementById('sop-custom-domain').value || '').trim();
+    var domain = custom || selectedDomain;
+    if (!domain) { showAlert('请选择领域或输入自定义领域', true); return; }
+    var btn = document.getElementById('sop-start-btn');
+    btn.disabled = true;
+    btn.textContent = '生成中…';
+    apiPost('/api/biz-clue/sop/start', {
+      domain: selectedDomain || custom,
+      custom_domain: custom,
+      use_llm: document.getElementById('sop-use-llm').checked
+    }).then(function(data) {
+      sessionId = data.session.id;
+      var kws = (data.session.keywords || {}).search_keywords || [];
+      document.getElementById('sop-keywords-text').value = kws.join('\n');
+      document.getElementById('sop-kw-count').textContent = kws.length + ' 词';
+      document.getElementById('sop-notify-name').value = (data.session.domain || domain) + ' 商机日报';
+      setStep(2);
+      showAlert('已创建 SOP 会话，请确认关键词');
+    }).catch(function(e) {
+      showAlert(e.message, true);
+    }).finally(function() {
+      btn.disabled = false;
+      btn.textContent = '开始配置';
+    });
+  });
+
+  document.getElementById('sop-regen-kw-btn').addEventListener('click', function() {
+    if (!sessionId) return;
+    apiPost('/api/biz-clue/sop/' + sessionId + '/keywords', { regenerate: true, use_llm: document.getElementById('sop-use-llm').checked })
+      .then(function(data) {
+        var kws = (data.session.keywords || {}).search_keywords || [];
+        document.getElementById('sop-keywords-text').value = kws.join('\n');
+        document.getElementById('sop-kw-count').textContent = kws.length + ' 词';
+        showAlert('关键词已重新生成');
+      }).catch(function(e) { showAlert(e.message, true); });
+  });
+
+  document.getElementById('sop-save-kw-btn').addEventListener('click', function() {
+    if (!sessionId) return;
+    var kws = (document.getElementById('sop-keywords-text').value || '').split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+    apiPost('/api/biz-clue/sop/' + sessionId + '/keywords', { search_keywords: kws })
+      .then(function(data) {
+        document.getElementById('sop-kw-count').textContent = kws.length + ' 词';
+        return apiPost('/api/biz-clue/sop/' + sessionId + '/sites', { rematch: true });
+      }).then(function(data) {
+        matchedSites = data.session.matched_sites || [];
+        selectedSiteIds = new Set(data.session.selected_site_ids || []);
+        renderSiteList();
+        setStep(3);
+        showAlert('已匹配 ' + matchedSites.length + ' 个相关站点');
+      }).catch(function(e) { showAlert(e.message, true); });
+  });
+
+  function renderSiteList() {
+    var list = document.getElementById('sop-site-list');
+    list.innerHTML = '';
+    matchedSites.forEach(function(site) {
+      var row = document.createElement('label');
+      row.className = 'insights-sop-site-row';
+      var checked = selectedSiteIds.has(site.site_id);
+      row.innerHTML =
+        '<input type="checkbox" data-site-id="' + site.site_id + '"' + (checked ? ' checked' : '') + '>' +
+        '<span class="insights-sop-site-name">' + (site.name || site.site_id) + '</span>' +
+        '<span class="insights-sop-site-score">匹配 ' + site.score + ' 分</span>' +
+        '<span class="insights-sop-site-meta">' + (site.category || '') + ' · ' + (site.region || '—') + '</span>';
+      list.appendChild(row);
+    });
+    document.getElementById('sop-site-count').textContent = selectedSiteIds.size + ' / ' + matchedSites.length + ' 站';
+    list.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        var sid = cb.getAttribute('data-site-id');
+        if (cb.checked) selectedSiteIds.add(sid); else selectedSiteIds.delete(sid);
+        document.getElementById('sop-site-count').textContent = selectedSiteIds.size + ' / ' + matchedSites.length + ' 站';
+      });
+    });
+  }
+
+  document.getElementById('sop-select-all-sites').addEventListener('change', function() {
+    var all = document.getElementById('sop-select-all-sites').checked;
+    selectedSiteIds = all ? new Set(matchedSites.map(function(s) { return s.site_id; })) : new Set();
+    renderSiteList();
+  });
+
+  document.getElementById('sop-rematch-btn').addEventListener('click', function() {
+    if (!sessionId) return;
+    apiPost('/api/biz-clue/sop/' + sessionId + '/sites', { rematch: true })
+      .then(function(data) {
+        matchedSites = data.session.matched_sites || [];
+        selectedSiteIds = new Set(data.session.selected_site_ids || []);
+        renderSiteList();
+        showAlert('站点已重新匹配');
+      }).catch(function(e) { showAlert(e.message, true); });
+  });
+
+  document.getElementById('sop-save-sites-btn').addEventListener('click', function() {
+    if (!sessionId) return;
+    if (selectedSiteIds.size === 0) { showAlert('请至少选择一个站点', true); return; }
+    apiPost('/api/biz-clue/sop/' + sessionId + '/sites', { selected_site_ids: Array.from(selectedSiteIds) })
+      .then(function() { setStep(4); showAlert('已选择 ' + selectedSiteIds.size + ' 个站点'); })
+      .catch(function(e) { showAlert(e.message, true); });
+  });
+
+  document.getElementById('sop-create-tasks-btn').addEventListener('click', function() {
+    if (!sessionId) return;
+    var btn = document.getElementById('sop-create-tasks-btn');
+    btn.disabled = true;
+    apiPost('/api/biz-clue/sop/' + sessionId + '/tasks', {
+      cron: document.getElementById('sop-sync-cron').value.trim(),
+      apply_sources: document.getElementById('sop-apply-sources').checked,
+      create_incremental_tasks: document.getElementById('sop-create-tasks').checked
+    }).then(function(data) {
+      var pre = document.getElementById('sop-tasks-result');
+      pre.hidden = false;
+      pre.textContent = JSON.stringify({
+        created_task_ids: data.created_task_ids,
+        applied_sources: data.applied_sources,
+        errors: data.errors
+      }, null, 2);
+      setStep(5);
+      showAlert('爬取任务已创建');
+    }).catch(function(e) { showAlert(e.message, true); })
+      .finally(function() { btn.disabled = false; });
+  });
+
+  document.getElementById('sop-notify-btn').addEventListener('click', function() {
+    if (!sessionId) return;
+    var btn = document.getElementById('sop-notify-btn');
+    btn.disabled = true;
+    apiPost('/api/biz-clue/sop/' + sessionId + '/notify', {
+      cron: document.getElementById('sop-notify-cron').value.trim(),
+      task_name: document.getElementById('sop-notify-name').value.trim(),
+      feishu_push: document.getElementById('sop-feishu-push').checked
+    }).then(function(data) {
+      var task = data.notify_task || {};
+      document.getElementById('sop-done-summary').textContent =
+        '领域「' + (data.session.domain || '') + '」配置完成。推送任务：' + (task.name || task.id || '—');
+      setStep(6);
+      showAlert('SOP 配置全部完成');
+    }).catch(function(e) { showAlert(e.message, true); })
+      .finally(function() { btn.disabled = false; });
+  });
+
+  document.getElementById('sop-restart-btn').addEventListener('click', function() {
+    sessionId = null;
+    selectedDomain = '';
+    matchedSites = [];
+    selectedSiteIds = new Set();
+    document.querySelectorAll('.insights-sop-domain-card').forEach(function(c) { c.classList.remove('selected'); });
+    document.getElementById('sop-custom-domain').value = '';
+    document.getElementById('sop-tasks-result').hidden = true;
+    setStep(1);
+  });
+})();
+</script>
+{% endblock %}

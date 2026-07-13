@@ -373,8 +373,14 @@ async def insights_page(
     )
 
 
-@app.get("/insights/config", response_class=HTMLResponse)
-async def insights_config_page(request: Request):
+@app.get("/insights/config")
+async def insights_config_redirect():
+    """原商机配置管理入口，重定向至 SOP 向导。"""
+    return RedirectResponse(url="/insights/sop", status_code=302)
+
+
+@app.get("/insights/config/readonly", response_class=HTMLResponse)
+async def insights_config_readonly_page(request: Request):
     from src.core.biz_clue_config import get_config_for_api
 
     svc = get_data_service()
@@ -386,6 +392,23 @@ async def insights_config_page(request: Request):
             "data_source": svc.data_source,
             "active_nav": "insights",
             "config": config,
+        },
+    )
+
+
+@app.get("/insights/sop", response_class=HTMLResponse)
+async def insights_sop_page(request: Request):
+    from src.web.biz_clue_sop_service import get_biz_clue_sop_service
+
+    svc = get_data_service()
+    domains = get_biz_clue_sop_service().list_domains()
+    return _render(
+        "insights_sop.html",
+        {
+            "request": request,
+            "data_source": svc.data_source,
+            "active_nav": "insights",
+            "domains": domains.get("domains") or [],
         },
     )
 
@@ -582,6 +605,131 @@ async def api_biz_clue_config_stages():
     from src.core.biz_clue_config import get_stages
 
     return {"ok": True, "stages": get_stages()}
+
+
+class BizClueSopStartRequest(BaseModel):
+    domain: str = ""
+    custom_domain: str = ""
+    use_llm: bool = False
+
+
+class BizClueSopKeywordsRequest(BaseModel):
+    search_keywords: Optional[list[str]] = None
+    exclude_keywords: Optional[list[str]] = None
+    regenerate: bool = False
+    use_llm: bool = False
+
+
+class BizClueSopSitesRequest(BaseModel):
+    selected_site_ids: Optional[list[str]] = None
+    rematch: bool = False
+    limit: int = 30
+
+
+class BizClueSopTasksRequest(BaseModel):
+    cron: Optional[str] = None
+    apply_sources: bool = True
+    create_incremental_tasks: bool = True
+
+
+class BizClueSopNotifyRequest(BaseModel):
+    cron: Optional[str] = None
+    task_name: Optional[str] = None
+    feishu_push: bool = True
+    feishu_webhook_url: Optional[str] = None
+
+
+@app.get("/api/biz-clue/sop/domains")
+async def api_biz_clue_sop_domains():
+    from src.web.biz_clue_sop_service import get_biz_clue_sop_service
+
+    return {"ok": True, **get_biz_clue_sop_service().list_domains()}
+
+
+@app.post("/api/biz-clue/sop/start")
+async def api_biz_clue_sop_start(body: BizClueSopStartRequest):
+    from src.web.biz_clue_sop_service import get_biz_clue_sop_service
+
+    result = get_biz_clue_sop_service().start_session(
+        domain=body.domain.strip(),
+        custom_domain=body.custom_domain.strip(),
+        use_llm=body.use_llm,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "创建 SOP 会话失败")
+    return result
+
+
+@app.get("/api/biz-clue/sop/{session_id}")
+async def api_biz_clue_sop_get(session_id: str):
+    from src.web.biz_clue_sop_service import get_biz_clue_sop_service
+
+    result = get_biz_clue_sop_service().get_session(session_id)
+    if not result.get("ok"):
+        raise HTTPException(status_code=404, detail=result.get("error") or "会话不存在")
+    return result
+
+
+@app.post("/api/biz-clue/sop/{session_id}/keywords")
+async def api_biz_clue_sop_keywords(session_id: str, body: BizClueSopKeywordsRequest):
+    from src.web.biz_clue_sop_service import get_biz_clue_sop_service
+
+    result = get_biz_clue_sop_service().save_keywords(
+        session_id,
+        search_keywords=body.search_keywords,
+        exclude_keywords=body.exclude_keywords,
+        regenerate=body.regenerate,
+        use_llm=body.use_llm,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "保存关键词失败")
+    return result
+
+
+@app.post("/api/biz-clue/sop/{session_id}/sites")
+async def api_biz_clue_sop_sites(session_id: str, body: BizClueSopSitesRequest):
+    from src.web.biz_clue_sop_service import get_biz_clue_sop_service
+
+    result = get_biz_clue_sop_service().match_and_save_sites(
+        session_id,
+        selected_site_ids=body.selected_site_ids,
+        rematch=body.rematch,
+        limit=body.limit,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "站点匹配失败")
+    return result
+
+
+@app.post("/api/biz-clue/sop/{session_id}/tasks")
+async def api_biz_clue_sop_tasks(session_id: str, body: BizClueSopTasksRequest):
+    from src.web.biz_clue_sop_service import get_biz_clue_sop_service
+
+    result = get_biz_clue_sop_service().create_crawl_tasks(
+        session_id,
+        cron=body.cron,
+        apply_sources=body.apply_sources,
+        create_incremental_tasks=body.create_incremental_tasks,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "创建爬取任务失败")
+    return result
+
+
+@app.post("/api/biz-clue/sop/{session_id}/notify")
+async def api_biz_clue_sop_notify(session_id: str, body: BizClueSopNotifyRequest):
+    from src.web.biz_clue_sop_service import get_biz_clue_sop_service
+
+    result = get_biz_clue_sop_service().configure_notify(
+        session_id,
+        cron=body.cron,
+        task_name=body.task_name,
+        feishu_push=body.feishu_push,
+        feishu_webhook_url=(body.feishu_webhook_url or "").strip() or None,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "配置推送失败")
+    return result
 
 
 @app.get("/api/biz-clue/summary")

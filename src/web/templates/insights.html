@@ -22,7 +22,7 @@
       <p class="insights-slogan">
         Agent 读取已采集的招采公告，按产品线匹配、阶段识别、商机评分与去重规则输出结构化线索。
         <span class="insights-config-badge">{{ config_label or '基于 bizclue 配置 v1.0' }}</span>
-        <a href="/insights/config" class="insights-config-link">查看配置</a>
+        <a href="/insights/sop" class="insights-config-link">配置 SOP 向导</a>
       </p>
       {% if analyzed_at %}
       <p class="insights-meta">最近分析：{{ analyzed_at[:19].replace('T', ' ') }} · 扫描 {{ total_notices_scanned or 0 }} 条公告</p>

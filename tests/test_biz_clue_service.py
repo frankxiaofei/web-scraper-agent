@@ -263,10 +263,14 @@ def test_biz_clue_api_config_stages():
 
 def test_biz_clue_config_page():
     client = TestClient(main_app)
-    resp = client.get("/insights/config")
-    assert resp.status_code == 200
-    assert "商机配置管理" in resp.text
-    assert "阶段词库" in resp.text
+    resp = client.get("/insights/config", follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers.get("location") == "/insights/sop"
+
+    readonly = client.get("/insights/config/readonly")
+    assert readonly.status_code == 200
+    assert "商机配置管理" in readonly.text
+    assert "阶段词库" in readonly.text
 
 
 def test_biz_clue_page(sample_notices):
