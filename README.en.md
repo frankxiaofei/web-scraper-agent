@@ -169,11 +169,6 @@ If this project helps you, consider supporting ongoing development:
       <b>Thanks for the coffee</b><br/>
       <sub>WeChat Reward · 微信赞赏</sub>
     </td>
-    <td align="center">
-      <img src="assets/donate/wechat-official-account.svg" alt="WeChat Official Account QR" width="200"/><br/>
-      <b>Official Account</b><br/>
-      <sub>Follow for updates · 关注公众号</sub>
-    </td>
   </tr>
 </table>
 
@@ -185,7 +180,7 @@ You can also **star the repo** or **open issues** to help improve the project.
 
 * **Report issues** — GitHub / Gitee issue tracker *(add repo URL before public release)*
 * **简体中文 README** — [README.md](README.md)
-* **Contact** — Email *(to be added)* · WeChat official account *(see QR above)*
+* **Contact** — Email *(to be added)*
 * **CI** — GitHub Actions workflow at [`.github/workflows/ci.yml`](.github/workflows/ci.yml); local run: `bash scripts/ci.sh`
 
 ---

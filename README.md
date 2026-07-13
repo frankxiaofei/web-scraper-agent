@@ -174,11 +174,6 @@ make docker-up     # Docker Compose 启动
       <b>感谢你的咖啡</b><br/>
       <sub>微信赞赏 · WeChat Reward</sub>
     </td>
-    <td align="center">
-      <img src="assets/donate/wechat-official-account.svg" alt="微信公众号二维码" width="200"/><br/>
-      <b>关注公众号</b><br/>
-      <sub>获取更新与教程 · Official Account</sub>
-    </td>
   </tr>
 </table>
 
@@ -190,7 +185,7 @@ make docker-up     # Docker Compose 启动
 
 * **反馈问题** — GitHub / Gitee Issue 跟踪 *(公开发布前请补充仓库地址)*
 * **English README** — [README.en.md](README.en.md)
-* **联系方式** — 邮箱 *（待补充）* · 微信公众号 *（见上方二维码）*
+* **联系方式** — 邮箱 *（待补充）*
 * **CI** — GitHub Actions 工作流见 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)；本地运行：`bash scripts/ci.sh`
 
 ---
