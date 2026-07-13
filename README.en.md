@@ -47,6 +47,10 @@ make status            # port & HTTP health checks
 
 Open **http://127.0.0.1:8090/insights** (Business Opportunity Insights).
 
+**Business Opportunity SOP**
+
+Use `/insights/sop` to configure domain-specific opportunity pipelines in five steps: pick a domain → generate keywords → match sites → create scheduled crawls → configure Feishu summary push. Updates `config/biz_clue_sources.yaml` and creates notification tasks automatically.
+
 **Example: crawl a single site**
 
 ```bash
@@ -68,11 +72,46 @@ python scripts/run_scheduler.py
 - **Out of the box** — `make start` launches main UI (8090, incl. insights), scheduler, and MongoDB
 - **151+ sites, 49 enabled** — National procurement, provincial portals, SOE platforms, industry sources, WeChat articles
 - **Agent-driven crawl** — Hermes conversational agent + intelligent BFS discovery + optional LLM enrichment
+- **Natural-language task creation** — describe sites, keywords, and schedules in `/hermes` chat to auto-create crawl & notification jobs
 - **Real-browser automation** — Playwright headless pool + WebBridge extension for login-heavy or anti-bot sites
 - **Insight dashboards** — Digital agriculture and other keyword-based opportunity filtering, daily briefs
+- **Business Opportunity SOP** — `/insights/sop` wizard: domain template → keywords → site matching → scheduled crawl → push
 - **Scheduled sync** — Cron & interval jobs for opportunity insights SOE sync, per-site round-robin crawls
 - **Multi-channel notifications** — Feishu, DingTalk, WeCom, email, SMS via scheduled tasks
 - **Layered storage** — JSONL → MongoDB → PostgreSQL, with Redis dedup
+
+---
+
+## Create Crawl Tasks in Natural Language
+
+Use the **Hermes conversational agent** at [http://127.0.0.1:8090/hermes](http://127.0.0.1:8090/hermes) to describe crawl goals in plain Chinese or English. The agent parses intent and creates incremental sync jobs, scheduled notifications, and more — no scripts or YAML edits required.
+
+**Example prompts**
+
+- "Every day at 9 AM, crawl CCGP national platform for digital agriculture notices and push to Feishu"
+- "Run incremental sync on all enabled SOE procurement sites"
+- "Show my configured notification tasks"
+
+**What the agent can do**
+
+- Map colloquial site names to `site_id`; register new sites and generate crawl rules in chat
+- Skills + tool calls: WebBridge real-browser automation, `run_once`, incremental sync, site diagnostics
+- Create cron scheduled tasks in conversation; persisted to the [notification tasks page](/tasks) (Feishu, DingTalk, WeCom, etc.)
+
+**Hermes chat vs. Business Opportunity SOP**
+
+| | Hermes chat | Business Opportunity SOP ([`/insights/sop`](/insights/sop)) |
+|---|-------------|---------------------------------------------------------------|
+| Use case | Ad-hoc or one-off tasks via conversation | Guided five-step domain configuration wizard |
+| Output | Crawl runs, incremental sync, notification jobs | `biz_clue_sources.yaml` + insight dashboard pipeline |
+
+**Prerequisites**
+
+- Set `HERMES_AGENT_CHAT_URL` (default `http://127.0.0.1:8642`) and `HERMES_AGENT_API_KEY` in `.env` (must match hermes-agent `API_SERVER_KEY`)
+- Hermes Gateway / API Server running (crawl dispatch `:8080`, chat `/v1/runs` `:8642`); e.g. `docker compose up hermes-agent` or `make start-hermes-agent`
+- After `make start`, open `/hermes` on port 8090; standalone UI also available at `8095/hermes`
+
+See [`docs/HERMES_CRAWL_AGENT.md`](docs/HERMES_CRAWL_AGENT.md) for details.
 
 ---
 
@@ -121,9 +160,10 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) and [`docs/HERMES_CRAWL_AGENT.md`](docs/H
 
 | Service | Port | Description |
 |---------|------|-------------|
-| Main Web UI | 8090 | Notice list, sync panel, crawl rules, Hermes chat, **Business Opportunity Insights** (`/insights`) |
+| Main Web UI | 8090 | Notice list, sync panel, crawl rules, Hermes chat (`/hermes`), **Business Opportunity Insights** (`/insights`) |
 | Opportunity Insights (standalone, optional) | 8091 | Deprecated for main flow; `agri_app.py` kept for standalone deploy |
-| Hermes Crawl Agent | 8095 | Standalone agent UI for conversational crawl tasks |
+| Hermes Gateway / API | 8080 / 8642 | Crawl dispatch & chat `/v1/runs`; `/hermes` requires API Server on 8642 |
+| Hermes Crawl Agent (standalone UI) | 8095 | Standalone agent UI for conversational crawl tasks |
 
 ---
 

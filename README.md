@@ -72,12 +72,46 @@ python scripts/run_scheduler.py
 - **开箱即用** — `make start` 一键启动主站（8090，含商机洞察）、调度器与 MongoDB
 - **151+ 站点，49 条已启用** — 覆盖国家级政采、省级门户、央企平台、行业源与微信公众号
 - **Agent 驱动爬取** — Hermes 对话 Agent + 智能 BFS 发现 + 可选 LLM 增强
+- **自然语言创建任务** — 在 `/hermes` 用对话描述站点、关键词与频率，自动创建爬取与通知任务
 - **真实浏览器自动化** — Playwright 无头池 + WebBridge 扩展，应对登录态与反爬场景
 - **专题洞察** — 数字农业等关键词商机过滤、LLM 每日简报
 - **商机配置 SOP** — `/insights/sop` 向导式配置：领域模板 → 关键词 → 站点匹配 → 定时爬取 → 推送
 - **定时同步** — 商机洞察央企同步、站点轮询等 cron 任务
 - **多渠道通知** — 飞书、钉钉、企业微信、邮件、短信（通过定时任务配置）
 - **分层持久化** — JSONL → MongoDB → PostgreSQL，Redis 去重
+
+---
+
+## 自然语言创建爬虫任务
+
+通过 **Hermes 对话 Agent**（[http://127.0.0.1:8090/hermes](http://127.0.0.1:8090/hermes)）用中文或英文描述爬取需求，系统自动解析意图并创建增量同步、定时通知等任务，无需手写脚本或改 YAML。
+
+**示例对话**
+
+- 「每天上午 9 点爬取 ccgp 国家平台数字农业相关公告并推送到飞书」
+- 「帮我对已启用的央企采购站做增量同步」
+- 「查看已配置的通知任务」
+
+**Agent 能力**
+
+- 口语化站点名 → `site_id` 解析；新站可对话内注册并生成爬取规则
+- Skills + 工具调用：WebBridge 真实浏览器、`run_once`、增量 sync、站点诊断
+- 对话内创建 cron 定时任务，持久化至[通知任务页](/tasks)（飞书、钉钉、企业微信等）
+
+**与商机 SOP 的区别**
+
+| | Hermes 对话 | 商机 SOP（[`/insights/sop`](/insights/sop)） |
+|---|-------------|---------------------------------------------|
+| 场景 | 即时描述、一次性或临时任务 | 领域商机配置向导（五步模板） |
+| 产出 | 爬取执行、增量 sync、通知任务 | `biz_clue_sources.yaml` + 专题洞察流水线 |
+
+**前置条件**
+
+- `.env` 配置 `HERMES_AGENT_CHAT_URL`（默认 `http://127.0.0.1:8642`）、`HERMES_AGENT_API_KEY`（与 hermes-agent `API_SERVER_KEY` 一致）
+- Hermes Gateway / API Server 已运行（调度 crawl dispatch `:8080`，对话 `/v1/runs` `:8642`）；可用 `docker compose up hermes-agent` 或 `make start-hermes-agent`
+- 主站 `make start` 后访问 `/hermes`；独立 UI 亦可使用 `8095/hermes`
+
+详见 [`docs/HERMES_CRAWL_AGENT.md`](docs/HERMES_CRAWL_AGENT.md)。
 
 ---
 
@@ -126,9 +160,10 @@ flowchart TB
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| 主 Web UI | 8090 | 数据列表、同步面板、爬取规则、Hermes 对话、**商机洞察**（`/insights`） |
+| 主 Web UI | 8090 | 数据列表、同步面板、爬取规则、Hermes 对话（`/hermes`）、**商机洞察**（`/insights`） |
 | 商机洞察（独立，可选） | 8091 | 已弃用为主流程；保留 `agri_app.py` 供独立部署 |
-| Hermes 爬取 Agent | 8095 | 独立 Agent 对话界面，自然语言驱动爬取 |
+| Hermes Gateway / API | 8080 / 8642 | crawl dispatch 与对话 `/v1/runs`；`/hermes` 依赖 8642 已就绪 |
+| Hermes 爬取 Agent（独立 UI） | 8095 | 独立 Agent 对话界面，自然语言驱动爬取 |
 
 ---
 
