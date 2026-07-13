@@ -46,6 +46,12 @@
 .app-brand {
   grid-area: brand;
 }
+.app-brand-logo {
+  height: 2.25rem;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 .app-nav {
   grid-area: nav;
   justify-self: stretch;

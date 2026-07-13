@@ -2,7 +2,9 @@
 
 <div align="center">
 
-![WebScraperAgent logo](assets/logo.svg)
+<p align="center">
+  <img src="assets/logo.png" alt="WebScraperAgent" width="280">
+</p>
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Docs](https://img.shields.io/badge/docs-full%20guide-informational)](docs/README.full.md)
