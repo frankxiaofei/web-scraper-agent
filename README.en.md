@@ -28,7 +28,7 @@ Procurement notices, policy updates, and industry signals are scattered across n
 | **Site coverage** | One script per site | **151** sites, YAML rules + adapters |
 | **Maintenance** | Breaks on DOM changes | Rule engine + recorder + WebBridge |
 | **Interaction** | Edit code for every task | **Hermes Agent** — chat-driven crawl with Skills |
-| **Output** | Flat files | **Domain dashboards** — Business Opportunity Insights, Stock Insights |
+| **Output** | Flat files | **Domain dashboards** — Business Opportunity Insights |
 | **Operations** | Ad-hoc cron | APScheduler + Web UI sync + layered storage |
 
 > **Tagline:** *Stop chasing scattered bid notices — let an AI Agent crawl, schedule, and turn raw data into actionable insights.*
@@ -41,11 +41,11 @@ cd web_scraper_agent
 python3 -m venv .venv && source .venv/bin/activate
 bash scripts/install.sh
 cp .env.example .env   # set OPENAI_API_KEY if using LLM features
-make start             # MongoDB + InfluxDB + main UI 8090 (incl. insights) + stock 8092 + scheduler
+make start             # MongoDB + main UI 8090 (incl. insights) + scheduler
 make status            # port & HTTP health checks
 ```
 
-Open **http://127.0.0.1:8090/insights** (Business Opportunity Insights) and **http://127.0.0.1:8092/** (Stock Insights).
+Open **http://127.0.0.1:8090/insights** (Business Opportunity Insights).
 
 **Example: crawl a single site**
 
@@ -61,20 +61,18 @@ bash scripts/run_with_local_chrome.sh \
 python scripts/run_scheduler.py
 ```
 
-> **Disclaimer:** Stock insights and investment-plan outputs are for research and demonstration only — **not financial advice**.
-
 ---
 
 ## Key Features
 
-- **Out of the box** — `make start` launches main UI (8090, incl. insights), Stock Insights (8092), scheduler, MongoDB, and InfluxDB
+- **Out of the box** — `make start` launches main UI (8090, incl. insights), scheduler, and MongoDB
 - **151+ sites, 49 enabled** — National procurement, provincial portals, SOE platforms, industry sources, WeChat articles
 - **Agent-driven crawl** — Hermes conversational agent + intelligent BFS discovery + optional LLM enrichment
 - **Real-browser automation** — Playwright headless pool + WebBridge extension for login-heavy or anti-bot sites
-- **Insight dashboards** — Digital agriculture and other keyword-based opportunity filtering, stock sector analysis, daily briefs
-- **Scheduled sync** — Cron & interval jobs for opportunity insights SOE sync, stock news/policy feeds, per-site round-robin crawls
+- **Insight dashboards** — Digital agriculture and other keyword-based opportunity filtering, daily briefs
+- **Scheduled sync** — Cron & interval jobs for opportunity insights SOE sync, per-site round-robin crawls
 - **Multi-channel notifications** — Feishu, DingTalk, WeCom, email, SMS via scheduled tasks
-- **Layered storage** — JSONL → MongoDB → PostgreSQL, with Redis dedup and InfluxDB for stock K-lines
+- **Layered storage** — JSONL → MongoDB → PostgreSQL, with Redis dedup
 
 ---
 
@@ -101,7 +99,6 @@ flowchart TB
         Mongo["MongoDB bid_notices"]
         PG["PostgreSQL"]
         Redis["Redis dedup"]
-        Influx["InfluxDB stock_ts"]
     end
 
     CLI --> Scheduler
@@ -118,7 +115,6 @@ flowchart TB
     Pipeline --> Redis
     Intel -.-> LLM["Optional LLM"]
     Pipeline -.-> LLM
-    UI --> Influx
 ```
 
 See [`docs/DESIGN.md`](docs/DESIGN.md) and [`docs/HERMES_CRAWL_AGENT.md`](docs/HERMES_CRAWL_AGENT.md) for deeper design notes.
@@ -127,7 +123,6 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) and [`docs/HERMES_CRAWL_AGENT.md`](docs/H
 |---------|------|-------------|
 | Main Web UI | 8090 | Notice list, sync panel, crawl rules, Hermes chat, **Business Opportunity Insights** (`/insights`) |
 | Opportunity Insights (standalone, optional) | 8091 | Deprecated for main flow; `agri_app.py` kept for standalone deploy |
-| Stock Insights | 8092 | A-share/HK/US market data, news, policy sync, sector analysis |
 | Hermes Crawl Agent | 8095 | Standalone agent UI for conversational crawl tasks |
 
 ---
@@ -139,7 +134,6 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) and [`docs/HERMES_CRAWL_AGENT.md`](docs/H
 * **[Configuration](docs/README.full.md)** — `.env` variables (`MONGODB_URI`, `OPENAI_API_KEY`, …), `config/sites.yaml`, `config/schedule.yaml`
 * **[Notification Channels](docs/README.full.md)** — global `.env` for Feishu/DingTalk/WeChat/SMTP/SMS; per-task overrides via `channel_config` in the scheduled task dialog
 * **[Business Opportunity Insights](docs/README.full.md)** — SOE sync, digital agri keyword filtering, port 8090 `/insights` dashboard
-* **[Stock Insights](docs/README.full.md)** — AKShare quotes, policy feeds, sector analysis on port 8092
 * **[Hermes Crawl Agent](docs/HERMES_CRAWL_AGENT.md)** — Conversational crawl with Skills & tool calling
 * **[WebBridge Crawl](skills/webbridge-crawl/SKILL.md)** — Real-browser automation playbook
 * **[Docker Deployment](docker/README.md)** — Container deployment notes
@@ -149,10 +143,9 @@ See [`docs/DESIGN.md`](docs/DESIGN.md) and [`docs/HERMES_CRAWL_AGENT.md`](docs/H
 
 ```bash
 make help          # all targets
-make start         # default stack (8090 + 8092 + scheduler + DBs; 8091 standalone UI optional)
+make start         # default stack (8090 + scheduler + DBs; 8091 standalone UI optional)
 make stop          # stop UI and scheduler
 make restart-agri  # restart opportunity insights UI
-make restart-stock # restart stock UI
 make docker-up     # Docker Compose up
 ```
 
