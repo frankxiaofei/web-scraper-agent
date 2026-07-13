@@ -122,7 +122,7 @@ def build_bim_analysis_schedule_ui_event(
     payload = build_bim_analysis_schedule_ui_payload(defaults=defaults)
     return ChatStreamEvent(
         type="ui",
-        content="请配置 BIM 每日分析通知任务：查询今日新增标讯、LLM 综合分析后推送飞书。",
+        content="请配置商机每日分析通知任务：查询今日新增标讯、LLM 综合分析后推送飞书。",
         data=payload,
     )
 
@@ -254,7 +254,7 @@ SYSTEM_PROMPT = """你是 Hermes 爬虫运维 Agent，通过 **skill 分步工�
 - 默认 **国央企 + 行业平台**（`schedule.yaml` → `crawl_scope: soe_and_industry`）
 - `sites.yaml` 中 `enabled: true` 且满足以下之一：`soe: true`（国央企）或 `industry: true`（行业扩展，如 dlzb_power、ggzy_上海市）
 - 整站 sync / BIM sync / 定时爬取只处理上述 enabled 站；其余站点仍 `enabled: false`
-- 统计与 BIM 洞察页面数据范围与 crawl_scope 一致
+- 统计与商机洞察页面数据范围与 crawl_scope 一致
 
 ## 能力
 - 解析用户口语（如 tjbid、铁建物资采购网）为 site_id
@@ -820,7 +820,7 @@ class CrawlAgentChatService:
                 content=(
                     "下方为当前已配置的通知任务。"
                     "关闭开关可暂停调度（run_scheduler 约 60 秒内生效）；"
-                    "也可说「创建 BIM 每日分析通知任务」添加新任务。"
+                    "也可说「创建商机每日分析通知任务」添加新任务。"
                 ),
             )
             yield ChatStreamEvent(type="done")
@@ -829,7 +829,7 @@ class CrawlAgentChatService:
         if agent_profile == "default" and detect_bim_analysis_schedule_ui_intent(user_message):
             yield ChatStreamEvent(
                 type="thinking",
-                content="检测到 BIM 分析通知任务配置意图，展示表单…",
+                content="检测到商机分析通知任务配置意图，展示表单…",
                 data={"bim_analysis_schedule_ui_intent": True},
             )
             yield build_bim_analysis_schedule_ui_event()
@@ -849,7 +849,7 @@ class CrawlAgentChatService:
 
             yield ChatStreamEvent(
                 type="thinking",
-                content="检测到「BIM 每日综合分析 + 飞书」通知任务意图，正在解析…",
+                content="检测到「商机每日综合分析 + 飞书」通知任务意图，正在解析…",
                 data={"scheduled_bim_analysis_intent": True},
             )
             result = get_chat_schedule_service().create_bim_analysis_from_intent(user_message)
@@ -864,14 +864,14 @@ class CrawlAgentChatService:
                     type="message",
                     role="assistant",
                     content=(
-                        f"已创建 BIM 分析通知任务：**{task.get('name')}**\n\n"
+                        f"已创建商机分析通知任务：**{task.get('name')}**\n\n"
                         f"- 类型：`bim_daily_analysis`\n"
                         f"- Cron：`{task.get('cron')}`\n"
                         f"- Top 标讯：{task.get('top_n', 10)} 条\n"
                         f"- 下次执行：{task.get('next_run_time') or '—'}\n"
                         f"- 任务 ID：`{task.get('id')}`\n"
                         f"- 飞书：{webhook_note}\n\n"
-                        "到点将分析今日新增 BIM 标讯并 LLM 综合分析后推送；run_scheduler 约 60 秒内自动加载。"
+                        "到点将分析今日新增标讯并 LLM 综合分析后推送；run_scheduler 约 60 秒内自动加载。"
                     ),
                 )
             else:
@@ -879,8 +879,8 @@ class CrawlAgentChatService:
                     type="message",
                     role="assistant",
                     content=(
-                        f"未能自动创建 BIM 分析通知任务：{result.get('error')}\n\n"
-                        "请补充执行时间与 Webhook，或说「创建 BIM 每日分析通知任务」打开配置表单。"
+                        f"未能自动创建商机分析通知任务：{result.get('error')}\n\n"
+                        "请补充执行时间与 Webhook，或说「创建商机每日分析通知任务」打开配置表单。"
                     ),
                 )
             yield ChatStreamEvent(type="done")

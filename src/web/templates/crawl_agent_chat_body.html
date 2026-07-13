@@ -961,7 +961,7 @@
             '<li>下次执行：' + escapeHtml(task.next_run_time || '—') + '</li>' +
             '</ul><p class="mt-2 text-xs text-slate-500">run_scheduler 约 60 秒内自动加载。</p>';
         }
-        if (typeof showToast === 'function') showToast('BIM 分析通知任务已创建', 'success');
+        if (typeof showToast === 'function') showToast('商机分析通知任务已创建', 'success');
       } catch (e) {
         const errEl = blockEl.querySelector('.hermes-ui-error');
         if (errEl) errEl.textContent = '网络错误';
@@ -1152,7 +1152,7 @@
           '" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"></div>';
       }).join('');
       const cronCustomDef = (data.fields || []).find(function(f) { return f.name === 'cron_custom'; }) || {};
-      return '<p class="text-sm text-slate-700 mb-1 font-medium">' + escapeHtml(data.title || 'BIM 分析通知任务') + '</p>' +
+      return '<p class="text-sm text-slate-700 mb-1 font-medium">' + escapeHtml(data.title || '商机分析通知任务') + '</p>' +
         (data.description ? '<p class="text-xs text-slate-500 mb-3">' + escapeHtml(data.description) + '</p>' : '') +
         '<form class="hermes-bim-analysis-schedule-form space-y-3">' + fieldsHtml +
         '<div class="hermes-bim-cron-custom hidden"><label class="block text-xs font-medium text-slate-700 mb-1">自定义 Cron</label>' +
@@ -1242,11 +1242,11 @@
         component: 'scheduled_tasks_panel',
         title: '通知任务管理',
         description: '查看已配置的通知任务，可启用/禁用或删除。禁用后 run_scheduler 约 60 秒内自动卸载该 job。',
-        empty_hint: '暂无通知任务。可说「创建 BIM 每日分析通知任务」或「每天8点爬取电建增量并发飞书」来创建。',
+        empty_hint: '暂无通知任务。可说「创建商机每日分析通知任务」或「每天8点爬取电建增量并发飞书」来创建。',
         task_type_labels: {
           incremental_sync: '增量同步 + 飞书',
           hermes_prompt: 'Hermes Prompt + 飞书',
-          bim_daily_analysis: 'BIM 每日综合分析',
+          bim_daily_analysis: '商机每日综合分析',
         },
       },
     });

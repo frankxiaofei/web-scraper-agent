@@ -91,7 +91,7 @@
           <label class="block text-xs font-medium text-slate-600 mb-1">任务名称</label>
           <input type="text" name="name" id="task-name" required
                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
-                 placeholder="BIM 日报总结">
+                 placeholder="商机日报总结">
         </div>
 
         <div>
@@ -109,7 +109,7 @@
           <label class="block text-xs font-medium text-slate-600 mb-1">提示词</label>
           <textarea name="hermes_prompt" id="hermes-prompt" required rows="10"
                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono leading-relaxed focus:ring-2 focus:ring-brand-500"
-                    placeholder="请分析今日（{date}）新增的 BIM 招标公告…"></textarea>
+                    placeholder="请分析今日（{date}）新增的招标公告与商机线索…"></textarea>
           <p class="text-xs text-slate-400 mt-1">建议文末要求 Agent 输出「## 飞书摘要」段落，便于群推送。</p>
         </div>
 
@@ -212,9 +212,9 @@
               <select id="legacy-task-type" class="app-select">
                 <option value="">Hermes 提示词（默认）</option>
                 <option value="engineering_llm_report">{{ task_type_labels.get('engineering_llm_report', '工程大模型应用 · 个人私信') }}</option>
-                <option value="bim_daily_brief">{{ task_type_labels.get('bim_daily_brief', 'BIM 日报') }}</option>
-                <option value="bim_weekly_brief">{{ task_type_labels.get('bim_weekly_brief', 'BIM 周报') }}</option>
-                <option value="bim_daily_analysis">{{ task_type_labels.get('bim_daily_analysis', 'BIM 综合分析') }}</option>
+                <option value="bim_daily_brief">{{ task_type_labels.get('bim_daily_brief', '商机日报') }}</option>
+                <option value="bim_weekly_brief">{{ task_type_labels.get('bim_weekly_brief', '商机周报') }}</option>
+                <option value="bim_daily_analysis">{{ task_type_labels.get('bim_daily_analysis', '商机综合分析') }}</option>
               </select>
             </div>
             <div id="legacy-engineering-wrap" class="hidden space-y-3">

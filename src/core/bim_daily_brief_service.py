@@ -98,12 +98,12 @@ def _brief_report_title(
     days: int, date_label: str, *, is_weekend_daily: bool = False
 ) -> str:
     if days >= 28:
-        return f"BIM 招标周报 {date_label}"
+        return f"商机招标周报 {date_label}"
     if is_weekend_daily:
-        return f"BIM 招标日报 {date_label}（周末）"
+        return f"商机招标日报 {date_label}（周末）"
     if days > 1:
-        return f"BIM 招标简报 {date_label}"
-    return f"BIM 招标日报 {date_label}"
+        return f"商机招标简报 {date_label}"
+    return f"商机招标日报 {date_label}"
 
 
 def _parse_target_date(value: DateInput) -> date:
@@ -361,7 +361,7 @@ def build_bim_daily_brief(
     ]
 
     settings = get_settings()
-    detail_url = f"{settings.bim_ui_url.rstrip('/')}/bim"
+    detail_url = f"{settings.bim_ui_url.rstrip('/')}/insights"
     window_end_inclusive = _window_end_inclusive(end)
     window_suffix = "（周末）" if is_weekend_daily else ""
     window_label = _format_window_label(start, end, suffix=window_suffix)
@@ -406,7 +406,7 @@ def build_feishu_card(brief: dict[str, Any]) -> dict[str, Any]:
     count = brief.get("bim_count", 0)
     by_site = brief.get("by_site") or []
     amount_stats = brief.get("amount_stats") or {}
-    detail_url = brief.get("detail_url") or f"{get_settings().bim_ui_url.rstrip('/')}/bim"
+    detail_url = brief.get("detail_url") or f"{get_settings().bim_ui_url.rstrip('/')}/insights"
 
     week_new = brief.get("week_new_count")
     month_new = brief.get("month_new_count")
@@ -447,7 +447,7 @@ def build_feishu_card(brief: dict[str, Any]) -> dict[str, Any]:
             "text": {
                 "tag": "lark_md",
                 "content": (
-                    f"**BIM 相关标讯**　{count} 条\n\n"
+                    f"**商机相关标讯**　{count} 条\n\n"
                     f"{period_block}"
                     f"**统计区间**　{stats_interval}"
                 ),
@@ -473,7 +473,7 @@ def build_feishu_card(brief: dict[str, Any]) -> dict[str, Any]:
             "tag": "div",
             "text": {
                 "tag": "lark_md",
-                "content": "**Top 标讯**\n\n" + ("\n\n---\n\n".join(top_lines) if top_lines else "暂无 BIM 标讯"),
+                "content": "**Top 标讯**\n\n" + ("\n\n---\n\n".join(top_lines) if top_lines else "暂无商机标讯"),
             },
         },
         {
@@ -481,7 +481,7 @@ def build_feishu_card(brief: dict[str, Any]) -> dict[str, Any]:
             "actions": [
                 {
                     "tag": "button",
-                    "text": {"tag": "plain_text", "content": "查看 BIM 洞察"},
+                    "text": {"tag": "plain_text", "content": "查看商机洞察"},
                     "type": "primary",
                     "url": detail_url,
                 }
@@ -517,7 +517,7 @@ def build_bim_weekly_feishu_card(brief: dict[str, Any]) -> dict[str, Any]:
     card = build_feishu_card(brief)
     date_label = f"{brief.get('date')} ~ {brief.get('date_end')}"
     days = brief.get("days", 7)
-    title = f"BIM招标周报 {date_label}"
+    title = f"商机招标周报 {date_label}"
 
     # 周报主统计区：突出本周新增与近一月分析
     elements = card.get("elements") or []
@@ -533,7 +533,7 @@ def build_bim_weekly_feishu_card(brief: dict[str, Any]) -> dict[str, Any]:
         if month_new is not None:
             stat_lines.append(f"**近一月新增**　{month_new} 条（{month_label}）")
         if days >= 28:
-            stat_lines.append(f"**统计窗口**　近 {days} 日共 **{count}** 条 BIM 标讯")
+            stat_lines.append(f"**统计窗口**　近 {days} 日共 **{count}** 条商机标讯")
         else:
             stat_lines.append(f"**本周标讯**　{count} 条（{date_label}）")
         elements[0]["text"]["content"] = "\n\n".join(stat_lines)
@@ -826,7 +826,7 @@ def build_bim_analysis_feishu_card(
         title = card.get("header", {}).get("title", {})
         if isinstance(title, dict):
             title["content"] = format_feishu_card_title(
-                f"BIM 近一月综合分析 {analysis_label}"
+                f"商机近一月综合分析 {analysis_label}"
             )
         return card
 
@@ -864,7 +864,7 @@ def build_bim_analysis_feishu_card(
     title = card.get("header", {}).get("title", {})
     if isinstance(title, dict):
         title["content"] = format_feishu_card_title(
-            f"BIM 近一月综合分析 {analysis_label}"
+            f"商机近一月综合分析 {analysis_label}"
         )
     return card
 

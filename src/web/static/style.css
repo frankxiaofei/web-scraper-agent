@@ -1507,7 +1507,7 @@
   padding-right: 0;
 }
 
-/* BIM 洞察页 — 分区标题、图表网格、公告表 */
+/* 商机洞察页 — 分区标题、图表网格、公告表 */
 .stats-section-heading {
   display: flex;
   align-items: center;
@@ -1534,7 +1534,7 @@
   margin-bottom: 0.875rem;
 }
 
-/* BIM 招标洞察 — 品牌蓝 + 琥珀强调，数据密集型仪表盘 */
+/* 商机招标洞察 — 品牌蓝 + 琥珀强调，数据密集型仪表盘 */
 .bim-insights-page {
   --stats-violet-600: var(--app-primary);
   --stats-violet-700: #1e3a8a;

@@ -1676,7 +1676,7 @@ class SiteRegisterRequest(BaseModel):
 
 
 class BimAnalysisScheduleRequest(BaseModel):
-    name: str = "BIM 每日综合分析"
+    name: str = "商机每日综合分析"
     cron: Optional[str] = None
     cron_expression: Optional[str] = None
     cron_preset: Optional[str] = None
@@ -1843,7 +1843,7 @@ async def api_create_scheduled_task(body: ScheduledTaskCreateRequest):
     elif task_type == TASK_TYPE_BIM_DAILY_ANALYSIS:
         result = svc.create_bim_analysis_task(
             cron=cron_expr,
-            name=(body.name or "").strip() or "BIM 每日综合分析",
+            name=(body.name or "").strip() or "商机每日综合分析",
             top_n=max(1, min(int(body.top_n or 10), 30)),
             feishu_webhook_url=(body.feishu_webhook_url or "").strip() or None,
             feishu_webhooks=body.feishu_webhooks,
@@ -1897,7 +1897,7 @@ async def api_create_bim_analysis_schedule(body: BimAnalysisScheduleRequest):
 
     result = get_chat_schedule_service().create_bim_analysis_task(
         cron=cron_expr,
-        name=(body.name or "").strip() or "BIM 每日综合分析",
+        name=(body.name or "").strip() or "商机每日综合分析",
         top_n=max(1, min(int(body.top_n or 10), 30)),
         feishu_webhook_url=(body.feishu_webhook_url or "").strip() or None,
         enabled=bool(body.enabled),

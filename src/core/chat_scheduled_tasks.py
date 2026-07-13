@@ -92,9 +92,9 @@ TASK_TYPE_LABELS: dict[str, str] = {
     TASK_TYPE_INCREMENTAL: "增量同步 + 飞书",
     TASK_TYPE_HERMES: "Hermes 提示词 + 飞书（旧）",
     TASK_TYPE_HERMES_SUMMARY: "Hermes 提示词 + 飞书",
-    TASK_TYPE_BIM_DAILY_ANALYSIS: "BIM 每日综合分析",
-    TASK_TYPE_BIM_DAILY_BRIEF: "BIM 日报推送",
-    TASK_TYPE_BIM_WEEKLY_BRIEF: "BIM 周报推送",
+    TASK_TYPE_BIM_DAILY_ANALYSIS: "商机每日综合分析",
+    TASK_TYPE_BIM_DAILY_BRIEF: "商机日报推送",
+    TASK_TYPE_BIM_WEEKLY_BRIEF: "商机周报推送",
     TASK_TYPE_ENGINEERING_LLM_REPORT: "工程大模型应用 · 个人私信",
 }
 
@@ -110,14 +110,14 @@ MAX_PUSH_EXCERPT = 4000
 PROMPT_PRESETS: list[dict[str, str]] = [
     {
         "id": "bim_daily_summary",
-        "label": "BIM 日报总结",
-        "description": "汇总今日 BIM 招标公告并给出重点结论",
-        "default_name": "BIM 日报总结",
+        "label": "商机日报总结",
+        "description": "汇总今日招标公告与商机线索并给出重点结论",
+        "default_name": "商机日报总结",
         "default_cron": "0 8 * * *",
         "prompt": (
-            "请分析今日（{date}，{weekday}）新增的 BIM 相关招标公告。\n\n"
+            "请分析今日（{date}，{weekday}）新增的招标公告与商机线索。\n\n"
             "要求：\n"
-            "1. 统计今日 BIM 标讯总量，按站点分布列出 Top 5\n"
+            "1. 统计今日标讯总量，按站点分布列出 Top 5\n"
             "2. 提炼 3–5 条重点标讯（项目名称、预算/金额、站点）\n"
             "3. 给出 2–3 句综合结论与关注建议\n\n"
             "输出格式：先写完整分析，最后用「## 飞书摘要」标题给出 200 字以内的群推送摘要。\n"
@@ -126,14 +126,14 @@ PROMPT_PRESETS: list[dict[str, str]] = [
     },
     {
         "id": "bim_weekly_summary",
-        "label": "BIM 周报总结",
-        "description": "汇总近 30 天 BIM 招标趋势与重点标讯",
-        "default_name": "BIM 周报总结（近30天）",
+        "label": "商机周报总结",
+        "description": "汇总近 30 天招标趋势与重点标讯",
+        "default_name": "商机周报总结（近30天）",
         "default_cron": "0 8 * * 5",
         "prompt": (
-            "请分析近 30 天（截至 {date}）的 BIM 相关招标公告。\n\n"
+            "请分析近 30 天（截至 {date}）的招标公告与商机线索。\n\n"
             "要求：\n"
-            "1. 统计近 30 天 BIM 标讯总量与日均，按站点分布\n"
+            "1. 统计近 30 天标讯总量与日均，按站点分布\n"
             "2. 对比前 30 天（如能查询）说明增减趋势\n"
             "3. 列出近 30 天 Top 5 重点标讯\n"
             "4. 给出下周关注建议\n\n"
@@ -578,15 +578,15 @@ def build_bim_analysis_schedule_ui_payload(
     defaults = defaults or {}
     return {
         "component": "bim_analysis_schedule_form",
-        "title": "创建 BIM 每日分析通知任务",
-        "description": "分析今日新增 BIM 招标公告，LLM 综合分析后推送到飞书群机器人。",
+        "title": "创建商机每日分析通知任务",
+        "description": "分析今日新增招标公告与商机线索，LLM 综合分析后推送到飞书群机器人。",
         "fields": [
             {
                 "name": "name",
                 "label": "任务名称",
                 "type": "text",
-                "placeholder": "BIM 每日综合分析",
-                "default": defaults.get("name") or "BIM 每日综合分析",
+                "placeholder": "商机每日综合分析",
+                "default": defaults.get("name") or "商机每日综合分析",
                 "required": True,
             },
             {
@@ -667,7 +667,7 @@ def build_scheduled_tasks_panel_ui_payload() -> dict[str, Any]:
         "title": "通知任务管理",
         "description": "查看已配置的通知任务，可启用/禁用或删除。禁用后 run_scheduler 约 60 秒内自动卸载该 job。",
         "task_type_labels": TASK_TYPE_LABELS,
-        "empty_hint": "暂无通知任务。可说「每天9点执行 Hermes 任务：统计今日 BIM 公告并推飞书」或在通知任务页创建提示词任务。",
+        "empty_hint": "暂无通知任务。可说「每天9点执行 Hermes 任务：统计今日招标公告并推飞书」或在通知任务页创建提示词任务。",
     }
 
 
@@ -682,12 +682,12 @@ def parse_bim_analysis_schedule_intent(user_message: str) -> dict[str, Any]:
         return {"ok": False, "error": "未能识别执行时间，请说明如「每天上午8点」或 cron「0 8 * * *」"}
 
     webhook_url, webhook_secret = extract_feishu_webhook_from_text(text)
-    name = "BIM 每日综合分析"
+    name = "商机每日综合分析"
     name_match = re.search(r"任务名[称]?[：:\s]+(.+?)(?:[,，。]|cron|飞书|$)", text, re.I)
     if name_match:
         name = name_match.group(1).strip()[:80] or name
     else:
-        name = f"BIM 每日综合分析 @ {cron}"
+        name = f"商机每日综合分析 @ {cron}"
 
     top_n = 10
     top_match = re.search(r"top\s*(\d+)|前\s*(\d+)\s*条", text, re.I)
@@ -863,7 +863,7 @@ def parse_hermes_schedule_intent(user_message: str) -> dict[str, Any]:
     if not hermes_prompt:
         return {
             "ok": False,
-            "error": "未能识别 Hermes 任务指令，请说明要执行的内容，如「任务：统计今日 BIM 公告数量」",
+            "error": "未能识别 Hermes 任务指令，请说明要执行的内容，如「任务：统计今日招标公告数量」",
         }
 
     webhook_url, webhook_secret = extract_feishu_webhook_from_text(text)
@@ -1007,7 +1007,7 @@ def _build_system_bim_notification_specs() -> list[dict[str, Any]]:
         {
             "task_type": TASK_TYPE_BIM_DAILY_BRIEF,
             "task_id": MIGRATED_SYSTEM_TASK_IDS[TASK_TYPE_BIM_DAILY_BRIEF],
-            "name": "BIM 日报飞书推送",
+            "name": "商机日报飞书推送",
             "enabled": bool(settings.bim_brief_enabled and scheduler_cfg.get("bim_brief_enabled", True)),
             "cron": str(
                 os.environ.get("BIM_BRIEF_CRON")
@@ -1021,7 +1021,7 @@ def _build_system_bim_notification_specs() -> list[dict[str, Any]]:
         {
             "task_type": TASK_TYPE_BIM_WEEKLY_BRIEF,
             "task_id": MIGRATED_SYSTEM_TASK_IDS[TASK_TYPE_BIM_WEEKLY_BRIEF],
-            "name": "BIM 周报飞书推送",
+            "name": "商机周报飞书推送",
             "enabled": bool(
                 settings.bim_weekly_brief_enabled
                 and scheduler_cfg.get("bim_weekly_brief_enabled", True)
@@ -1489,9 +1489,9 @@ def create_chat_scheduled_task(
         )
     elif task_type in (TASK_TYPE_BIM_DAILY_ANALYSIS, TASK_TYPE_BIM_DAILY_BRIEF, TASK_TYPE_BIM_WEEKLY_BRIEF):
         default_names = {
-            TASK_TYPE_BIM_DAILY_ANALYSIS: f"BIM 每日综合分析 @ {cron_expr}",
-            TASK_TYPE_BIM_DAILY_BRIEF: f"BIM 日报推送 @ {cron_expr}",
-            TASK_TYPE_BIM_WEEKLY_BRIEF: f"BIM 周报推送 @ {cron_expr}",
+            TASK_TYPE_BIM_DAILY_ANALYSIS: f"商机每日综合分析 @ {cron_expr}",
+            TASK_TYPE_BIM_DAILY_BRIEF: f"商机日报推送 @ {cron_expr}",
+            TASK_TYPE_BIM_WEEKLY_BRIEF: f"商机周报推送 @ {cron_expr}",
         }
         task_days = days
         if task_days is None:
@@ -1841,7 +1841,7 @@ def push_bim_analysis_task_feishu_report(
         "skipped": True,
         "reason": "bim_daily_analysis_deprecated",
         "report_type": "bim_daily_analysis",
-        "error": "BIM 每日分析已废弃，请使用商机洞察专题",
+        "error": "商机每日分析已废弃，请使用商机洞察专题",
     }
 
 
@@ -2139,8 +2139,8 @@ async def _run_bim_brief_scheduled_task(
         "ok": False,
         "task_id": task_id,
         "task_type": task_type,
-        "error": f"BIM {label}任务已废弃，请使用商机洞察（8091）与 daily_agri_sync",
-        "message": f"BIM {label}任务已废弃",
+        "error": f"商机{label}任务已废弃，请使用商机洞察（8091）与 daily_agri_sync",
+        "message": f"商机{label}任务已废弃",
     }
 
 
@@ -2156,8 +2156,8 @@ async def _run_bim_daily_analysis_scheduled_task(
         "ok": False,
         "task_id": task_id,
         "task_type": TASK_TYPE_BIM_DAILY_ANALYSIS,
-        "error": "BIM 每日分析任务已废弃，请使用 crawl_agri_insights 或 8091 商机洞察专题",
-        "message": "BIM 每日分析任务已废弃",
+        "error": "商机每日分析任务已废弃，请使用 crawl_agri_insights 或 8091 商机洞察专题",
+        "message": "商机每日分析任务已废弃",
     }
 
 

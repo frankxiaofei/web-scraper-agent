@@ -179,7 +179,7 @@ class ChatScheduleService:
                 "ok": True,
                 "task": task,
                 "message": (
-                    f"已创建 BIM 分析通知任务；下次执行 {task.get('next_run_time') or '—'}；"
+                    f"已创建商机分析通知任务；下次执行 {task.get('next_run_time') or '—'}；"
                     "run_scheduler 约 60s 内自动加载"
                 ),
             }

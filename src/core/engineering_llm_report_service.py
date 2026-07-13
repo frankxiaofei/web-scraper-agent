@@ -273,9 +273,9 @@ def build_engineering_llm_feishu_card(brief: dict[str, Any]) -> dict[str, Any]:
             "actions": [
                 {
                     "tag": "button",
-                    "text": {"tag": "plain_text", "content": "查看 BIM 洞察"},
+                    "text": {"tag": "plain_text", "content": "查看商机洞察"},
                     "type": "primary",
-                    "url": f"{settings.public_base_url.rstrip('/')}/bim",
+                    "url": f"{settings.public_base_url.rstrip('/')}/insights",
                 }
             ],
         }
