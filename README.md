@@ -165,9 +165,9 @@ make docker-up     # Docker Compose 启动
 <table>
   <tr>
     <td align="center">
-      <img src="assets/donate/wechat-reward.svg" alt="微信赞赏码" width="200"/><br/>
-      <b>微信赞赏</b><br/>
-      <sub>扫码支持开发 · WeChat Reward</sub>
+      <img src="assets/donate/wechat-reward.png" alt="微信赞赏码" width="200"/><br/>
+      <b>感谢你的咖啡</b><br/>
+      <sub>微信赞赏 · WeChat Reward</sub>
     </td>
     <td align="center">
       <img src="assets/donate/wechat-official-account.svg" alt="微信公众号二维码" width="200"/><br/>
@@ -176,8 +176,6 @@ make docker-up     # Docker Compose 启动
     </td>
   </tr>
 </table>
-
-> 当前为 SVG 占位图，发布前请替换为真实 PNG 二维码 — 见 [`assets/donate/README.md`](assets/donate/README.md)。
 
 你也可以在 GitHub / Gitee **Star 本仓库**，或通过 **Issue** 反馈问题与建议。
 

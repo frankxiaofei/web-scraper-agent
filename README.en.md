@@ -165,9 +165,9 @@ If this project helps you, consider supporting ongoing development:
 <table>
   <tr>
     <td align="center">
-      <img src="assets/donate/wechat-reward.svg" alt="WeChat Reward QR" width="200"/><br/>
-      <b>WeChat Reward</b><br/>
-      <sub>Scan to tip · 微信赞赏</sub>
+      <img src="assets/donate/wechat-reward.png" alt="WeChat Reward QR" width="200"/><br/>
+      <b>Thanks for the coffee</b><br/>
+      <sub>WeChat Reward · 微信赞赏</sub>
     </td>
     <td align="center">
       <img src="assets/donate/wechat-official-account.svg" alt="WeChat Official Account QR" width="200"/><br/>
@@ -176,8 +176,6 @@ If this project helps you, consider supporting ongoing development:
     </td>
   </tr>
 </table>
-
-> Replace SVG placeholders with real PNG QR codes — see [`assets/donate/README.md`](assets/donate/README.md).
 
 You can also **star the repo** or **open issues** to help improve the project.
 
