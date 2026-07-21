@@ -1,0 +1,34 @@
+version: 1
+site_id: ccgp_江苏省
+name: 江苏省政府采购网
+enabled: true
+entry_url: http://www.ccgp-jiangsu.gov.cn/
+entry_steps:
+  - action: navigate
+    url: http://www.ccgp-jiangsu.gov.cn/
+  - action: wait
+    timeout_ms: 5000
+list_page:
+  strategy: dom
+  container: "body"
+  item: "a[href*='js_cggg/details']"
+  title: "self"
+  link: "self"
+  wait_for: "a[href*='js_cggg/details']"
+pagination:
+  type: page_button
+  selector: "a[href*='pageNo=']"
+  wait_after_ms: 2000
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "js_cggg/details"
+  content_selector: ".article_content, #content1, .article_p, .div22 .article, .vF_detail_content, .vF_deail_maincontent, #detail_content, .article-content"
+  title_selector: ".article_head h3, .article_head span[id*=\"title\"], .vF_detail_header h2, .vF_detail_main h2, h2.tc, h1"
+  wait_for: ".article_content, #content1, .article_head h3, .vF_detail_content, #detail_content"
+  date_selector: ".headnav span[id*=\"time\"], .headnav"
+limits:
+  max_pages: 10
+  max_items: 100
+  max_depth: 2
+  rate_limit_seconds: 2.0

@@ -5,7 +5,34 @@ enabled: true
 entry_url: https://ebid.espic.com.cn/newgdtcms/category/bulletinListNew.html?dates=300&categoryId=2&tenderMethod=01&tabName=招标信息&page=1
 entry_steps: []
 note: "双层WAF: SafeLine JS Challenge + 自研滑块验证码(remoteUrl=null,仅客户端校验)"
-bypass_method: "通过evaluate手动设置Successfully cookie绕过滑块,直接iframe.html"
+waf:
+  type: slider_captcha
+  subtype: custom_slidercaptcha
+  remote_verify: false
+  captcha_page: "https://ebid.espic.com.cn/newgdtcms/category/demo2.html"
+  real_list_page: "https://ebid.espic.com.cn/newgdtcms/category/iframe.html"
+bypass:
+  method: cookie_injection
+  description: "remoteUrl=null 时仅客户端校验(stddev!=0) → 直接设置Successfully cookie跳过滑块"
+  cookie_name: Successfully
+  cookie_value: Successfully
+  cookie_expiry_seconds: 300
+  cookie_path: "/"
+  steps:
+    - action: navigate
+      url: demo2.html
+      label: "加载滑块验证页面(必须同域以设置cookie)"
+    - action: evaluate
+      code: "(function(){var d=new Date();d.setTime(d.getTime()+5*60*1000);document.cookie='Successfully=Successfully;expires='+d.toUTCString()+';path=/';document.cookie='Successfully=Successfully;path=/';return 'cookie_set';})()"
+      label: "注入Successfully Cookie(5min有效)"
+    - action: navigate
+      url: "iframe.html?dates=300&categoryId=2&tenderMethod=01&tabName=&page=1&time={today}"
+      label: "跳转到真实列表页"
+    - action: wait
+      seconds: 3
+    - action: evaluate
+      code: "(function(){return JSON.stringify(Array.from(document.querySelectorAll('a[href*=\"/sdny_bulletin/\"]')).map(a=>({title:a.textContent.trim().replace(/\\s+/g,' '),url:a.href})));})()"
+      label: "提取公告列表"
 cookie_expiry_seconds: 300
 list_page:
   strategy: dom

@@ -21,10 +21,11 @@ LIST_URLS = [
 DEAL_LINK_SELECTOR = "a[href*='/information/deal/html/']"
 
 DETAIL_CONTENT_SELECTOR = (
-    ".detail_content, .detailContent, .article-content, .content, #detail_content"
+    ".ewb-trade-mid, .detail_content, .detailContent, "
+    ".article-content, .content, #detail_content"
 )
 DETAIL_TITLE_SELECTOR = (
-    ".detail_title, .detailTitle, .article-title, h1.title, .title h1, h1"
+    ".detail_title, .detailTitle, .article-title, h1.title, .title h1, h1, h2, h4.h4_o"
 )
 
 _DETAIL_JS = """() => {
@@ -213,7 +214,7 @@ class GgzyBaseAdapter(BaseAdapter):
 
             # 等待内容加载
             try:
-                await page.wait_for_selector("h4.h4_o, .fully, iframe", timeout=20000)
+                await page.wait_for_selector("h4.h4_o, .fully, iframe, .ewb-trade-mid", timeout=20000)
                 await page.wait_for_timeout(2000)
             except Exception:
                 logger.debug("ggzy 详情页等待内容超时: %s", notice.url)
@@ -249,7 +250,7 @@ class GgzyBaseAdapter(BaseAdapter):
                 }
 
                 // 主 DOM 提取 — h4.h4_o 标题 + fully_toggle_cont 内容
-                var titleEl = document.querySelector('h4.h4_o, .detail_title, .article-title');
+                var titleEl = document.querySelector('h2, h4.h4_o, .detail_title, .article-title');
                 if (titleEl) title = titleEl.innerText.trim();
 
                 // 提取选中 tab 的内容

@@ -22,7 +22,7 @@ SITE_LIST_URLS: dict[str, list[str]] = {
         "https://ygp.gdzwfw.gov.cn/ggzy-portal/index.html",
     ],
     "ggzy_江苏省": [
-        "http://jsggzy.jszwfw.gov.cn/",
+        "http://jsggzy.jszwfw.gov.cn/jyxx/tradeInfonew.html?type=jsgc",
     ],
     "ggzy_浙江省": [
         "https://ggzy.zj.gov.cn/jyxxgk/list.html",
@@ -45,6 +45,9 @@ SITE_LIST_URLS: dict[str, list[str]] = {
     "ggzy_安徽省": [
         "https://ggzy.ah.gov.cn/jsgc/list",
         "https://ggzy.ah.gov.cn/",
+    ],
+    "ggzy_新疆维吾尔自治区": [
+        "https://ggzy.xinjiang.gov.cn/xinjiangggzy/jyxx/tradeInfo_new.html",
     ],
 }
 
@@ -164,6 +167,7 @@ _SITE_SCRAPERS: dict[str, tuple[str, str]] = {
     "ggzy_山东省": ("domcontentloaded", _SHANDONG_JS),
     "ggzy_河南省": ("domcontentloaded", _JYXX_JS),
     "ggzy_安徽省": ("domcontentloaded", _ANHUI_JS),
+    "ggzy_新疆维吾尔自治区": ("domcontentloaded", _JYXX_JS),
 }
 
 

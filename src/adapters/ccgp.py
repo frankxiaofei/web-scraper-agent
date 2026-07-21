@@ -28,9 +28,13 @@ LIST_SELECTORS = "ul li a, table tr a, .vT-srch-result-list a, .list-item a, .ne
 ITEM_SELECTORS = "ul.vT-srch-result-list-bid li, ul li, table tr, .list-item, .news-list li"
 
 DETAIL_CONTENT_SELECTOR = (
+    ".article_content, #content1, .article_p, "
     ".vF_detail_content, .vF_deail_maincontent, #detail_content, .article-content"
 )
-DETAIL_TITLE_SELECTOR = ".vF_detail_header h2, .vF_detail_main h2, h2.tc, #detail_title"
+DETAIL_TITLE_SELECTOR = (
+    ".article_head h3, .article_head span[id*=\"title\"], "
+    ".vF_detail_header h2, .vF_detail_main h2, h2.tc, #detail_title, h1"
+)
 
 _DETAIL_JS = """() => {
     const titleEl = document.querySelector('%s');
