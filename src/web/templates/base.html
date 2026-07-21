@@ -38,7 +38,7 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
   <header class="app-header sticky top-0 z-20 border-b border-slate-200/80 bg-white/95 backdrop-blur-md shadow-sm">
     <div class="app-header-inner max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-      <a href="{{ _main }}/" class="app-brand flex items-center gap-3 group shrink-0 cursor-pointer">
+      <a href="{{ _main }}/hermes" class="app-brand flex items-center gap-3 group shrink-0 cursor-pointer">
         <img src="/static/logo.png" alt="WebScraperAgent" height="36" class="app-brand-logo rounded-xl shadow-md shadow-brand-800/20 group-hover:opacity-90 transition-opacity duration-200">
         <div>
           <h1 class="text-base sm:text-lg font-semibold text-slate-900 leading-tight tracking-tight">WebScraperAgent</h1>
@@ -46,7 +46,9 @@
         </div>
       </a>
       <nav class="app-nav flex items-center gap-0.5 text-sm flex-nowrap p-1 rounded-xl bg-slate-100/80 border border-slate-200/60" aria-label="主导航">
-        <a href="{{ _main }}/"
+        <a href="{{ _main }}/hermes"
+           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'hermes' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">智能采集</a>
+        <a href="{{ _main }}/list"
            class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'list' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">数据列表</a>
         <a href="{{ _main }}/stats"
            class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'stats' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">数据统计</a>
@@ -58,8 +60,6 @@
            class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'scheduled_tasks' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">通知任务</a>
         <a href="{{ _main }}/sites"
            class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'sites' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">站点列表</a>
-        <a href="{{ _main }}/hermes"
-           class="app-nav-link px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer {% if active_nav|default('') == 'hermes' %}app-nav-link-active{% else %}text-slate-600 hover:text-slate-900 hover:bg-white/70{% endif %}">智能采集</a>
       </nav>
       <div class="app-header-meta flex items-center gap-2 sm:gap-3 text-xs shrink-0">
         <span class="hidden sm:inline text-slate-500 font-medium">数据源</span>

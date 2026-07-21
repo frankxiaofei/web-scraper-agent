@@ -187,7 +187,10 @@ def test_base_page_has_settings_button():
     from src.web.app import app
 
     client = TestClient(app)
-    html = client.get("/").text
+    resp = client.get("/", follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["location"] == "/hermes"
+    html = client.get("/hermes").text
     assert 'id="btn-settings"' in html
     assert 'aria-label="设置"' in html
     assert 'id="settings-modal"' in html

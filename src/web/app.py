@@ -130,7 +130,12 @@ def _render(name: str, context: dict[str, Any], *, status_code: int = 200) -> HT
     )
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
+async def home_redirect():
+    return RedirectResponse(url="/hermes", status_code=302)
+
+
+@app.get("/list", response_class=HTMLResponse)
 async def notice_list(
     request: Request,
     page: int = Query(1, ge=1),

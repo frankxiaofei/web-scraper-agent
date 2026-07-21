@@ -11,7 +11,7 @@
     </div>
   </header>
 
-  <form method="get" action="/" id="list-search-form" class="app-card p-4 sm:p-5 mb-6">
+  <form method="get" action="/list" id="list-search-form" class="app-card p-4 sm:p-5 mb-6">
     <div class="flex flex-col sm:flex-row gap-3">
       <div class="flex-1 min-w-0">
         <label for="q" class="sr-only">关键词搜索</label>
@@ -78,7 +78,7 @@
       </div>
       <div class="mt-4 flex flex-wrap items-center gap-2">
         <button type="submit" class="app-btn app-btn-primary px-4 py-2 text-sm">应用筛选</button>
-        <a href="/" class="app-btn app-btn-secondary px-4 py-2 text-sm">重置</a>
+        <a href="/list" class="app-btn app-btn-secondary px-4 py-2 text-sm">重置</a>
       </div>
     </div>
   </form>
@@ -126,7 +126,7 @@
             {% if n.tags %}
             <div class="flex flex-wrap gap-1 max-w-[140px]">
               {% for tag in n.tags %}
-              <a href="/?tags={{ tag | urlencode }}"
+              <a href="/list?tags={{ tag | urlencode }}"
                  class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-xs font-medium border border-amber-200/70 hover:bg-amber-100 transition"
                  title="按标签筛选：{{ tag }}">{{ tag }}</a>
               {% endfor %}
@@ -180,14 +180,14 @@
   </p>
   <div class="flex items-center gap-2">
     {% if pagination.has_prev %}
-    <a href="/?page={{ pagination.page - 1 }}&per_page={{ pagination.per_page }}{% if keyword %}&q={{ keyword | urlencode }}{% endif %}{% for sid in current_site_ids %}&site_ids={{ sid | urlencode }}{% endfor %}{% for t in current_tags %}&tags={{ t | urlencode }}{% endfor %}"
+    <a href="/list?page={{ pagination.page - 1 }}&per_page={{ pagination.per_page }}{% if keyword %}&q={{ keyword | urlencode }}{% endif %}{% for sid in current_site_ids %}&site_ids={{ sid | urlencode }}{% endfor %}{% for t in current_tags %}&tags={{ t | urlencode }}{% endfor %}"
        class="app-btn app-btn-secondary px-4 py-2 cursor-pointer">上一页</a>
     {% else %}
     <span class="px-4 py-2 rounded-lg border border-slate-100 bg-slate-50 text-sm text-slate-300 cursor-not-allowed">上一页</span>
     {% endif %}
     <span class="px-3 py-2 text-sm text-slate-600 tabular-nums">{{ pagination.page }} / {{ pagination.pages }}</span>
     {% if pagination.has_next %}
-    <a href="/?page={{ pagination.page + 1 }}&per_page={{ pagination.per_page }}{% if keyword %}&q={{ keyword | urlencode }}{% endif %}{% for sid in current_site_ids %}&site_ids={{ sid | urlencode }}{% endfor %}{% for t in current_tags %}&tags={{ t | urlencode }}{% endfor %}"
+    <a href="/list?page={{ pagination.page + 1 }}&per_page={{ pagination.per_page }}{% if keyword %}&q={{ keyword | urlencode }}{% endif %}{% for sid in current_site_ids %}&site_ids={{ sid | urlencode }}{% endfor %}{% for t in current_tags %}&tags={{ t | urlencode }}{% endfor %}"
        class="app-btn app-btn-secondary px-4 py-2 cursor-pointer">下一页</a>
     {% else %}
     <span class="px-4 py-2 rounded-lg border border-slate-100 bg-slate-50 text-sm text-slate-300 cursor-not-allowed">下一页</span>
@@ -203,7 +203,7 @@
   </div>
   <p class="text-slate-600 font-medium">暂无匹配的数据</p>
   <p class="text-sm text-slate-400 mt-2">请调整筛选条件，或先运行爬虫写入数据</p>
-  <a href="/" class="inline-block mt-4 text-sm text-brand-600 hover:underline">清除筛选</a>
+  <a href="/list" class="inline-block mt-4 text-sm text-brand-600 hover:underline">清除筛选</a>
 </div>
 {% endif %}
 
