@@ -104,6 +104,7 @@ def create_session(*, title: str = "", agent_profile: str = "default") -> dict[s
     session_id = str(uuid.uuid4())
     session: dict[str, Any] = {
         "session_id": session_id,
+        "hermes_session_id": session_id,
         "agent_profile": profile,
         "title": (title or "").strip() or "新对话",
         "created_at": now,
@@ -186,6 +187,29 @@ def delete_all_sessions(*, agent_profile: str = "default") -> int:
                 except OSError as exc:
                     logger.warning("删除对话会话失败 %s: %s", path, exc)
     return deleted
+
+
+def resolve_hermes_session_id(session: dict[str, Any]) -> str:
+    """返回传给 Hermes 的 session_id（默认同 web_scraper session_id）。"""
+    existing = (session.get("hermes_session_id") or "").strip()
+    if existing:
+        return existing
+    return str(session["session_id"])
+
+
+def ensure_hermes_session_id(session_id: str, *, agent_profile: str = "default") -> str:
+    """确保会话已分配 hermes_session_id 并持久化（兼容旧会话 JSON）。"""
+    session = get_session(session_id, agent_profile=agent_profile)
+    if not session:
+        raise LookupError("会话不存在")
+    hermes_id = (session.get("hermes_session_id") or "").strip()
+    if hermes_id:
+        return hermes_id
+    hermes_id = str(session["session_id"])
+    session["hermes_session_id"] = hermes_id
+    session["updated_at"] = _utcnow_iso()
+    _save_session(session)
+    return hermes_id
 
 
 def messages_to_history(messages: list[dict[str, Any]]) -> list[dict[str, str]]:

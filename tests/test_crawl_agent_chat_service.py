@@ -15,16 +15,20 @@ from src.web.crawl_agent_chat_service import (
     ChatStreamEvent,
     CrawlAgentChatService,
     MAX_AGENT_TURNS,
+    _CURRENT_QUESTION_PREFIX,
     _build_partial_summary,
     _collect_tool_stats,
+    build_conversation_history_for_hermes,
     build_site_register_ui_event,
     build_bim_analysis_schedule_ui_event,
     build_scheduled_tasks_panel_ui_event,
     detect_full_crawl_intent,
     detect_max_iterations_reached,
     detect_onboarding_intent,
+    emphasize_current_user_message,
     map_hermes_run_event,
     resolve_max_turns_for_message,
+    resolve_system_prompt,
 )
 from src.web.crawl_agent_tools import (
     CrawlAgentToolExecutor,
@@ -123,15 +127,159 @@ def test_tool_poll_until_done_completes_immediately():
         assert "polls=1" in summary
 
 
-async def _collect_events(service: CrawlAgentChatService, message: str) -> list[ChatStreamEvent]:
+async def _collect_events(
+    service: CrawlAgentChatService,
+    message: str,
+    *,
+    history: list[dict[str, str]] | None = None,
+) -> list[ChatStreamEvent]:
     events: list[ChatStreamEvent] = []
-    async for ev in service.stream_chat(message):
+    async for ev in service.stream_chat(message, history=history):
         events.append(ev)
     return events
 
 
 def test_max_agent_turns_default():
     assert MAX_AGENT_TURNS == 100
+
+
+def test_emphasize_current_user_message():
+    assert emphasize_current_user_message("查 tjbid 状态").startswith(_CURRENT_QUESTION_PREFIX)
+    prefixed = f"{_CURRENT_QUESTION_PREFIX}\n继续"
+    assert emphasize_current_user_message(prefixed) == prefixed
+    assert emphasize_current_user_message("") == ""
+
+
+def test_build_conversation_history_for_hermes_keeps_recent_user_turns():
+    history = [
+        {"role": "user", "content": f"旧问题{i}"}
+        for i in range(10)
+    ]
+    history.extend(
+        [
+            {"role": "assistant", "content": "长回复不应进入 Hermes history"},
+            {"role": "user", "content": "最新前置"},
+        ]
+    )
+    trimmed = build_conversation_history_for_hermes(history, max_turns=3, max_content_chars=500)
+    assert len(trimmed) == 3
+    assert trimmed[0]["content"] == "旧问题8"
+    assert trimmed[-1]["content"] == "最新前置"
+    assert all(msg["role"] == "user" for msg in trimmed)
+
+
+def test_build_conversation_history_for_hermes_truncates_content():
+    long_text = "x" * 5000
+    trimmed = build_conversation_history_for_hermes(
+        [{"role": "user", "content": long_text}],
+        max_turns=1,
+        max_content_chars=100,
+    )
+    assert len(trimmed) == 1
+    assert len(trimmed[0]["content"]) <= 100
+    assert "已截断" in trimmed[0]["content"]
+
+
+def test_resolve_system_prompt_includes_recency_instruction():
+    prompt = resolve_system_prompt("default")
+    assert "对话优先级" in prompt
+    assert "最新一条消息" in prompt
+
+
+@pytest.mark.asyncio
+async def test_stream_chat_passes_trimmed_history_and_emphasis():
+    mock_hermes = MagicMock()
+    mock_hermes.available = True
+    mock_hermes.start_run = AsyncMock(return_value=("run_x", None))
+
+    async def _events(*_a, **_k):
+        yield {"event": "run.completed", "output": "ok"}
+
+    mock_hermes.stream_run_events = _events
+
+    long_history = [{"role": "user", "content": f"历史{i}"} for i in range(12)]
+    service = CrawlAgentChatService(hermes_client=mock_hermes)
+    with patch("src.web.crawl_agent_chat_service.get_settings") as mock_settings:
+        mock_settings.return_value.crawl_agent_max_rounds_full = 100
+        mock_settings.return_value.crawl_agent_max_history_turns = 4
+        mock_settings.return_value.crawl_agent_max_history_content_chars = 2000
+        mock_settings.return_value.hermes_agent_url = "http://hermes:8642"
+        mock_settings.return_value.hermes_agent_chat_url = "http://hermes:8642"
+        await _collect_events(service, "现在查 ggzy 状态", history=long_history)
+
+    mock_hermes.start_run.assert_awaited_once()
+    kwargs = mock_hermes.start_run.await_args.kwargs
+    assert kwargs["user_message"].startswith(_CURRENT_QUESTION_PREFIX)
+    assert "现在查 ggzy 状态" in kwargs["user_message"]
+    assert len(kwargs["conversation_history"]) == 4
+    assert kwargs["conversation_history"][-1]["content"] == "历史11"
+    assert "对话优先级" in kwargs["instructions"]
+
+
+@pytest.mark.asyncio
+async def test_stream_chat_reuses_hermes_session_id_across_turns():
+    mock_hermes = MagicMock()
+    mock_hermes.available = True
+    mock_hermes.start_run = AsyncMock(side_effect=[("run_1", None), ("run_2", None)])
+
+    async def _events(*_a, **_k):
+        yield {"event": "run.completed", "output": "ok"}
+
+    mock_hermes.stream_run_events = _events
+
+    service = CrawlAgentChatService(hermes_client=mock_hermes)
+    hermes_sid = "hermes-sess-abc"
+    settings_patch = patch("src.web.crawl_agent_chat_service.get_settings")
+    with settings_patch as mock_settings:
+        mock_settings.return_value.crawl_agent_max_rounds_full = 100
+        mock_settings.return_value.crawl_agent_max_history_turns = 6
+        mock_settings.return_value.crawl_agent_max_history_content_chars = 2000
+        mock_settings.return_value.hermes_agent_url = "http://hermes:8642"
+        mock_settings.return_value.hermes_agent_chat_url = "http://hermes:8642"
+        await _collect_events(
+            service,
+            "第一轮",
+            history=[],
+        )
+        await _collect_events(
+            service,
+            "第二轮",
+            history=[{"role": "user", "content": "第一轮"}],
+        )
+
+    assert mock_hermes.start_run.await_count == 2
+    first_sid = mock_hermes.start_run.await_args_list[0].kwargs.get("session_id")
+    second_sid = mock_hermes.start_run.await_args_list[1].kwargs.get("session_id")
+    # 未显式传 hermes_session_id 时回退为 chat session_id（由调用方 ensure）
+    assert first_sid is None
+    assert second_sid is None
+
+    mock_hermes.start_run.reset_mock()
+    mock_hermes.start_run = AsyncMock(side_effect=[("run_3", None), ("run_4", None)])
+    with settings_patch as mock_settings:
+        mock_settings.return_value.crawl_agent_max_rounds_full = 100
+        mock_settings.return_value.crawl_agent_max_history_turns = 6
+        mock_settings.return_value.crawl_agent_max_history_content_chars = 2000
+        mock_settings.return_value.hermes_agent_url = "http://hermes:8642"
+        mock_settings.return_value.hermes_agent_chat_url = "http://hermes:8642"
+
+        async def _run_with_hermes_sid(msg: str, history: list | None = None):
+            events: list[ChatStreamEvent] = []
+            async for ev in service.stream_chat(
+                msg,
+                history=history,
+                session_id="ws-sess-1",
+                hermes_session_id=hermes_sid,
+            ):
+                events.append(ev)
+            return events
+
+        await _run_with_hermes_sid("第一轮")
+        await _run_with_hermes_sid("第二轮", history=[{"role": "user", "content": "第一轮"}])
+
+    assert mock_hermes.start_run.await_count == 2
+    assert mock_hermes.start_run.await_args_list[0].kwargs["session_id"] == hermes_sid
+    assert mock_hermes.start_run.await_args_list[1].kwargs["session_id"] == hermes_sid
 
 
 def test_detect_onboarding_intent():
@@ -465,6 +613,8 @@ async def test_stream_chat_yields_hermes_full_crawl_thinking():
     service = CrawlAgentChatService(hermes_client=mock_hermes, max_turns=20)
     with patch("src.web.crawl_agent_chat_service.get_settings") as mock_settings:
         mock_settings.return_value.crawl_agent_max_rounds_full = 100
+        mock_settings.return_value.crawl_agent_max_history_turns = 6
+        mock_settings.return_value.crawl_agent_max_history_content_chars = 2000
         mock_settings.return_value.hermes_agent_url = "http://hermes:8080"
         mock_settings.return_value.hermes_agent_chat_url = None
         events = await _collect_events(service, "帮我把 tjbid 全部爬下来")
@@ -492,6 +642,8 @@ async def test_stream_chat_hermes_tool_events():
     service = CrawlAgentChatService(hermes_client=mock_hermes)
     with patch("src.web.crawl_agent_chat_service.get_settings") as mock_settings:
         mock_settings.return_value.crawl_agent_max_rounds_full = 100
+        mock_settings.return_value.crawl_agent_max_history_turns = 6
+        mock_settings.return_value.crawl_agent_max_history_content_chars = 2000
         mock_settings.return_value.hermes_agent_url = "http://hermes:8642"
         mock_settings.return_value.hermes_agent_chat_url = "http://hermes:8642"
         events = await _collect_events(service, "爬取 tjbid")
@@ -534,6 +686,8 @@ async def test_hermes_start_error_yields_error_event():
     service = CrawlAgentChatService(hermes_client=mock_hermes)
     with patch("src.web.crawl_agent_chat_service.get_settings") as mock_settings:
         mock_settings.return_value.crawl_agent_max_rounds_full = 100
+        mock_settings.return_value.crawl_agent_max_history_turns = 6
+        mock_settings.return_value.crawl_agent_max_history_content_chars = 2000
         mock_settings.return_value.hermes_agent_url = "http://hermes:8642"
         mock_settings.return_value.hermes_agent_chat_url = "http://hermes:8642"
         events = await _collect_events(service, "hello")

@@ -102,6 +102,7 @@ async def _run_chat_background(
     cancel_event: threading.Event,
 ) -> None:
     from src.core.crawl_agent_chat_store import (
+        ensure_hermes_session_id,
         finalize_streaming_turn,
         set_active_hermes_run_id,
         update_streaming_turn,
@@ -117,10 +118,15 @@ async def _run_chat_background(
     flush_every = 0
 
     try:
+        try:
+            hermes_session_id = ensure_hermes_session_id(session_id, agent_profile=agent_profile)
+        except LookupError:
+            hermes_session_id = session_id
         async for event in chat_svc.stream_chat(
             message,
             history=history,
             session_id=session_id,
+            hermes_session_id=hermes_session_id,
             cancel_event=cancel_event,
             agent_profile=agent_profile,
         ):

@@ -51,6 +51,32 @@ def test_auth_headers_includes_bearer_when_key_set():
 
 
 @pytest.mark.asyncio
+async def test_start_run_passes_session_id():
+    client = HermesAgentChatClient(base_url="http://hermes.test:8642")
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 202
+    mock_resp.json.return_value = {"run_id": "run_abc", "status": "started"}
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.__aenter__.return_value = mock_client
+        mock_client.__aexit__.return_value = None
+        mock_client.post.return_value = mock_resp
+        mock_client_cls.return_value = mock_client
+
+        run_id, err = await client.start_run(
+            user_message="hello",
+            session_id="sess-uuid-123",
+        )
+
+    assert run_id == "run_abc"
+    assert err is None
+    call_kwargs = mock_client.post.await_args.kwargs
+    assert call_kwargs["json"]["session_id"] == "sess-uuid-123"
+
+
+@pytest.mark.asyncio
 async def test_start_run_success():
     client = HermesAgentChatClient(base_url="http://hermes.test:8642")
 

@@ -11,6 +11,7 @@ from urllib.parse import urlparse, urlunparse
 import httpx
 
 from src.core.config import Settings, get_settings
+from src.core.crawl_agent_prompt_log import log_hermes_run_payload
 
 logger = logging.getLogger(__name__)
 
@@ -105,12 +106,22 @@ class HermesAgentChatClient:
         body: dict[str, Any] = {"input": user_message}
         if conversation_history:
             body["conversation_history"] = conversation_history
-        # 不传 session_id：避免 Hermes 持久 session 内 tool 失败历史导致 LLM 只回文字不调工具。
-        # 跨轮上下文由 conversation_history（web_scraper 会话存储）提供。
-        # 注：hermes-agent POST /v1/runs 不接受 per-run max_iterations；预算由
-        # HERMES_MAX_ITERATIONS 或 data/hermes-agent/config.yaml agent.max_turns 控制。
+        # 同一 web_scraper 会话复用 Hermes session_id；每轮仍产生新 run_id，但共享 SessionDB 上下文。
+        # 跨轮 user 轮次仍由 conversation_history 补充；assistant 历史仍不传以免教 LLM 不调工具。
+        if session_id:
+            body["session_id"] = session_id
         if instructions:
             body["instructions"] = instructions
+
+        log_hermes_run_payload(
+            layer="client",
+            input_text=user_message,
+            conversation_history=conversation_history,
+            instructions=instructions,
+            session_id=session_id,
+            hermes_session_id=session_id,
+            extra={"post_url": f"{self.base_url}{RUNS_PATH}"},
+        )
 
         url = f"{self.base_url}{RUNS_PATH}"
         headers = _auth_headers()

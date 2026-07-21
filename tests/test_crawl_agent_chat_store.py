@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -17,9 +18,11 @@ from src.core.crawl_agent_chat_store import (
     create_session,
     delete_all_sessions,
     delete_session,
+    ensure_hermes_session_id,
     get_session,
     list_sessions,
     messages_to_history,
+    resolve_hermes_session_id,
     summarize_session,
 )
 from src.web.app import app
@@ -36,6 +39,7 @@ def chat_store(tmp_path: Path):
 def test_create_and_get_session(chat_store: Path):
     session = create_session(title="测试会话")
     assert session["session_id"]
+    assert session["hermes_session_id"] == session["session_id"]
     assert session["title"] == "测试会话"
     assert session["agent_profile"] == "default"
     assert session["messages"] == []
@@ -44,6 +48,24 @@ def test_create_and_get_session(chat_store: Path):
     loaded = get_session(session["session_id"])
     assert loaded is not None
     assert loaded["session_id"] == session["session_id"]
+
+
+def test_resolve_and_ensure_hermes_session_id(chat_store: Path):
+    session = create_session()
+    sid = session["session_id"]
+    loaded = get_session(sid)
+    assert loaded is not None
+    assert resolve_hermes_session_id(loaded) == sid
+
+    loaded.pop("hermes_session_id", None)
+    path = chat_store / "default" / f"{sid}.json"
+    path.write_text(json.dumps(loaded, ensure_ascii=False), encoding="utf-8")
+
+    hermes_id = ensure_hermes_session_id(sid)
+    assert hermes_id == sid
+    reloaded = get_session(sid)
+    assert reloaded is not None
+    assert reloaded["hermes_session_id"] == sid
 
 
 def test_append_turn_and_history(chat_store: Path):

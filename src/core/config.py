@@ -146,6 +146,18 @@ class Settings(BaseSettings):
         le=1440,
         description="streaming 会话无活跃 run 超过此分钟数则自动 finalize（CRAWL_AGENT_STREAM_STALE_MINUTES）",
     )
+    crawl_agent_max_history_turns: int = Field(
+        default=6,
+        ge=0,
+        le=30,
+        description="Hermes 对话传入的历史 user 轮数上限（CRAWL_AGENT_MAX_HISTORY_TURNS）",
+    )
+    crawl_agent_max_history_content_chars: int = Field(
+        default=2000,
+        ge=256,
+        le=32_000,
+        description="历史 user 消息单条字符上限（CRAWL_AGENT_MAX_HISTORY_CONTENT_CHARS）",
+    )
     http_proxy: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("HTTP_PROXY", "http_proxy"),

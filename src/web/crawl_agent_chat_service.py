@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, AsyncIterator, Optional
 
 from src.core.config import get_settings
+from src.core.crawl_agent_prompt_log import log_hermes_run_payload
 from src.core.crawl_rules import load_crawl_rule
 from src.core.chat_scheduled_tasks import (
     build_bim_analysis_schedule_ui_payload,
@@ -29,7 +30,7 @@ from src.core.hermes_agent_chat_client import (
 )
 from src.core.rule_generator import load_rule_yaml
 from src.core.site_sync import get_site_by_id
-from src.core.llm_chat import truncate_chat_history
+from src.core.llm_chat import truncate_chat_history, truncate_text
 from src.web.crawl_agent_tools import build_executed_command, format_tool_command, resolve_site_id
 from src.web.crawl_agent_cancel import is_chat_cancelled
 
@@ -39,6 +40,16 @@ logger = logging.getLogger(__name__)
 
 MAX_AGENT_TURNS = 100
 DEFAULT_HERMES_MAX_ITERATIONS = 180
+DEFAULT_MAX_CHAT_HISTORY_TURNS = 6
+DEFAULT_MAX_HISTORY_USER_CONTENT_CHARS = 2000
+_CURRENT_QUESTION_PREFIX = "【当前问题】"
+
+RECENCY_SYSTEM_PROMPT = """
+## 对话优先级（必读）
+- **优先回答用户最新一条消息**；历史对话仅供理解上下文参考
+- 若历史意图与最新提问冲突，**以最新提问为准**，勿自动延续旧任务
+- 「继续」等短指令仅在最新消息明确指向上一任务时，才接续历史爬取进度
+"""
 
 _FULL_CRAWL_KEYWORDS = ("全部", "全量", "所有", "完整", "500页", "10000")
 _CRAWL_ACTION_PATTERN = re.compile(r"[爬抓]")
@@ -453,13 +464,47 @@ STOCK_SYSTEM_PROMPT = """你是 **股票领域分析** Hermes Agent，结合 AKS
 """
 
 
+def emphasize_current_user_message(user_message: str) -> str:
+    """在发给 Hermes 的 input 前标注当前问题，提升最新意图权重。"""
+    text = (user_message or "").strip()
+    if not text or text.startswith(_CURRENT_QUESTION_PREFIX):
+        return text
+    return f"{_CURRENT_QUESTION_PREFIX}\n{text}"
+
+
+def build_conversation_history_for_hermes(
+    history: list[dict[str, str]],
+    *,
+    max_turns: int = DEFAULT_MAX_CHAT_HISTORY_TURNS,
+    max_content_chars: int = DEFAULT_MAX_HISTORY_USER_CONTENT_CHARS,
+) -> list[dict[str, str]]:
+    """构建 Hermes conversation_history：仅保留最近 N 条 user 轮次并截断正文。"""
+    user_msgs: list[dict[str, str]] = []
+    for msg in history:
+        role = msg.get("role", "user")
+        content = (msg.get("content") or "").strip()
+        if role == "user" and content:
+            user_msgs.append({"role": role, "content": content})
+    if max_turns > 0 and len(user_msgs) > max_turns:
+        user_msgs = user_msgs[-max_turns:]
+    return [
+        {
+            "role": m["role"],
+            "content": truncate_text(m["content"], max_content_chars),
+        }
+        for m in user_msgs
+    ]
+
+
 def resolve_system_prompt(agent_profile: str = "default") -> str:
     profile = (agent_profile or "").strip().lower()
     if profile == "agri":
-        return AGRI_SYSTEM_PROMPT
-    if profile == "stock":
-        return STOCK_SYSTEM_PROMPT
-    return SYSTEM_PROMPT
+        base = AGRI_SYSTEM_PROMPT
+    elif profile == "stock":
+        base = STOCK_SYSTEM_PROMPT
+    else:
+        base = SYSTEM_PROMPT
+    return base.rstrip() + "\n" + RECENCY_SYSTEM_PROMPT
 
 
 @dataclass
@@ -780,12 +825,14 @@ class CrawlAgentChatService:
         history: Optional[list[dict[str, str]]] = None,
         *,
         session_id: Optional[str] = None,
+        hermes_session_id: Optional[str] = None,
         cancel_event: Optional[threading.Event] = None,
         agent_profile: str = "default",
     ) -> AsyncIterator[ChatStreamEvent]:
         """处理单轮用户消息，委托 hermes-agent /v1/runs，yield SSE 事件。"""
         history = truncate_chat_history(history or [])
         chat_session_id = session_id
+        hermes_sid = (hermes_session_id or chat_session_id or "").strip() or None
         system_prompt = resolve_system_prompt(agent_profile)
 
         if agent_profile == "default" and detect_onboarding_intent(user_message):
@@ -979,17 +1026,24 @@ class CrawlAgentChatService:
                 yield ev
             return
 
-        # 只传 user 轮次：assistant 历史常含「好的我来操作…」等纯文字，会教 LLM 不调工具。
-        conversation_history: list[dict[str, str]] = []
-        for msg in history:
-            role = msg.get("role", "user")
-            content = (msg.get("content") or "").strip()
-            if role == "user" and content:
-                conversation_history.append({"role": role, "content": content})
-        if len(conversation_history) > 6:
-            conversation_history = conversation_history[-6:]
-
         settings = get_settings()
+        max_history_turns = getattr(
+            settings,
+            "crawl_agent_max_history_turns",
+            DEFAULT_MAX_CHAT_HISTORY_TURNS,
+        )
+        max_history_content_chars = getattr(
+            settings,
+            "crawl_agent_max_history_content_chars",
+            DEFAULT_MAX_HISTORY_USER_CONTENT_CHARS,
+        )
+        # 只传 user 轮次：assistant 历史常含「好的我来操作…」等纯文字，会教 LLM 不调工具。
+        conversation_history = build_conversation_history_for_hermes(
+            history,
+            max_turns=int(max_history_turns),
+            max_content_chars=int(max_history_content_chars),
+        )
+        hermes_user_message = emphasize_current_user_message(user_message)
         _, is_full_crawl = resolve_max_turns_for_message(
             user_message,
             default_max=self.max_turns,
@@ -1018,10 +1072,25 @@ class CrawlAgentChatService:
                 yield ev
             return
 
-        run_id, err = await self._hermes.start_run(
-            user_message=user_message,
+        log_hermes_run_payload(
+            layer="service",
+            input_text=hermes_user_message,
             conversation_history=conversation_history,
+            instructions=system_prompt,
             session_id=chat_session_id,
+            hermes_session_id=hermes_sid,
+            agent_profile=agent_profile,
+            raw_user_message=user_message,
+            extra={
+                "history_raw_turns": len(history or []),
+                "is_full_crawl": is_full_crawl,
+            },
+        )
+
+        run_id, err = await self._hermes.start_run(
+            user_message=hermes_user_message,
+            conversation_history=conversation_history,
+            session_id=hermes_sid,
             instructions=system_prompt,
         )
         if err:
