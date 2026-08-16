@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 供应链图谱{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/insights.css">
+<link rel="stylesheet" href="/static/industry.css">
+<script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js" crossorigin=""></script>
+{% endblock %}
+
+{% block content %}
+<section class="stats-page insights-page industry-graph-page"
+         data-domain="{{ domain }}"
+         data-industry="{{ industry }}"
+         data-center="{{ center }}"
+         data-depth="{{ depth }}">
+  <header class="stats-page-header insights-header">
+    <div class="insights-header-main">
+      <h2 class="stats-page-title insights-title">供应链关系图谱</h2>
+      <p class="stats-page-subtitle">Neo4j 子图 · Cytoscape 交互 · 近 {{ days }} 天</p>
+    </div>
+    <div class="insights-header-actions">
+      <a href="/insights" class="stats-btn stats-btn-secondary">返回仪表盘</a>
+    </div>
+  </header>
+
+  {% include "partials/insights_subnav.html" %}
+
+  <div class="industry-graph-toolbar stats-panel">
+    <label class="industry-filter-label">
+      中心企业 ID
+      <input id="graph-center-id" type="text" class="industry-filter-input" value="{{ center }}" placeholder="company UUID（可选）">
+    </label>
+    <label class="industry-filter-label">
+      行业 code
+      <input id="graph-industry-code" type="text" class="industry-filter-input" value="{{ industry }}" placeholder="如 A01">
+    </label>
+    <label class="industry-filter-label">
+      深度
+      <select id="graph-depth" class="industry-filter-select">
+        <option value="1"{% if depth == 1 %} selected{% endif %}>1-hop</option>
+        <option value="2"{% if depth == 2 %} selected{% endif %}>2-hop</option>
+        <option value="3"{% if depth == 3 %} selected{% endif %}>3-hop</option>
+      </select>
+    </label>
+    <button id="graph-reload-btn" type="button" class="stats-btn stats-btn-primary">加载图谱</button>
+    <span id="graph-status" class="industry-graph-status"></span>
+  </div>
+
+  <div id="industry-cy-graph" class="industry-cy-graph stats-panel"></div>
+  <aside id="graph-node-detail" class="industry-graph-detail stats-panel hidden"></aside>
+</section>
+<script src="/static/supply-chain-graph.js" defer></script>
+{% endblock %}

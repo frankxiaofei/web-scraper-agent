@@ -98,8 +98,27 @@ if EXTENSIONS_DIR.is_dir():
     )
 
 from src.web.crawl_recorder_routes import router as crawl_recorder_router
+from src.web.gov_bid_routes import router as gov_bid_router
+from src.web.industry_routes import router as industry_router
+from src.web.ontology_routes import router as ontology_router
+from src.billing.bootstrap import register_billing
 
 app.include_router(crawl_recorder_router)
+app.include_router(gov_bid_router)
+app.include_router(industry_router)
+app.include_router(ontology_router)
+register_billing(app)
+
+_DEPRECATION_PREFIXES = ("/api/agri", "/api/biz-clue", "/api/bim")
+
+
+@app.middleware("http")
+async def _legacy_insights_deprecation_headers(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if any(path.startswith(prefix) for prefix in _DEPRECATION_PREFIXES):
+        response.headers["Deprecation"] = 'true; successor="/api/industry/"'
+    return response
 
 _jinja_env = Environment(
     loader=FileSystemLoader(WEB_DIR / "templates"),
@@ -339,6 +358,21 @@ async def _run_biz_clue_sync_job(
         _biz_clue_sync_running = False
 
 
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return _render("login.html", {"request": request, "active_nav": ""})
+
+
+@app.get("/register", response_class=HTMLResponse)
+async def register_page(request: Request):
+    return _render("register.html", {"request": request, "active_nav": ""})
+
+
+@app.get("/settings/billing", response_class=HTMLResponse)
+async def settings_billing_page(request: Request):
+    return _render("settings_billing.html", {"request": request, "active_nav": ""})
+
+
 @app.get("/insights", response_class=HTMLResponse)
 async def insights_page(
     request: Request,
@@ -474,6 +508,129 @@ async def insights_tenders_page(
     )
 
 
+@app.get("/insights/industry-heatmap", response_class=HTMLResponse)
+async def insights_industry_heatmap(request: Request):
+    """细分行业热力图专页。"""
+    domain = request.query_params.get("domain", "数字农业")
+    industry = request.query_params.get("industry", "")
+    days = min(int(request.query_params.get("days", "30")), 90)
+    metric = request.query_params.get("metric", "count")
+    compare = request.query_params.get("compare", "")
+    svc = get_data_service()
+    return _render(
+        "insights_industry_heatmap.html",
+        {
+            "request": request,
+            "data_source": svc.data_source,
+            "active_nav": "insights",
+            "active_subnav": "industry-heatmap",
+            "domain": domain,
+            "industry": industry,
+            "days": days,
+            "metric": metric,
+            "compare": compare,
+        },
+    )
+
+
+@app.get("/insights/map", response_class=HTMLResponse)
+async def insights_map_page(request: Request):
+    """GIS 供应链地图（Leaflet，Phase 1）。"""
+    domain = request.query_params.get("domain", "数字农业")
+    industry = request.query_params.get("industry", "")
+    days = min(int(request.query_params.get("days", "30")), 90)
+    metric = request.query_params.get("metric", "count")
+    region = request.query_params.get("region", "")
+    svc = get_data_service()
+    return _render(
+        "insights_map.html",
+        {
+            "request": request,
+            "data_source": svc.data_source,
+            "active_nav": "insights",
+            "active_subnav": "map",
+            "domain": domain,
+            "industry": industry,
+            "days": days,
+            "metric": metric,
+            "region": region,
+        },
+    )
+
+
+@app.get("/insights/supply-chain", response_class=HTMLResponse)
+async def insights_supply_chain_page(request: Request):
+    """Neo4j 供应链关系图谱（Cytoscape，Phase 2 P2-T-007）。"""
+    domain = request.query_params.get("domain", "数字农业")
+    industry = request.query_params.get("industry", "")
+    center = request.query_params.get("center", "")
+    depth = min(max(int(request.query_params.get("depth", "2")), 1), 4)
+    days = min(int(request.query_params.get("days", "30")), 90)
+    svc = get_data_service()
+    return _render(
+        "insights_supply_chain.html",
+        {
+            "request": request,
+            "data_source": svc.data_source,
+            "active_nav": "insights",
+            "active_subnav": "supply-chain",
+            "domain": domain,
+            "industry": industry,
+            "center": center,
+            "depth": depth,
+            "days": days,
+        },
+    )
+
+
+@app.get("/insights/global-map", response_class=HTMLResponse)
+async def insights_global_map_page(request: Request):
+    """全球贸易 choropleth 预览页（Phase 3 P3-T-004）。"""
+    reporter = request.query_params.get("reporter", "156")
+    period = request.query_params.get("period", "2024")
+    svc = get_data_service()
+    return _render(
+        "insights_global_map.html",
+        {
+            "request": request,
+            "data_source": svc.data_source,
+            "active_nav": "insights",
+            "active_subnav": "global-map",
+            "reporter": reporter,
+            "period": period,
+        },
+    )
+
+
+@app.get("/insights/industry/{industry_code:path}", response_class=HTMLResponse)
+async def insights_industry_detail(request: Request, industry_code: str):
+    """单行业详情页（Phase 1）。"""
+    from urllib.parse import unquote
+
+    from src.industry.pseudo_industry import industry_display_name, parse_industry_code
+
+    code = unquote(industry_code)
+    domain = request.query_params.get("domain", "数字农业")
+    days = min(int(request.query_params.get("days", "30")), 90)
+    metric = request.query_params.get("metric", "count")
+    parsed = parse_industry_code(code)
+    svc = get_data_service()
+    return _render(
+        "industry_detail.html",
+        {
+            "request": request,
+            "data_source": svc.data_source,
+            "active_nav": "insights",
+            "active_subnav": "industry-detail",
+            "domain": domain,
+            "industry_code": code,
+            "industry_name": industry_display_name(parsed),
+            "days": days,
+            "metric": metric,
+        },
+    )
+
+
 @app.get("/bim")
 @app.get("/agri")
 async def agri_legacy_redirect(request: Request):
@@ -559,6 +716,12 @@ async def api_biz_clue_sync(
     max_items: Optional[int] = None,
 ):
     global _biz_clue_sync_running
+    from src.web.biz_clue_service import check_sync_quota
+
+    try:
+        check_sync_quota()
+    except HTTPException as exc:
+        return JSONResponse(status_code=exc.status_code, content=exc.detail if isinstance(exc.detail, dict) else {"detail": exc.detail})
     if _biz_clue_sync_running:
         return JSONResponse(
             status_code=409,

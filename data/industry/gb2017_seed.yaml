@@ -1,0 +1,53 @@
+# GB/T 4754-2017 门类+大类种子（数字农业相关 A 门类子集）
+# 完整树 Phase 1 可扩展 data/industry/gb2017_full.yaml
+
+taxonomy: GB2017
+industries:
+  - code: A
+    name: 农、林、牧、渔业
+    level: 1
+    parent_code: null
+  - code: A01
+    name: 农业
+    level: 2
+    parent_code: A
+  - code: A011
+    name: 谷物种植
+    level: 3
+    parent_code: A01
+  - code: A012
+    name: 豆类、油料和薯类种植
+    level: 3
+    parent_code: A01
+  - code: A013
+    name: 棉、麻、糖、烟草种植
+    level: 3
+    parent_code: A01
+  - code: A014
+    name: 蔬菜、食用菌及园艺作物种植
+    level: 3
+    parent_code: A01
+  - code: A015
+    name: 水果种植
+    level: 3
+    parent_code: A01
+  - code: A05
+    name: 农、林、牧、渔专业及辅助性活动
+    level: 2
+    parent_code: A
+  - code: A051
+    name: 农业专业及辅助性活动
+    level: 3
+    parent_code: A05
+  - code: I
+    name: 信息传输、软件和信息技术服务业
+    level: 1
+    parent_code: null
+  - code: I65
+    name: 软件和信息技术服务业
+    level: 2
+    parent_code: I
+  - code: I651
+    name: 软件开发
+    level: 3
+    parent_code: I65

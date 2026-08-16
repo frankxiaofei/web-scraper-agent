@@ -1,0 +1,21 @@
+version: 1
+site_id: agri_gov_sichuan
+name: 四川省农业农村厅
+enabled: true
+entry_url: https://nynct.sc.gov.cn/
+list_page:
+  strategy: dom
+  wait_for: "body"
+  container: "body"
+  item: "a[href]"
+  title: "a"
+  link: "a[href]"
+detail:
+  fetch_detail: true
+  strategy: dom
+  content_selector: ".article, .content, #content, .TRS_Editor, .pages_content, .detail"
+limits:
+  max_pages: 5
+  max_items: 30
+  max_depth: 2
+  rate_limit_seconds: 3.0

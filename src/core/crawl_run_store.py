@@ -207,7 +207,10 @@ class CrawlRunStore:
             runs = [r for r in runs if r.get("site_id") == site_id]
         if status:
             runs = [r for r in runs if r.get("status") == status]
-        runs.sort(key=lambda r: r.get("created_at", ""), reverse=True)
+        runs.sort(
+            key=lambda r: self._created_at_sort_key(r.get("created_at")),
+            reverse=True,
+        )
         return [self._normalize_run(r) for r in runs[:limit]]
 
     def list_latest_runs_by_site(
@@ -239,7 +242,7 @@ class CrawlRunStore:
         by_site: dict[str, dict[str, Any]] = {}
         for run in sorted(
             self._memory_runs.values(),
-            key=lambda r: r.get("created_at", ""),
+            key=lambda r: self._created_at_sort_key(r.get("created_at")),
             reverse=True,
         ):
             sid = run.get("site_id") or ""
@@ -365,6 +368,14 @@ class CrawlRunStore:
             "_from_log_file": True,
         }
         return self._normalize_run(doc)
+
+    @staticmethod
+    def _created_at_sort_key(val: Any) -> str:
+        if isinstance(val, datetime):
+            return as_utc(val).isoformat()
+        if val is None:
+            return ""
+        return str(val)
 
     @staticmethod
     def _normalize_run(doc: dict[str, Any]) -> dict[str, Any]:

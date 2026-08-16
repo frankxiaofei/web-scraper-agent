@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 行业分布热力{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/insights.css">
+<link rel="stylesheet" href="/static/industry.css">
+{% endblock %}
+
+{% block content %}
+<section class="stats-page insights-page industry-heatmap-page"
+         data-domain="{{ domain }}"
+         data-industry="{{ industry }}"
+         data-days="{{ days }}"
+         data-metric="{{ metric }}"
+         data-compare="{{ compare }}">
+  <header class="stats-page-header insights-header">
+    <div class="insights-header-main">
+      <h2 class="stats-page-title insights-title">行业分布热力</h2>
+      <p class="stats-page-subtitle">按细分行业查看省级分布 · 近 {{ days }} 天</p>
+    </div>
+    <div class="insights-header-actions">
+      <a href="/insights" class="stats-btn stats-btn-secondary">返回仪表盘</a>
+    </div>
+  </header>
+
+  {% include "partials/insights_subnav.html" %}
+  {% include "partials/industry_heatmap_filters.html" %}
+
+  <div id="industry-recommend-section" class="stats-section">
+    {% include "partials/industry_recommend_cards.html" %}
+  </div>
+
+  <div class="industry-heatmap-layout">
+    <div class="industry-heatmap-main">
+      <div id="industry-heatmap-chart" class="stats-panel industry-chart-panel"></div>
+      <div id="industry-heatmap-compare-chart" class="stats-panel industry-chart-panel hidden"></div>
+    </div>
+    {% include "partials/industry_heatmap_kpi.html" %}
+  </div>
+
+  {% include "partials/industry_heatmap_drawer.html" %}
+</section>
+<script src="/static/industry.js" defer></script>
+{% endblock %}

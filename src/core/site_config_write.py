@@ -146,6 +146,25 @@ def update_site_enabled(site_id: str, *, enabled: bool) -> dict[str, Any]:
     found = False
     for site in sites:
         if site.get("id") == canonical:
+            if enabled and not site.get("enabled"):
+                from src.billing.quota_middleware import check_entitlement, count_enabled_sites
+                from src.billing.tenant_context import get_current_tenant_id
+
+                result = check_entitlement(
+                    get_current_tenant_id(),
+                    "quota.enabled_sites",
+                    delta=1,
+                    enabled_sites_count=count_enabled_sites(),
+                )
+                if not result.allowed:
+                    return {
+                        "ok": False,
+                        "error": "quota_exceeded",
+                        "entitlement": "quota.enabled_sites",
+                        "used": result.used,
+                        "limit": result.limit,
+                        "plan_id": result.plan_id,
+                    }
             site["enabled"] = bool(enabled)
             found = True
             break

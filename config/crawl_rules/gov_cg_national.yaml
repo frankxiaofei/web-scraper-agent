@@ -1,0 +1,40 @@
+version: 1
+site_id: gov_cg_national
+name: 中国政府采购招标网（政采网）
+enabled: true
+entry_url: http://www.gov-cg.cn/BidInfoList.html
+entry_steps:
+  - action: navigate
+    url: "http://www.gov-cg.cn/BidInfoList.html"
+  - action: wait
+    timeout_ms: 3000
+list_page:
+  strategy: dom
+  container: "table"
+  item: "tr"
+  title: "a[href*='BidInfoDetails']"
+  link: "a[href*='BidInfoDetails']"
+  date: ""
+pagination:
+  type: page_number
+  page_param: "page"
+  start_page: 1
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "BidInfoDetails_bid_"
+  title_selector: "#content_title, h1"
+  content_selector: "#content, .main_content"
+limits:
+  max_pages: 5
+  max_items: 100
+  max_depth: 1
+  rate_limit_seconds: 2.0
+search:
+  enabled: true
+  type: form_submit
+  keyword_field: "searchKeyword"
+  category_field: "searchType"
+  field_field: "searchField"
+  district_field: "searchDistrict"
+  form_action: "./BidInfoList.html"

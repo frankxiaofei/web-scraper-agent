@@ -1,0 +1,93 @@
+version: 1
+site_id: wechat_zhiwu
+name: 植物微生物最前线（微信公众号）
+enabled: true
+# 微信公众号 WebBridge 规则（真实浏览器 / mp.weixin.qq.com）
+# 种子文章：多糖多酚植物RNA提取全球第一！8min完成（任何植物）
+# 使用 HTTP 脚本 scripts/fetch_wechat_article.py 定时抓取
+entry_url: https://mp.weixin.qq.com/s/Y7cpE6WcrGYbrQBRm7uftA
+entry_steps:
+  - action: navigate
+    url: "https://mp.weixin.qq.com/s/Y7cpE6WcrGYbrQBRm7uftA"
+  - action: wait
+    timeout_ms: 3000
+detail:
+  fetch_detail: true
+  strategy: dom
+  url_pattern: "mp\\.weixin\\.qq\\.com/s"
+  title_selector: "meta[property=\"og:title\"]"
+  content_selector: "#js_content, .rich_media_content"
+  wait_for: "#js_content, .rich_media_content"
+limits:
+  max_pages: 1
+  max_items: 500
+  max_depth: 1
+  rate_limit_seconds: 3.0
+search:
+  enabled: true
+  type: webbridge_interactive
+  nickname: "植物微生物最前线"
+  steps:
+    - action: navigate
+      url: "https://weixin.sogou.com/weixin?type=2&query=%E6%A4%8D%E7%89%A9%E5%BE%AE%E7%94%9F%E7%89%A9%E6%9C%80%E5%89%8D%E7%BA%BF&page=1&ie=utf8"
+      label: "搜狗微信搜索（WebBridge 绕过 antispider）"
+    - action: wait
+      timeout_ms: 3000
+    - action: evaluate
+      label: "提取搜索结果并过滤来源"
+      code: |
+        (function() {
+          var target = "植物微生物最前线";
+          var items = [];
+          document.querySelectorAll('ul.news-list > li').forEach(function(li) {
+            var titleEl = li.querySelector('h3 a');
+            var linkEl = li.querySelector('.img-box a[data-z="art"]');
+            var sourceEl = li.querySelector('.s-p');
+            var source = sourceEl ? sourceEl.textContent.replace(/document\.write\([^)]+\)/g, '').trim() : '';
+            if (titleEl && linkEl && source.indexOf(target) !== -1) {
+              var href = linkEl.getAttribute('href') || '';
+              var fullUrl = href.startsWith('http') ? href : 'https://weixin.sogou.com' + href;
+              items.push({title: titleEl.textContent.trim(), url: fullUrl});
+            }
+          });
+          return JSON.stringify(items.slice(0, 20));
+        })()
+chain_discovery:
+  enabled: true
+  type: webbridge_evaluate
+  link_selector: "a.normal_text_link[href*='mp.weixin.qq.com/s']"
+  scroll_before_extract: true
+  code: |
+    (function() {
+      window.scrollTo(0, document.body.scrollHeight);
+      var links = [];
+      document.querySelectorAll('a.normal_text_link[href*="mp.weixin.qq.com/s"]').forEach(function(a) {
+        links.push({url: a.href, title: a.textContent.trim()});
+      });
+      return JSON.stringify(links.slice(0, 20));
+    })()
+webbridge:
+  session_id: "crawl-wechat_zhiwu"
+  require_daemon: true
+  require_extension: true
+  close_session_on_complete: true
+  captcha_fallback:
+    - action: evaluate
+      code: "document.querySelector('button')?.click()"
+    - action: go
+      direction: back
+article_extract:
+  evaluate: |
+    (function() {
+      var title = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
+      var contentEl = document.querySelector('#js_content, .rich_media_content');
+      var html = contentEl ? contentEl.innerHTML : '';
+      var text = contentEl ? contentEl.innerText : '';
+      var ctMatch = document.documentElement.innerHTML.match(/var ct\s*=\s*['"](\d+)['"]/);
+      var publishTime = '';
+      if (ctMatch) {
+        var d = new Date(parseInt(ctMatch[1]) * 1000);
+        publishTime = d.toISOString().slice(0,19).replace('T',' ');
+      }
+      return JSON.stringify({title: title, publish_time: publishTime, content_html: html.substring(0, 50000), content_text: text.substring(0, 20000)});
+    })()

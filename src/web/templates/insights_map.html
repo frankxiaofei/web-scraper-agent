@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — 供应链 GIS 地图{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/insights.css">
+<link rel="stylesheet" href="/static/industry.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+{% endblock %}
+
+{% block content %}
+<section class="stats-page insights-page industry-map-page"
+         data-domain="{{ domain }}"
+         data-industry="{{ industry }}"
+         data-days="{{ days }}"
+         data-metric="{{ metric }}"
+         data-region="{{ region }}">
+  <header class="stats-page-header insights-header">
+    <div class="insights-header-main">
+      <h2 class="stats-page-title insights-title">供应链 GIS 地图</h2>
+      <p class="stats-page-subtitle">Leaflet 省级/市级热力 · 近 {{ days }} 天</p>
+    </div>
+    <div class="insights-header-actions">
+      <a href="/insights/industry-heatmap" class="stats-btn stats-btn-secondary">ECharts 热力</a>
+      <a href="/insights" class="stats-btn stats-btn-secondary">返回仪表盘</a>
+    </div>
+  </header>
+
+  {% include "partials/insights_subnav.html" %}
+  {% include "partials/industry_heatmap_filters.html" %}
+
+  <div id="industry-map-breadcrumb" class="industry-map-breadcrumb"></div>
+  <div id="industry-leaflet-map" class="industry-leaflet-map stats-panel"></div>
+  <div id="industry-map-legend" class="industry-map-legend"></div>
+</section>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/static/gis-map.js" defer></script>
+{% endblock %}

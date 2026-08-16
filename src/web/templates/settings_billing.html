@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}订阅与用量 — WebScraperAgent{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="/static/industry.css">
+<script src="/static/js/billing.js" defer></script>
+{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 px-4">
+  <h1 class="text-2xl font-semibold text-slate-900 mb-2">订阅与用量</h1>
+  <p class="text-sm text-slate-500 mb-8">查看当前计划、用量进度与升级选项</p>
+
+  <div id="billing-loading" class="text-slate-500 text-sm">加载中…</div>
+  <div id="billing-error" class="hidden text-red-600 text-sm mb-4"></div>
+
+  <section id="billing-plan-card" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <p class="text-xs uppercase tracking-wide text-slate-400 mb-1">当前计划</p>
+        <h2 id="billing-plan-name" class="text-xl font-semibold text-slate-900">—</h2>
+        <p id="billing-plan-status" class="text-sm text-slate-500 mt-1"></p>
+      </div>
+      <button id="billing-upgrade-btn" type="button"
+              class="rounded-lg bg-brand-600 text-white px-4 py-2 text-sm font-medium hover:bg-brand-700 hidden">
+        升级到 Pro
+      </button>
+      <button id="billing-stripe-checkout-btn" type="button"
+              class="rounded-lg border border-brand-600 text-brand-700 px-4 py-2 text-sm font-medium hover:bg-brand-50 hidden ml-2">
+        Stripe 支付
+      </button>
+      <button id="billing-portal-btn" type="button"
+              class="rounded-lg border border-slate-300 text-slate-700 px-4 py-2 text-sm font-medium hover:bg-slate-50 hidden ml-2">
+        管理订阅
+      </button>
+    </div>
+  </section>
+
+  <section id="billing-usage-section" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+    <h3 class="text-lg font-medium text-slate-900 mb-4">本月用量</h3>
+    <div id="billing-usage-bars" class="space-y-4"></div>
+  </section>
+
+  <section id="billing-buyer-section" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mt-6">
+    <h3 class="text-lg font-medium text-slate-900 mb-4">发票买方信息</h3>
+    <div class="grid gap-3 max-w-md">
+      <input id="billing-buyer-name" type="text" placeholder="企业名称" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+      <input id="billing-buyer-tax-id" type="text" placeholder="纳税人识别号" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+      <button id="billing-buyer-save" type="button" class="rounded-lg bg-slate-800 text-white px-4 py-2 text-sm w-fit">保存</button>
+    </div>
+  </section>
+</div>
+{% endblock %}

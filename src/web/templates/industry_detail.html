@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}WebScraperAgent — {{ industry_name|default(industry_code) }}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="/static/insights.css">
+<link rel="stylesheet" href="/static/industry.css">
+{% endblock %}
+
+{% block content %}
+<section class="stats-page insights-page industry-detail-page"
+         data-domain="{{ domain }}"
+         data-industry="{{ industry_code }}"
+         data-days="{{ days }}"
+         data-metric="{{ metric }}">
+  <header class="stats-page-header insights-header">
+    <div class="insights-header-main">
+      <h2 class="stats-page-title insights-title">{{ industry_name|default(industry_code) }}</h2>
+      <p class="stats-page-subtitle">行业详情 · 省级热力 + 采购链 · 近 {{ days }} 天</p>
+    </div>
+    <div class="insights-header-actions">
+      <a href="/insights/map?industry={{ industry_code|urlencode }}&domain={{ domain|urlencode }}" class="stats-btn stats-btn-secondary">GIS 地图</a>
+      <a href="/insights/industry-heatmap?industry={{ industry_code|urlencode }}" class="stats-btn stats-btn-secondary">热力专页</a>
+    </div>
+  </header>
+
+  {% include "partials/insights_subnav.html" %}
+
+  <div class="industry-heatmap-layout">
+    <div class="industry-heatmap-main">
+      <div id="industry-detail-chart" class="stats-panel industry-chart-panel"></div>
+    </div>
+    {% include "partials/industry_heatmap_kpi.html" %}
+  </div>
+
+  <div class="stats-section">
+    <h3 class="stats-section-title">采购链 Top 边</h3>
+    <table id="industry-detail-supply-chain" class="industry-supply-chain-table stats-table">
+      <thead>
+        <tr><th>采购方</th><th>供应商</th><th>公告数</th><th>金额</th><th>最近</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+<script src="/static/industry.js" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var root = document.querySelector('.industry-detail-page');
+  if (!root || !window.industryDetailInit) return;
+  window.industryDetailInit({
+    domain: root.dataset.domain,
+    industry: root.dataset.industry,
+    days: parseInt(root.dataset.days || '30', 10),
+    metric: root.dataset.metric || 'count'
+  });
+});
+</script>
+{% endblock %}

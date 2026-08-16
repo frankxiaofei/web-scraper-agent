@@ -1,4 +1,4 @@
-"""智慧农业专题监测数据源（7 个央企招采网站，非农业专用平台）。"""
+"""智慧农业专题监测数据源（央企招采 + 政采 P0 招标站）。"""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from urllib.parse import quote
 
 import yaml
 
+from src.core.biz_clue_config import get_biz_clue_sync_site_ids
 from src.core.site_sync import get_site_by_id, load_sites_config
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -46,9 +47,25 @@ def get_agri_site_ids() -> list[str]:
     return [str(i) for i in ids if str(i).strip()]
 
 
+def get_insights_tender_site_ids() -> list[str]:
+    """商机洞察可见招标源：biz_clue P0/P1 政采站 + 七大央企招采站。"""
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for sid in get_biz_clue_sync_site_ids() + get_agri_site_ids():
+        sid = str(sid).strip()
+        if sid and sid not in seen:
+            seen.add(sid)
+            ordered.append(sid)
+    return ordered
+
+
 def get_agri_scope_label() -> str:
     cfg = load_agri_sites_config()
-    return str(cfg.get("scope_label") or "七大央企招采数据源")
+    base = str(cfg.get("scope_label") or "七大央企招采数据源")
+    biz_count = len(get_biz_clue_sync_site_ids())
+    if biz_count:
+        return f"{base} + 政采 P0 招标源（{biz_count} 站）"
+    return base
 
 
 def get_agri_search_keywords() -> list[str]:

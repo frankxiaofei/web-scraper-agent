@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 from src.adapters.base import BaseAdapter
 from src.core.models import BidNotice, NoticeCategory
@@ -59,8 +59,30 @@ _DETAIL_JS = """() => {
 )
 
 
+def build_ccgp_search_url(keyword: str, *, days: int = 90) -> str:
+    """构造 CCGP 站内搜索 URL（商机 sync 关键词检索）。"""
+    end = datetime.now()
+    start = end - timedelta(days=max(1, days))
+    start_str = start.strftime("%Y:%m:%d")
+    end_str = end.strftime("%Y:%m:%d")
+    return (
+        "http://search.ccgp.gov.cn/bxsearch?"
+        "searchtype=1&page_index=1&bidSort=0&buyerName=&projectId="
+        f"&pinMu=0&bidType=0&dbselect=bidx&kw={quote(keyword.strip())}"
+        f"&start_time={quote(start_str)}&end_time={quote(end_str)}"
+        "&timeType=6&displayZone=&zoneId=&pppStatus=0&agentName="
+    )
+
+
 class CcgpBaseAdapter(BaseAdapter):
     """CCGP 系列站点通用列表解析（中央 + 省级结构类似）。"""
+
+    def _resolve_search_keyword(self) -> Optional[str]:
+        for key in ("biz_clue_search_keyword", "agri_search_keyword"):
+            kw = self.config.get(key)
+            if kw and str(kw).strip():
+                return str(kw).strip()
+        return None
 
     @staticmethod
     def _extract_meta_field(text: str, labels: list[str]) -> Optional[str]:
@@ -101,6 +123,10 @@ class CcgpBaseAdapter(BaseAdapter):
 
     def get_list_urls(self) -> list[str]:
         """子类可覆盖，返回待尝试的列表页 URL。"""
+        keyword = self._resolve_search_keyword()
+        if keyword:
+            logger.info("站点 %s 使用关键词搜索: %s", self.site_id, keyword)
+            return [build_ccgp_search_url(keyword)]
         base = self.base_url.rstrip("/")
         return [urljoin(base + "/", p.lstrip("/")) for p in DEFAULT_LIST_PATHS]
 
@@ -216,4 +242,8 @@ class CcgpNationalAdapter(CcgpBaseAdapter):
     """中国政府采购网 — 中央公开招标公告列表。"""
 
     def get_list_urls(self) -> list[str]:
+        keyword = self._resolve_search_keyword()
+        if keyword:
+            logger.info("站点 %s 使用关键词搜索: %s", self.site_id, keyword)
+            return [build_ccgp_search_url(keyword)]
         return [NATIONAL_LIST_URL, "https://www.ccgp.gov.cn/"]

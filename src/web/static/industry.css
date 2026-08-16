@@ -1,0 +1,246 @@
+.insights-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.insights-subnav-link {
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  color: #475569;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
+}
+
+.insights-subnav-link.is-active,
+.insights-subnav-link:hover {
+  color: #1d4ed8;
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.industry-heatmap-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .industry-heatmap-layout {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.industry-chart-panel {
+  min-height: 420px;
+}
+
+.industry-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.industry-filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.industry-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.industry-side-title {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.industry-side-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1rem;
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.industry-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(420px, 100vw);
+  height: 100vh;
+  background: #fff;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.08);
+  z-index: 40;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.industry-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.industry-drawer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.industry-drawer-list li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.industry-recommend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.industry-recommend-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+.industry-recommend-card:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+
+.industry-supply-chain-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.industry-supply-chain-table th,
+.industry-supply-chain-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.industry-supply-chain-table th {
+  cursor: pointer;
+  color: #475569;
+}
+
+.industry-policy-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.industry-policy-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  background: #fff;
+}
+
+.industry-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.industry-tab-btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+}
+
+.industry-tab-btn.is-active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.industry-tab-panel.hidden {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .industry-heatmap-compare-stack .industry-chart-panel {
+    min-height: 320px;
+  }
+}
+
+.industry-leaflet-map {
+  min-height: 480px;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 0.75rem;
+}
+
+.industry-map-breadcrumb {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+}
+
+.industry-map-breadcrumb a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.industry-map-legend {
+  font-size: 0.8125rem;
+  color: #475569;
+  margin-bottom: 1rem;
+}
+
+.industry-graph-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.industry-cy-graph {
+  min-height: 520px;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.industry-graph-status {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.industry-graph-status.is-error {
+  color: #dc2626;
+}
+
+.industry-graph-detail {
+  margin-top: 1rem;
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+
+.industry-graph-detail.hidden {
+  display: none;
+}

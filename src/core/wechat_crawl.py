@@ -747,7 +747,6 @@ def crawl_new_articles(
     articles: list[dict] = []
     for i, url in enumerate(target):
         article = extract_article(url, site_id=site_id)
-        seen.add(url)
         if not article or not (article.get("title") or article.get("content")):
             if i < len(target) - 1 and article_delay_seconds > 0:
                 time.sleep(article_delay_seconds)
@@ -770,6 +769,7 @@ def crawl_new_articles(
             if i < len(target) - 1 and article_delay_seconds > 0:
                 time.sleep(article_delay_seconds)
             continue
+        seen.add(url)
         articles.append(article)
         if i < len(target) - 1 and article_delay_seconds > 0:
             time.sleep(article_delay_seconds)

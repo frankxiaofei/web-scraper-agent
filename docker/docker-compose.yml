@@ -1,7 +1,7 @@
 # 镜像：app 使用 reg.hdec.com 构建；基础设施仍用官方 tag（可配置 daemon registry-mirrors 加速拉取）
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgis/postgis:16-3.4
     container_name: web_scraper_pg
     environment:
       POSTGRES_USER: scraper
@@ -41,6 +41,23 @@ services:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
+      retries: 5
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: web_scraper_neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/industry_scraper_pass
+      NEO4J_PLUGINS: '["apoc"]'
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"]
+      interval: 15s
+      timeout: 10s
       retries: 5
 
   influxdb:
@@ -108,6 +125,7 @@ volumes:
   pg_data:
   redis_data:
   mongo_data:
+  neo4j_data:
   influx_data:
   app_logs:
   app_data:

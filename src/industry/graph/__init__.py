@@ -1,0 +1,1 @@
+"""Industry graph module."""

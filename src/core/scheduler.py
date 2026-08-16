@@ -29,6 +29,8 @@ from src.adapters.ggzy import GgzyNationalAdapter
 from src.adapters.ggzy_provincial import GgzyProvincialAdapter
 from src.adapters.sgcc_ecp import SgccEcpAdapter
 from src.adapters.sinopec import SinopecAdapter
+from src.adapters.sam_gov import SamGovAdapter
+from src.adapters.ted import TedAdapter
 from src.adapters.wechat import WechatAdapter
 from src.adapters.zycg import ZycgAdapter
 from src.core.alert import get_alert_manager
@@ -62,6 +64,9 @@ ADAPTER_REGISTRY: dict[str, type[BaseAdapter]] = {
     "chinamobile": ChinaMobileAdapter,
     "crec": CrecAdapter,
     "wechat": WechatAdapter,
+    "ted": TedAdapter,
+    "ted_eu": TedAdapter,
+    "sam_gov": SamGovAdapter,
     "generic": GenericRuleAdapter,
 }
 

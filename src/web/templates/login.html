@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}登录 — WebScraperAgent{% endblock %}
+{% block head_extra %}
+<style>
+  .auth-card { max-width: 420px; margin: 4rem auto; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-card bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+  <h2 class="text-2xl font-semibold text-slate-900 mb-2">登录</h2>
+  <p class="text-sm text-slate-500 mb-6">登录后访问行业洞察与订阅功能</p>
+  <form id="login-form" class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1" for="email">邮箱</label>
+      <input id="email" name="email" type="email" required autocomplete="email"
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1" for="password">密码</label>
+      <input id="password" name="password" type="password" required autocomplete="current-password"
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+    </div>
+    <p id="login-error" class="text-sm text-red-600 hidden"></p>
+    <button type="submit" class="w-full rounded-lg bg-brand-600 text-white py-2.5 font-medium hover:bg-brand-700 transition">
+      登录
+    </button>
+  </form>
+  <p class="text-sm text-slate-500 mt-6 text-center">
+    还没有账号？<a href="/register" class="text-brand-600 hover:underline">注册</a>
+  </p>
+</div>
+<script>
+(function () {
+  var form = document.getElementById('login-form');
+  var errEl = document.getElementById('login-error');
+  var params = new URLSearchParams(window.location.search);
+  var redirect = params.get('redirect') || '/insights';
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    errEl.classList.add('hidden');
+    var email = document.getElementById('email').value.trim();
+    var password = document.getElementById('password').value;
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: password })
+    }).then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          errEl.textContent = res.body.detail || '登录失败';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        localStorage.setItem('access_token', res.body.access_token);
+        if (res.body.refresh_token) localStorage.setItem('refresh_token', res.body.refresh_token);
+        window.location.href = redirect;
+      })
+      .catch(function () {
+        errEl.textContent = '网络错误，请重试';
+        errEl.classList.remove('hidden');
+      });
+  });
+})();
+</script>
+{% endblock %}

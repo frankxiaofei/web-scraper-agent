@@ -1,0 +1,111 @@
+# Palantir Ontology 风格语义层 — 行业供应链（Phase 2 P2-T-002）
+ontology:
+  version: "1.0.0"
+  name: industry_supply_chain
+  description: 行业洞察与供应链语义模型
+
+  object_types:
+    Industry:
+      primary_key: [code, taxonomy]
+      title_property: name
+      properties:
+        code: { type: string, required: true, max_length: 16 }
+        taxonomy: { type: string, required: true, enum: [GB2017, NAICS2022, ISIC4] }
+        name: { type: string, required: true }
+        parent_code: { type: string, nullable: true }
+        level: { type: integer, minimum: 1, maximum: 4 }
+      datasource:
+        postgres: mdm.industries
+        neo4j_label: Industry
+
+    Company:
+      primary_key: [company_id]
+      title_property: canonical_name
+      properties:
+        company_id: { type: uuid, required: true }
+        canonical_name: { type: string, required: true }
+        lei: { type: string, max_length: 20, nullable: true }
+        credit_code: { type: string, max_length: 32, nullable: true }
+        country_iso: { type: string, default: CN }
+        quality_tier: { type: string, enum: [A, B, C], default: B }
+      datasource:
+        postgres: mdm.companies
+        neo4j_label: Company
+
+    Region:
+      primary_key: [region_code]
+      title_property: name
+      properties:
+        region_code: { type: string, required: true }
+        name: { type: string, required: true }
+        level: { type: string, enum: [country, province, city, district] }
+        country_iso: { type: string, default: CN }
+      datasource:
+        postgres: mdm.regions
+        neo4j_label: Region
+
+    Contract:
+      primary_key: [contract_id]
+      title_property: title
+      properties:
+        contract_id: { type: uuid, required: true }
+        title: { type: string }
+        amount: { type: decimal, nullable: true }
+        currency: { type: string, default: CNY }
+        notice_url: { type: string, required: true, unique: true }
+      datasource:
+        postgres: mdm.contracts
+        neo4j_label: Contract
+
+    TenderNotice:
+      primary_key: [notice_id]
+      title_property: title
+      properties:
+        notice_id: { type: string, required: true }
+        title: { type: string }
+        source_site_id: { type: string }
+      datasource:
+        mongodb: bid_notices
+        neo4j_label: TenderNotice
+
+  link_types:
+    CLASSIFIED_AS:
+      from: Company
+      to: Industry
+      neo4j_type: CLASSIFIED_AS
+    LOCATED_IN:
+      from: Company
+      to: Region
+      neo4j_type: LOCATED_IN
+    ISSUED_BY:
+      from: Contract
+      to: Company
+      neo4j_type: ISSUED_BY
+    AWARDED_TO:
+      from: Contract
+      to: Company
+      neo4j_type: AWARDED_TO
+    SUPPLIES:
+      from: Company
+      to: Company
+      neo4j_type: SUPPLIES
+    PUBLISHED_IN:
+      from: TenderNotice
+      to: Region
+      neo4j_type: PUBLISHED_IN
+    BECOMES:
+      from: TenderNotice
+      to: Contract
+      neo4j_type: BECOMES
+    PARENT_OF:
+      from: Industry
+      to: Industry
+      neo4j_type: PARENT_OF
+
+  actions:
+    MergeCompanies:
+      endpoint: POST /api/ontology/actions/merge-companies
+    ConfirmClassification:
+      endpoint: POST /api/ontology/actions/confirm-industry
+    TriggerEnrichment:
+      endpoint: POST /api/ontology/actions/enrich

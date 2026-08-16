@@ -85,6 +85,10 @@ jobs:
   trigger: interval
   minutes: 90
   enabled: true
+- site_id: gov_cg_national
+  trigger: interval
+  minutes: 60
+  enabled: true
 - site_id: 中国电力建设集团有限公司_公共资源交易服务平台
   trigger: interval
   minutes: 60
@@ -101,8 +105,6 @@ jobs:
   trigger: interval
   minutes: 60
   enabled: true
-
-# --- Tab2: 省级政府采购网 (部分禁用，仅启用数字农业相关) ---
 - site_id: ccgp_上海市
   trigger: interval
   minutes: 60
@@ -223,8 +225,6 @@ jobs:
   trigger: interval
   minutes: 60
   enabled: false
-
-# --- Tab2: 省级公共资源交易平台 ---
 - site_id: ggzy_上海市
   trigger: interval
   minutes: 60
@@ -340,4 +340,168 @@ jobs:
 - site_id: ggzy_黑龙江省
   trigger: interval
   minutes: 60
+  enabled: true
+- site_id: wechat_36kr
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: wechat_agritech
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: wechat_ai4elab
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: wechat_xzy
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: wechat_dtcity
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_gov
+  trigger: interval
+  minutes: 90
+  enabled: true
+- site_id: agri_gov_moa
+  trigger: interval
+  minutes: 90
+  enabled: true
+- site_id: agri_gov_agri
+  trigger: interval
+  minutes: 90
+  enabled: true
+- site_id: agri_gov_zwfw
+  trigger: interval
+  minutes: 90
+  enabled: true
+- site_id: agri_gov_beijing
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_tianjin
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_hebei
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_shanxi
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_neimenggu
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_liaoning
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_jilin
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_heilongjiang
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_shanghai
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_jiangsu
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_zhejiang
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_anhui
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_fujian
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_jiangxi
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_shandong
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_henan
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_hubei
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_hunan
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_guangdong
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_guangxi
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_hainan
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_chongqing
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_sichuan
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_guizhou
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_yunnan
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_xizang
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_shaanxi
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_gansu
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_qinghai
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_ningxia
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_xinjiang
+  trigger: interval
+  minutes: 120
+  enabled: true
+- site_id: agri_gov_xinjiang_bingtuan
+  trigger: interval
+  minutes: 120
   enabled: true

@@ -19,7 +19,11 @@ from src.core.agri_classifier import (
     matched_agri_keywords,
     score_agri_opportunity,
 )
-from src.core.agri_sites import agri_site_display_list, get_agri_scope_label, get_agri_site_ids
+from src.core.agri_sites import (
+    agri_site_display_list,
+    get_agri_scope_label,
+    get_insights_tender_site_ids,
+)
 from src.core.notice_field_utils import aggregate_structured_insights, structured_fields_from_doc
 from src.core.timezone_utils import app_now, to_app_tz
 from src.core.url_utils import resolve_notice_detail_url
@@ -120,7 +124,7 @@ class AgriInsightsService:
         self._data = data_service or get_data_service()
 
     def _agri_site_ids(self) -> list[str]:
-        return get_agri_site_ids()
+        return get_insights_tender_site_ids()
 
     def _load_docs(
         self,

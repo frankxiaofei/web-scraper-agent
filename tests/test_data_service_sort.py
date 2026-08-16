@@ -129,3 +129,27 @@ def test_load_jsonl_reloads_when_file_mtime_changes(tmp_path: Path):
             f.write(json.dumps(doc_b, ensure_ascii=False) + "\n")
 
         assert svc.list_notices(page=1, per_page=10)["total"] == 2
+
+
+def test_list_notices_falls_back_to_jsonl_when_mongo_empty(sort_sample_notices):
+    mock_coll = MagicMock()
+    mock_coll.count_documents.return_value = 0
+
+    svc = NoticeDataService()
+    svc._mongo_available = True
+    svc._mongo_coll = mock_coll
+    svc._jsonl_cache = None
+    svc._jsonl_mtime = 0.0
+
+    with patch("src.web.data_service.get_settings") as mock_settings, patch(
+        "src.web.data_service.load_enabled_sites"
+    ) as mock_sites:
+        settings = MagicMock()
+        settings.data_dir = sort_sample_notices.parent
+        mock_settings.return_value = settings
+        mock_sites.return_value = [{"id": "crec_bidding", "name": "中铁"}]
+
+        assert svc.data_source == "jsonl"
+        result = svc.list_notices(page=1, per_page=10)
+        assert result["total"] == 3
+        mock_coll.count_documents.assert_called()

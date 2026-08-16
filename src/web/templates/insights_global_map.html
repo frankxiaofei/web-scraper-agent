@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}WebScraperAgent — 全球贸易热力{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="/static/insights.css">
+<link rel="stylesheet" href="/static/industry.css">
+{% endblock %}
+{% block content %}
+<section class="stats-page insights-page">
+  <header class="stats-page-header insights-header">
+    <h2 class="stats-page-title">全球贸易 choropleth（预览）</h2>
+    <p class="stats-page-subtitle">UN Comtrade TradeFlow · Phase 3</p>
+  </header>
+  {% include "partials/insights_subnav.html" %}
+  <div id="global-trade-panel" class="stats-panel" data-reporter="{{ reporter }}" data-period="{{ period }}">
+    <p class="text-sm text-slate-500">数据来自 <code>/api/industry/trade-flows</code>，可在控制台查看 JSON。</p>
+    <pre id="global-trade-json" class="industry-json-preview"></pre>
+  </div>
+</section>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var panel = document.getElementById('global-trade-panel');
+  if (!panel) return;
+  var reporter = panel.dataset.reporter || '156';
+  var period = panel.dataset.period || '2024';
+  fetch('/api/industry/trade-flows?reporter=' + encodeURIComponent(reporter) + '&period=' + period)
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var pre = document.getElementById('global-trade-json');
+      if (pre) pre.textContent = JSON.stringify(data, null, 2);
+    });
+});
+</script>
+{% endblock %}

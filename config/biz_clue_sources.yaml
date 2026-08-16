@@ -3,7 +3,7 @@ version: 1
 description: 数字农业商机线索优先信息源
 scope_label: P0/P1 政府采购与公共资源交易平台
 
-# 每站最多尝试的搜索关键词数（业务词×阶段词轮换）
+# 每站最多尝试的搜索关键词数（业务词×阶段词轮换；ccgp 适配器已支持 kw 检索）
 max_search_keywords_per_site: 3
 default_max_items: 30
 
@@ -84,7 +84,7 @@ sites:
   - id: ccgp_national
     name: 中国政府采购网
     level: P0
-    notes: 中央及地方政采公告
+    notes: 中央及地方政采公告；支持 search.ccgp.gov.cn 关键词检索（数字农业/智慧农业等）
   - id: ggzy_national
     name: 全国公共资源交易平台
     level: P0

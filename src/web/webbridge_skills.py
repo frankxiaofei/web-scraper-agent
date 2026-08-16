@@ -53,10 +53,17 @@ def resolve_webbridge_binary() -> Optional[str]:
     found = shutil.which("kimi-webbridge")
     if found:
         return found
+    if os.name == "nt":
+        found = shutil.which("kimi-webbridge.exe")
+        if found:
+            return found
     if WEBBRIDGE_DEFAULT_BIN.is_file():
         return str(WEBBRIDGE_DEFAULT_BIN)
+    if os.name == "nt":
+        win_default = WEBBRIDGE_DEFAULT_BIN.with_suffix(".exe")
+        if win_default.is_file():
+            return str(win_default)
     return None
-
 
 def _parse_status_output(stdout: str) -> dict[str, Any]:
     text = (stdout or "").strip()

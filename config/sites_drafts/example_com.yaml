@@ -1,0 +1,9 @@
+id: example_com
+name: test site
+url: http://example.com
+category: draft
+adapter: generic
+enabled: false
+mvp: false
+onboarding: true
+notes: onboarding draft created 2026-07-26T14:15:43.584253+00:00

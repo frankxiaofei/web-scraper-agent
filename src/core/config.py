@@ -59,7 +59,12 @@ class Settings(BaseSettings):
     llm_model: str = Field(
         default="gpt-4o-mini",
         validation_alias=AliasChoices("LLM_MODEL", "OPENAI_MODEL"),
-        description="LLM 模型名",
+        description="对话/Agent 默认 LLM 模型名",
+    )
+    llm_extraction_model: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("LLM_EXTRACTION_MODEL", "EXTRACTION_MODEL"),
+        description="信息抽取专用模型（未设置时回退 llm_model）",
     )
 
     @field_validator("llm_base_url", mode="before")
@@ -330,7 +335,77 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("AGRI_UI_URL", "BIM_UI_URL"),
         description="商机洞察独立前端基址（AGRI_UI_URL，兼容旧 BIM_UI_URL）",
     )
+    billing_enabled: bool = Field(
+        default=False,
+        description="启用商业订阅/认证/计量（BILLING_ENABLED；默认 false 兼容自托管 MVP）",
+    )
+    industry_enrichment_enabled: bool = Field(
+        default=False,
+        description="Pipeline 写入后异步 MDM enrichment（INDUSTRY_ENRICHMENT_ENABLED；Phase 1+）",
+    )
+    industry_insights_cache_ttl_seconds: int = Field(
+        default=60,
+        ge=0,
+        le=3600,
+        description="行业洞察 API 内存缓存 TTL（INDUSTRY_INSIGHTS_CACHE_TTL_SECONDS）",
+    )
+    jwt_secret: Optional[str] = Field(
+        default=None,
+        description="JWT HS256 签名密钥（JWT_SECRET）；未设置时使用开发默认值",
+    )
+    jwt_algorithm: str = Field(
+        default="HS256",
+        description="JWT 算法（JWT_ALGORITHM）",
+    )
+    jwt_access_ttl_minutes: int = Field(
+        default=15,
+        ge=1,
+        le=1440,
+        description="Access token TTL 分钟（JWT_ACCESS_TTL_MINUTES）",
+    )
+    jwt_secret_previous: Optional[str] = Field(
+        default=None,
+        description="JWT 轮换 grace period 旧密钥（JWT_SECRET_PREVIOUS）",
+    )
+    neo4j_uri: Optional[str] = Field(
+        default=None,
+        description="Neo4j Bolt URI（NEO4J_URI），如 bolt://localhost:7687",
+    )
+    neo4j_user: str = Field(default="neo4j", description="Neo4j 用户名（NEO4J_USER）")
+    neo4j_password: Optional[str] = Field(
+        default=None,
+        description="Neo4j 密码（NEO4J_PASSWORD）",
+    )
+    neo4j_sync_enabled: bool = Field(
+        default=False,
+        description="Pipeline enrichment 后同步 Neo4j（NEO4J_SYNC_ENABLED；Phase 2+）",
+    )
+    stripe_secret_key: Optional[str] = Field(
+        default=None,
+        description="Stripe Secret Key（STRIPE_SECRET_KEY；Commercial C2）",
+    )
+    stripe_webhook_secret: Optional[str] = Field(
+        default=None,
+        description="Stripe Webhook 签名密钥（STRIPE_WEBHOOK_SECRET）",
+    )
+    stripe_price_pro_monthly: Optional[str] = Field(
+        default=None,
+        description="Stripe Price ID — Pro 月付（STRIPE_PRICE_PRO_MONTHLY）",
+    )
+    sam_api_key: Optional[str] = Field(
+        default=None,
+        description="SAM.gov API Key（SAM_API_KEY；Phase 3 美国招标）",
+    )
 
 
 def get_settings() -> Settings:
     return Settings()
+
+
+def get_extraction_model(settings: Settings | None = None) -> str:
+    """信息抽取场景使用的模型；未单独配置时与 llm_model 一致。"""
+    s = settings or get_settings()
+    explicit = (s.llm_extraction_model or "").strip()
+    if explicit:
+        return explicit
+    return s.llm_model

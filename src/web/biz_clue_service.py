@@ -778,8 +778,17 @@ def get_biz_clue_service() -> BizClueService:
     return _service
 
 
+def check_sync_quota() -> None:
+    """Crawl 配额检查 — biz-clue / industry sync 入口调用。"""
+    from src.billing.quota_middleware import enforce_entitlement
+    from src.billing.tenant_context import get_current_tenant_id
+
+    enforce_entitlement(get_current_tenant_id(), "quota.crawl_runs")
+
+
 __all__ = [
     "BizClueService",
+    "check_sync_quota",
     "compute_opportunity_score",
     "deduplicate_leads",
     "get_biz_clue_service",

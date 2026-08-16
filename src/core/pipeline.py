@@ -231,7 +231,39 @@ class Pipeline:
         to_upsert = processed.all_for_storage
         self._save_mongo(to_upsert)
         self._save_postgres(to_upsert)
+        self._run_industry_enrichment(to_upsert)
         return count
+
+    def _run_industry_enrichment(self, notices: list[BidNotice]) -> None:
+        if not notices or not self._settings.industry_enrichment_enabled:
+            return
+        try:
+            from src.industry.enrichment.job import run_enrichment_batch
+
+            result = run_enrichment_batch(notices)
+            if result.processed:
+                logger.info(
+                    "Industry enrichment: processed=%d skipped=%d errors=%d",
+                    result.processed,
+                    result.skipped,
+                    result.errors,
+                )
+                self._apply_enrichment_payloads(result.payloads)
+        except Exception as exc:
+            logger.warning("Industry enrichment hook failed: %s", exc)
+
+    def _apply_enrichment_payloads(self, payloads: list[dict]) -> None:
+        if not self._mongo_repo or not payloads:
+            return
+        for item in payloads:
+            url = item.get("notice_url")
+            enrichment = item.get("enrichment")
+            if not url or not enrichment:
+                continue
+            try:
+                self._mongo_repo.set_industry_enrichment(url, enrichment)
+            except Exception as exc:
+                logger.debug("Mongo enrichment write skipped %s: %s", url[:60], exc)
 
     def log_scrape_job(
         self,

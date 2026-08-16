@@ -12,6 +12,8 @@ SITE_ID_ALIASES: dict[str, str] = {
     "powerchina_bid": "中国电力建设集团有限公司_公共资源交易服务平台",
     "ceec_ec": "中国能源建设集团_ec_ceec",
     "ecceec": "中国能源建设集团_ec_ceec",
+    "gov_cg": "gov_cg_national",
+    "gov-cg": "gov_cg_national",
 }
 
 

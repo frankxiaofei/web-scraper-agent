@@ -1,0 +1,9 @@
+<nav class="insights-subnav" aria-label="行业洞察子导航">
+  <a href="/insights" class="insights-subnav-link{% if active_subnav|default('') == 'dashboard' %} is-active{% endif %}">仪表盘</a>
+  <a href="/insights/industry-heatmap" class="insights-subnav-link{% if active_subnav|default('') == 'industry-heatmap' %} is-active{% endif %}">行业分布</a>
+  <a href="/insights/map" class="insights-subnav-link{% if active_subnav|default('') == 'map' %} is-active{% endif %}">GIS 地图</a>
+  <a href="/insights/supply-chain" class="insights-subnav-link{% if active_subnav|default('') == 'supply-chain' %} is-active{% endif %}">供应链图谱</a>
+  <a href="/insights/tenders" class="insights-subnav-link{% if active_subnav|default('') == 'tenders' %} is-active{% endif %}">招标列表</a>
+  <a href="/insights/sop" class="insights-subnav-link{% if active_subnav|default('') == 'sop' %} is-active{% endif %}">配置 SOP</a>
+  <a href="/insights/hermes" class="insights-subnav-link{% if active_subnav|default('') == 'hermes' %} is-active{% endif %}">Agent</a>
+</nav>

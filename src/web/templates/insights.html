@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}WebScraperAgent — 商机洞察{% endblock %}
+{% block title %}WebScraperAgent — 行业洞察{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="/static/insights.css">
+<link rel="stylesheet" href="/static/industry.css">
 {% endblock %}
 
 {% block content %}
@@ -16,11 +17,11 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
         </span>
-        商机洞察
+        行业洞察
       </h2>
-      <p class="stats-page-subtitle">基于采集数据的智能商机分析 Agent · 近 {{ days }} 天</p>
+      <p class="stats-page-subtitle">基于采集数据的行业分析 Agent · 近 {{ days }} 天</p>
       <p class="insights-slogan">
-        Agent 读取已采集的招采公告，按产品线匹配、阶段识别、商机评分与去重规则输出结构化线索。
+        Agent 读取已采集的招采公告，按产品线匹配、阶段识别、行业评分与去重规则输出结构化洞察。
         <span class="insights-config-badge">{{ config_label or '基于 bizclue 配置 v1.0' }}</span>
         <a href="/insights/sop" class="insights-config-link">配置 SOP 向导</a>
       </p>
@@ -31,7 +32,7 @@
     <div class="insights-header-actions">
       <button type="button" id="biz-clue-sync-btn" onclick="bizClueSync()"
               class="stats-btn stats-btn-primary">
-        同步商机数据
+        同步行业数据
       </button>
     </div>
   </header>
@@ -48,16 +49,27 @@
     <span class="insights-status-item">分析窗口：近 {{ days }} 天</span>
   </div>
 
+  {% set active_subnav = 'dashboard' %}
+  {% include "partials/insights_subnav.html" %}
+
+  <div class="industry-tabs" role="tablist">
+    <button type="button" class="industry-tab-btn is-active" data-tab="leads">线索列表</button>
+    <button type="button" class="industry-tab-btn" data-tab="distribution">省级分布</button>
+    <button type="button" class="industry-tab-btn" data-tab="supply-chain">采购链</button>
+    <button type="button" class="industry-tab-btn" data-tab="policy">政策风向</button>
+  </div>
+
   {% set sm = summary or {} %}
 
+  <div id="tab-leads" class="industry-tab-panel">
   <div class="stats-kpi-grid insights-kpi-grid" aria-label="关键指标">
     <div class="stats-kpi-card stats-kpi-card-violet">
-      <p class="stats-kpi-label">有效线索</p>
+      <p class="stats-kpi-label">行业相关公告</p>
       <p class="stats-kpi-value">{{ sm.new_count or 0 }}</p>
       <p class="stats-kpi-hint">产品线匹配且通过筛选</p>
     </div>
     <div class="stats-kpi-card stats-kpi-card-amber">
-      <p class="stats-kpi-label">S/A 级商机</p>
+      <p class="stats-kpi-label">高价值采购链节点</p>
       <p class="stats-kpi-value">{{ sm.high_value_count or 0 }}</p>
       <p class="stats-kpi-hint">S {{ sm.s_count or 0 }} · A {{ sm.a_count or 0 }}</p>
     </div>
@@ -216,7 +228,7 @@
           </svg>
         </div>
         <p class="insights-empty-title">暂无匹配线索</p>
-        <p class="insights-empty-desc">可点击「同步商机数据」拉取 P0/P1 官方公告后刷新页面查看分析结果，或放宽筛选条件。</p>
+        <p class="insights-empty-desc">可点击「同步行业数据」拉取 P0/P1 官方公告后刷新页面查看分析结果，或放宽筛选条件。</p>
       </div>
       {% endif %}
     </div>
@@ -272,8 +284,45 @@
     {% endif %}
   </div>
   {% endif %}
+  </div>
+
+  <div id="tab-distribution" class="industry-tab-panel hidden">
+    <div class="stats-panel">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">省级分布</h3>
+        <a href="/insights/industry-heatmap" class="insights-config-link">打开热力专页</a>
+      </div>
+      <div id="industry-distribution-chart" class="industry-chart-panel min-h-[420px]"></div>
+    </div>
+  </div>
+
+  <div id="tab-supply-chain" class="industry-tab-panel hidden">
+    <div class="stats-panel">
+      <div class="stats-panel-header">
+        <h3 class="stats-panel-title">采购链表格</h3>
+      </div>
+      <table id="industry-supply-chain-table" class="industry-supply-chain-table">
+        <thead>
+          <tr>
+            <th>采购方</th>
+            <th>供应商/中标方</th>
+            <th>公告数</th>
+            <th>金额合计</th>
+            <th>最近日期</th>
+            <th>链接</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-policy" class="industry-tab-panel hidden">
+    {% include "partials/industry_policy_wind.html" %}
+  </div>
 </section>
 
+<script src="/static/industry.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
 <script>
   function bizClueSync() {
@@ -284,7 +333,7 @@
       .then(function(data) {
         if (!data.ok) {
           alert(data.error || '同步启动失败');
-          if (btn) { btn.disabled = false; btn.textContent = '同步商机数据'; }
+          if (btn) { btn.disabled = false; btn.textContent = '同步行业数据'; }
           return;
         }
         var poll = setInterval(function() {
@@ -293,7 +342,7 @@
             .then(function(st) {
               if (!st.running) {
                 clearInterval(poll);
-                if (btn) { btn.disabled = false; btn.textContent = '同步商机数据'; }
+                if (btn) { btn.disabled = false; btn.textContent = '同步行业数据'; }
                 var url = new URL(window.location.href);
                 url.searchParams.set('refresh', 'true');
                 window.location.href = url.toString();
@@ -303,7 +352,7 @@
       })
       .catch(function() {
         alert('请求失败');
-        if (btn) { btn.disabled = false; btn.textContent = '同步商机数据'; }
+        if (btn) { btn.disabled = false; btn.textContent = '同步行业数据'; }
       });
   }
   function copyBrief() {

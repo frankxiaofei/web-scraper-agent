@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 from src.core.browser import BrowserPool
 from src.core.config import get_settings
 from src.core.pipeline import Pipeline
+from src.core.schedule_eligibility import site_eligible_for_schedule
 from src.core.scheduler import get_adapter_class, load_yaml
 from src.db.mongo_repository import create_mongo_repository
 
@@ -63,8 +64,8 @@ async def main() -> None:
     site = {**crawl_defaults, **raw_site}
 
     adapter_name = site.get("adapter", "generic")
-    if adapter_name == "generic":
-        logger.error("站点 %s 尚未配置适配器", args.site_id)
+    if adapter_name == "generic" and not site_eligible_for_schedule(site):
+        logger.error("站点 %s 尚未配置适配器（generic 需有效 crawl_rules.list_page）", args.site_id)
         sys.exit(1)
 
     settings = get_settings()

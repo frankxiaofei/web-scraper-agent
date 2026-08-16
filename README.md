@@ -28,7 +28,7 @@
 | **站点覆盖** | 每个站一套脚本 | **151** 个站点，YAML 规则 + 专用适配器 |
 | **维护成本** | 页面改版即失效 | 规则引擎 + 录制扩展 + WebBridge |
 | **使用方式** | 改代码才能爬新任务 | **Hermes Agent** 对话式爬取，Skills + 工具调用 |
-| **产出形态** | 扁平文件 | **领域专题仪表盘** — 商机洞察 |
+| **产出形态** | 扁平文件 | **领域专题仪表盘** — 行业洞察 |
 | **运维** | 零散 cron | APScheduler + Web UI 同步面板 + 分层存储 |
 
 > **Slogan：** *告别分散盯盘与脆弱脚本 —— 用 AI Agent 自动爬取、定时同步，把海量公告变成可行动的洞察。*
@@ -41,15 +41,15 @@ cd web_scraper_agent
 python3 -m venv .venv && source .venv/bin/activate
 bash scripts/install.sh
 cp .env.example .env   # 使用 LLM 时需配置 OPENAI_API_KEY
-make start             # MongoDB + 主站 8090（含商机洞察）+ 调度器
+make start             # MongoDB + 主站 8090（含行业洞察）+ 调度器
 make status            # 端口与 HTTP 健康检查
 ```
 
-打开 **http://127.0.0.1:8090/insights**（商机洞察）。
+打开 **http://127.0.0.1:8090/insights**（行业洞察）；热力专页 **http://127.0.0.1:8090/insights/industry-heatmap**。
 
-**商机配置 SOP（标准作业流程）**
+**行业配置 SOP（标准作业流程）**
 
-在 `/insights/sop` 按五步向导完成领域商机配置：选择领域 → 生成关键词 → 匹配站点 → 创建定时爬取 → 配置飞书总结推送。完成后自动更新 `config/biz_clue_sources.yaml` 并创建通知任务。
+在 `/insights/sop` 按五步向导完成领域行业配置：选择领域 → 生成关键词 → 匹配站点 → 创建定时爬取 → 配置飞书总结推送。完成后自动更新 `config/biz_clue_sources.yaml` 并创建通知任务。
 
 **示例：单站爬取**
 
@@ -156,11 +156,11 @@ flowchart TB
     Pipeline -.-> LLM
 ```
 
-详细设计见 [`docs/DESIGN.md`](docs/DESIGN.md)、[`docs/HERMES_CRAWL_AGENT.md`](docs/HERMES_CRAWL_AGENT.md)。
+详细设计见 [`docs/DESIGN.md`](docs/DESIGN.md)、[`docs/HERMES_CRAWL_AGENT.md`](docs/HERMES_CRAWL_AGENT.md)、[`docs/design/industry-insights-supply-chain.md`](docs/design/industry-insights-supply-chain.md)（行业洞察与全球供应链）。
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| 主 Web UI | 8090 | 数据列表、同步面板、爬取规则、Hermes 对话（`/hermes`）、**商机洞察**（`/insights`） |
+| 主 Web UI | 8090 | 数据列表、同步面板、爬取规则、Hermes 对话（/hermes）、**商机洞察**（/insights）、**行业洞察**（/insights/industry-heatmap 等） |
 | 商机洞察（独立，可选） | 8091 | 已弃用为主流程；保留 `agri_app.py` 供独立部署 |
 | Hermes Gateway / API | 8080 / 8642 | crawl dispatch 与对话 `/v1/runs`；`/hermes` 依赖 8642 已就绪 |
 | Hermes 爬取 Agent（独立 UI） | 8095 | 独立 Agent 对话界面，自然语言驱动爬取 |
@@ -227,3 +227,9 @@ make docker-up     # Docker Compose 启动
 ## 开源协议
 
 项目根目录尚未包含 `LICENSE` 文件。公开发布前请确认开源协议类型（如 MIT、Apache-2.0）。
+# 世舶招投标 API
+
+服务端已提供 `/api/gov-bid/*` 代理接口。请仅在本地 `.env` 配置
+`GOV_BID_API_KEY`；可选配置 `GOV_BID_BASE_URL`，默认使用
+`https://gate.gov-bid.com/outer-gateway`。请求示例和端点清单见
+`docs/gov_bid_api.md`。

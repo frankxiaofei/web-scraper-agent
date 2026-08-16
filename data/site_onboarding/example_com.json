@@ -1,0 +1,24 @@
+{
+  "site_id": "example_com",
+  "name": "test site",
+  "url": "http://example.com",
+  "current_stage": "probe",
+  "stages": {
+    "register": "completed",
+    "probe": "in_progress",
+    "analyze": "pending",
+    "toolchain": "pending",
+    "schedule": "pending"
+  },
+  "registered_at": "2026-07-26T14:15:43.585250+00:00",
+  "draft": true,
+  "probe_report": {
+    "site_id": "example_com",
+    "url": "http://example.com",
+    "status": "pending",
+    "probed_at": null,
+    "summary": null,
+    "page_title": null,
+    "hints": {}
+  }
+}

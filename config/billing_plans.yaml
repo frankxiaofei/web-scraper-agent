@@ -1,0 +1,63 @@
+# 订阅计划与 Entitlements（Commercial Phase C0/C1）
+# 价格以「分」存储，避免浮点误差
+
+plans:
+  free:
+    id: free
+    name: Free
+    price_monthly_cny: 0
+    price_yearly_cny: 0
+    entitlements:
+      enabled_sites: 10
+      crawl_runs_per_day: 5
+      llm_tokens_per_month: 50000
+      hermes_messages_per_month: 20
+      storage_gb: 1
+      webbridge_minutes_per_month: 0
+      gov_bid_api_calls: 0
+      team_members: 1
+      features:
+        - sop_wizard
+
+  pro:
+    id: pro
+    name: Pro
+    price_monthly_cny: 99900
+    price_yearly_cny: 999000
+    entitlements:
+      enabled_sites: 50
+      crawl_runs_per_day: 50
+      llm_tokens_per_month: 500000
+      hermes_messages_per_month: 500
+      storage_gb: 20
+      webbridge_minutes_per_month: 120
+      gov_bid_api_calls: 1000
+      team_members: 10
+      features:
+        - sop_wizard
+        - industry_heatmap
+        - supply_chain
+        - policy_bid_lag
+        - feishu_notify
+
+  enterprise:
+    id: enterprise
+    name: Enterprise
+    price_monthly_cny: -1
+    price_yearly_cny: -1
+    entitlements:
+      enabled_sites: -1
+      crawl_runs_per_day: -1
+      llm_tokens_per_month: 5000000
+      hermes_messages_per_month: -1
+      storage_gb: 500
+      webbridge_minutes_per_month: -1
+      gov_bid_api_calls: -1
+      team_members: -1
+      features:
+        - sop_wizard
+        - industry_heatmap
+        - supply_chain
+        - policy_bid_lag
+        - feishu_notify
+        - neo4j_graph

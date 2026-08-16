@@ -1,0 +1,43 @@
+# 行业域配置 — Phase 0
+version: 1
+default_domain: 数字农业
+
+domains:
+  数字农业:
+    description: 农业数字化、智慧种植、农事管理
+    agri_only: true
+    keywords:
+      - 数字农业
+      - 智慧农业
+      - 农业物联网
+    product_lines_ref: config/biz_clue.yaml
+    pseudo_industry_groups:
+      - id: product_lines
+        label: 产品线
+        source: biz_clue.product_lines
+      - id: agri_tags
+        label: 农业标签
+        source: agri_classifier
+    industry_codes:
+      - code: A
+        taxonomy: GB2017
+        name: 农、林、牧、渔业
+    site_ids: []
+    sop_domain_ref: config/biz_clue_sop_domains.yaml#数字农业
+
+  智慧城市:
+    description: 城市大脑、数字孪生、智慧市政
+    agri_only: false
+    keywords:
+      - 智慧城市
+      - 城市大脑
+    product_lines_ref: null
+    pseudo_industry_groups:
+      - id: sop_keywords
+        label: 领域关键词
+        source: biz_clue_sop_domains
+    industry_codes:
+      - code: I
+        taxonomy: GB2017
+        name: 信息传输、软件和信息技术服务业
+    site_ids: []

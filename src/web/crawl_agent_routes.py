@@ -401,7 +401,7 @@ def register_crawl_agent_routes(
         return cancel_chat_session(session_id)
 
     @app.post("/api/crawl-agent/chat")
-    async def api_crawl_agent_chat(body: CrawlAgentChatRequest):
+    async def api_crawl_agent_chat(body: CrawlAgentChatRequest, request: Request):
         from src.core.crawl_agent_chat_store import (
             abort_streaming_turn,
             begin_streaming_turn,
@@ -422,6 +422,10 @@ def register_crawl_agent_routes(
         message = (body.message or "").strip()
         if not message:
             raise HTTPException(status_code=400, detail="message 不能为空")
+
+        from src.billing.quota_middleware import consume_entitlement, tenant_from_request
+
+        consume_entitlement(tenant_from_request(request), "quota.hermes_messages")
 
         agent_profile = _resolve_agent_profile(
             body.agent_profile,

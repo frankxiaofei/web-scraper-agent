@@ -197,6 +197,16 @@ class MongoRepository:
             logger.info("MongoDB upsert %d 条公告", count)
         return count
 
+    def set_industry_enrichment(self, notice_url: str, enrichment: dict[str, Any]) -> bool:
+        """写入 industry_enrichment 字段（Phase 1 MDM enrichment）。"""
+        if not self._available or self._notices is None or not notice_url:
+            return False
+        result = self._notices.update_one(
+            {"url": notice_url},
+            {"$set": {"industry_enrichment": enrichment}},
+        )
+        return result.modified_count > 0 or result.matched_count > 0
+
     def find_by_source(self, source: str, limit: int = 10) -> list[dict[str, Any]]:
         if not self._available or self._notices is None:
             return []

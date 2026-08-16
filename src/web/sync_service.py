@@ -410,6 +410,23 @@ class SyncService:
         return await self.cancel_sync(run["site_id"])
 
     async def _start_sync(self, site_id: str, *, trigger: str) -> dict[str, Any]:
+        from src.billing.quota_middleware import enforce_entitlement
+        from src.billing.tenant_context import get_current_tenant_id
+
+        try:
+            enforce_entitlement(get_current_tenant_id(), "quota.crawl_runs")
+        except Exception as exc:
+            from fastapi import HTTPException
+
+            if isinstance(exc, HTTPException):
+                return {
+                    "ok": False,
+                    "status": "quota_exceeded",
+                    "message": exc.detail,
+                    "site_id": site_id,
+                }
+            raise
+
         if self.is_syncing(site_id):
             return {
                 "ok": False,
@@ -452,6 +469,20 @@ class SyncService:
 
         asyncio_task = asyncio.create_task(_run())
         _running_tasks[site_id].asyncio_task = asyncio_task
+        try:
+            from src.billing.tenant_context import get_current_tenant_id
+            from src.billing.usage_service import period_key_for_metric, record_usage
+
+            record_usage(
+                tenant_id=get_current_tenant_id(),
+                metric="crawl_runs",
+                quantity=1,
+                source="sync",
+                metadata={"site_id": site_id, "trigger": trigger, "run_id": run_id},
+                idempotency_key=f"crawl:{site_id}:{run_id}",
+            )
+        except Exception:
+            logger.debug("crawl_runs metering hook skipped", exc_info=True)
         return {
             "ok": True,
             "status": "started",

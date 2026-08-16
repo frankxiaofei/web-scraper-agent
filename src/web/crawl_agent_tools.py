@@ -76,6 +76,10 @@ SITE_ALIASES: dict[str, str] = {
     "公共资源交易服务平台": "中国电力建设集团有限公司_公共资源交易服务平台",
     "zgjtjs": "中国交通建设集团有限公司_供应链管理信息系统",
     "中交": "中国交通建设集团有限公司_供应链管理信息系统",
+    "gov_cg": "gov_cg_national",
+    "gov-cg": "gov_cg_national",
+    "政采网": "gov_cg_national",
+    "中国政府采购招标网": "gov_cg_national",
 }
 
 SKILL_TOOL_SCHEMAS: list[dict[str, Any]] = [
@@ -904,6 +908,34 @@ HITL_TOOL_SCHEMAS: list[dict[str, Any]] = [
     },
 ]
 
+INDUSTRY_TOOL_SCHEMAS: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "skill_supply_chain_graph",
+            "description": (
+                "查询行业供应链 Neo4j 子图或采购链表格。"
+                "可传 center（企业 UUID）或 industry_code 展开关系。"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "center": {"type": "string", "description": "中心企业 company_id (UUID)"},
+                    "industry_code": {"type": "string", "description": "行业 code，如 A01"},
+                    "depth": {"type": "integer", "description": "子图深度 1-4，默认 2"},
+                    "domain": {"type": "string", "description": "业务域，默认数字农业"},
+                    "days": {"type": "integer", "description": "采购链表格天数窗口"},
+                    "mode": {
+                        "type": "string",
+                        "enum": ["graph", "table"],
+                        "description": "graph=Neo4j 子图；table=采购链表格",
+                    },
+                },
+            },
+        },
+    },
+]
+
 DIAGNOSTIC_TOOL_SCHEMAS: list[dict[str, Any]] = [
     {
         "type": "function",
@@ -1380,6 +1412,7 @@ LEGACY_SYNC_TOOL_SCHEMAS: list[dict[str, Any]] = [
 DEFAULT_TOOL_SCHEMAS: list[dict[str, Any]] = (
     WEBBRIDGE_TOOL_SCHEMAS
     + SKILL_TOOL_SCHEMAS
+    + INDUSTRY_TOOL_SCHEMAS
     + DIAGNOSTIC_TOOL_SCHEMAS
     + RULE_TOOL_SCHEMAS
     + HITL_TOOL_SCHEMAS
@@ -2407,6 +2440,41 @@ class CrawlAgentToolExecutor:
             attachments=args.get("attachments"),
             on_url_crawl=self._emit_url_crawl if self._on_url_crawl else None,
         )
+
+    def _tool_skill_supply_chain_graph(self, args: dict[str, Any]) -> dict[str, Any]:
+        mode = (args.get("mode") or "graph").strip().lower()
+        if mode == "table":
+            from src.web.industry_insights_service import get_industry_insights_service
+
+            code = (args.get("industry_code") or args.get("domain") or "domain:数字农业").strip()
+            if not code.startswith("domain:") and args.get("domain"):
+                code = f"domain:{args.get('domain')}"
+            days = int(args.get("days") or 30)
+            svc = get_industry_insights_service()
+            try:
+                table = svc.supply_chain_table(code, days=days, limit=int(args.get("limit") or 20))
+            except ValueError as exc:
+                return {"ok": False, "error": str(exc)}
+            return {"ok": True, "mode": "table", "industry_code": code, **table}
+        from src.industry.graph.neo4j_sync import get_neo4j_graph_service
+
+        depth = max(1, min(int(args.get("depth") or 2), 4))
+        graph = get_neo4j_graph_service().query_subgraph(
+            center=(args.get("center") or "").strip() or None,
+            industry_code=(args.get("industry_code") or "").strip() or None,
+            depth=depth,
+            limit=int(args.get("limit") or 100),
+        )
+        nodes = graph.get("elements", {}).get("nodes") or []
+        edges = graph.get("elements", {}).get("edges") or []
+        return {
+            "ok": True,
+            "mode": "graph",
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "view_url": "/insights/supply-chain",
+            **graph,
+        }
 
     def _tool_skill_save_tagged_document(self, args: dict[str, Any]) -> dict[str, Any]:
         title = (args.get("title") or "").strip()

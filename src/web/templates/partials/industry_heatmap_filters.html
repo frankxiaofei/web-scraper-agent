@@ -1,0 +1,38 @@
+<div class="industry-filters stats-panel">
+  <div class="industry-filter-row">
+    <label class="insights-filter-label" for="industry-domain">行业域</label>
+    <select id="industry-domain" class="form-select form-select-sm">
+      <option value="数字农业" {% if domain == '数字农业' %}selected{% endif %}>数字农业</option>
+      <option value="智慧城市" {% if domain == '智慧城市' %}selected{% endif %}>智慧城市</option>
+    </select>
+  </div>
+  <div class="industry-filter-row">
+    <label class="insights-filter-label" for="industry-code">细分行业</label>
+    <select id="industry-code" class="form-select form-select-sm">
+      <option value="">请选择细分行业</option>
+    </select>
+  </div>
+  <div class="industry-filter-row">
+    <label class="insights-filter-label" for="industry-metric">指标</label>
+    <select id="industry-metric" class="form-select form-select-sm">
+      <option value="count" {% if metric == 'count' %}selected{% endif %}>公告数</option>
+      <option value="budget" {% if metric == 'budget' %}selected{% endif %}>预算金额</option>
+      <option value="score" {% if metric == 'score' %}selected{% endif %}>评分</option>
+      <option value="companies" {% if metric == 'companies' %}selected{% endif %}>企业数</option>
+    </select>
+  </div>
+  <div class="industry-filter-row">
+    <label class="insights-filter-label" for="industry-days">窗口</label>
+    <select id="industry-days" class="form-select form-select-sm">
+      <option value="30" {% if days == 30 %}selected{% endif %}>近 30 天</option>
+      <option value="60" {% if days == 60 %}selected{% endif %}>近 60 天</option>
+      <option value="90" {% if days == 90 %}selected{% endif %}>近 90 天</option>
+    </select>
+  </div>
+  <div class="industry-filter-row">
+    <label class="insights-filter-label" for="industry-compare">对比行业</label>
+    <select id="industry-compare" class="form-select form-select-sm">
+      <option value="">无对比</option>
+    </select>
+  </div>
+</div>

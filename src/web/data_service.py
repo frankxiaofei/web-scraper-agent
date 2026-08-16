@@ -340,11 +340,36 @@ class NoticeDataService:
             return
         self._mongo_coll = db[settings.mongodb_collection]
         self._mongo_available = True
-        logger.info("Web UI 使用 MongoDB 数据源")
+        if self._mongo_has_mvp_data():
+            logger.info("Web UI 使用 MongoDB 数据源")
+        else:
+            logger.info("MongoDB 已连接但无 MVP 公告，Web UI 回退 JSONL")
+
+    def _mongo_has_mvp_data(self) -> bool:
+        """Mongo 中是否存在 enabled 站点公告；空库时不应掩盖 JSONL 数据。"""
+        if not self._mongo_available or self._mongo_coll is None:
+            return False
+        mvp_ids = self._enabled_site_ids()
+        if not mvp_ids:
+            return False
+        try:
+            return (
+                self._mongo_coll.count_documents(
+                    self._mvp_source_filter_mongo(mvp_ids),
+                    limit=1,
+                )
+                > 0
+            )
+        except Exception:
+            logger.debug("MongoDB MVP 计数失败，回退 JSONL", exc_info=True)
+            return False
+
+    def _prefer_mongo_for_list(self) -> bool:
+        return self._mongo_available and self._mongo_coll is not None and self._mongo_has_mvp_data()
 
     @property
     def data_source(self) -> str:
-        return "mongodb" if self._mongo_available else "jsonl"
+        return "mongodb" if self._prefer_mongo_for_list() else "jsonl"
 
     def _load_jsonl(self) -> list[dict[str, Any]]:
         mtime = self._jsonl_path.stat().st_mtime if self._jsonl_path.is_file() else 0.0
@@ -466,7 +491,7 @@ class NoticeDataService:
                 return cached_tags
 
         tags: set[str] = {WECHAT_TAG}
-        if self._mongo_available and self._mongo_coll is not None:
+        if self._prefer_mongo_for_list():
             try:
                 for row in self._mongo_coll.aggregate(
                     [
@@ -513,7 +538,7 @@ class NoticeDataService:
             tags=tags,
         )
 
-        if self._mongo_available and self._mongo_coll is not None:
+        if self._prefer_mongo_for_list():
             return self._list_from_mongo(
                 page=page,
                 per_page=per_page,

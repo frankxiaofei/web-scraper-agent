@@ -305,7 +305,7 @@ def classify_agri_notice(
     if not is_agri_classify_llm_enabled():
         return AgriClassification()
 
-    from src.core.config import get_settings
+    from src.core.config import get_extraction_model, get_settings
 
     settings = get_settings()
     title = (title or "").strip()
@@ -329,7 +329,7 @@ def classify_agri_notice(
     import urllib.request
 
     base_url = (settings.llm_base_url or os.environ.get("LLM_BASE_URL") or "").rstrip("/")
-    model = settings.llm_model or os.environ.get("LLM_MODEL", "gpt-4o-mini")
+    model = get_extraction_model(settings)
     url = f"{base_url}/v1/chat/completions" if base_url else "https://api.openai.com/v1/chat/completions"
     body = json.dumps(
         {

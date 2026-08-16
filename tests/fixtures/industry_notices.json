@@ -1,0 +1,38 @@
+[
+  {
+    "title": "某市智慧农业物联网平台建设项目",
+    "url": "https://example.com/agri1",
+    "source_site_id": "crec_bidding",
+    "source_site_name": "鲁班商务网",
+    "category": "招标公告",
+    "scraped_at": "2026-08-10T10:00:00",
+    "content_text": "采购人：某市农业农村局\n项目地点：广东省广州市\n预算金额：380万元\n要求：农业物联网、巡田、传感器部署",
+    "budget_amount": "380万元",
+    "tender_party": "某市农业农村局",
+    "region": "广东省广州市"
+  },
+  {
+    "title": "数字农业大数据平台运维服务",
+    "url": "https://example.com/agri2",
+    "source_site_id": "crec_bidding",
+    "source_site_name": "鲁班商务网",
+    "category": "招标公告",
+    "scraped_at": "2026-08-12T10:00:00",
+    "content_text": "采购人：江苏省农业农村厅\n项目地点：江苏省南京市\n数字农业、精准农业数据分析、巡田管理系统",
+    "budget_amount": "120万元",
+    "tender_party": "江苏省农业农村厅",
+    "region": "江苏省南京市"
+  },
+  {
+    "title": "AI能力农业知识库建设",
+    "url": "https://example.com/agri3",
+    "source_site_id": "crec_bidding",
+    "source_site_name": "鲁班商务网",
+    "category": "招标公告",
+    "scraped_at": "2026-08-14T10:00:00",
+    "content_text": "采购人：北京市某局\n项目地点：北京市\n农业大模型、智能问答、AI识别",
+    "budget_amount": "500万元",
+    "tender_party": "中标单位A",
+    "region": "北京市"
+  }
+]

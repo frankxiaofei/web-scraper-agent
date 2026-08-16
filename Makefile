@@ -4,17 +4,22 @@ PYTHON := $(ROOT)/.venv/bin/python
 HOST_UI ?= 0.0.0.0
 PORT_AGRI := 8091
 PORT_STOCK := 8092
+PORT_HERMES_UI := 8095
 MONGO_CONTAINER := web_scraper_agent_mongo
 INFLUX_CONTAINER := web_scraper_agent_influxdb
 
 SCREEN_AGRI := web_scraper_agent_agri_ui
 SCREEN_STOCK := web_scraper_agent_stock_ui
 SCREEN_SCHED := web_scraper_agent_sched
+SCREEN_HERMES_UI := web_scraper_agent_hermes_ui
 
 LOG_DIR := $(ROOT)/logs
 LOG_AGRI := $(LOG_DIR)/agri_ui.log
 LOG_STOCK := $(LOG_DIR)/stock_ui.log
 LOG_SCHED := $(LOG_DIR)/scheduler.log
+LOG_HERMES_AGENT := $(LOG_DIR)/hermes_agent.log
+LOG_HERMES_AGENT_ERR := $(LOG_DIR)/hermes_agent.err.log
+LOG_HERMES_UI := $(LOG_DIR)/hermes_ui.log
 
 DOCKER_DIR := $(ROOT)/docker
 DOCKER_REGISTRY ?= reg.hdec.com
@@ -31,17 +36,19 @@ INFLUXDB_MIRROR ?= docker.m.daocloud.io/library/influxdb:2.7
 .PHONY: help start restart stop status start-mongo restart-mongo start-influx restart-influx \
 	start-agri restart-agri stop-agri start-stock restart-stock stop-stock \
 	start-scheduler restart-scheduler stop-scheduler \
-	logs-agri logs-stock logs-scheduler sync-biz-clue \
+	start-hermes-agent restart-hermes-agent stop-hermes-agent status-hermes-agent \
+	start-hermes-ui restart-hermes-ui stop-hermes-ui logs-hermes-ui \
+	logs-agri logs-stock logs-scheduler logs-hermes-agent sync-biz-clue \
 	pull-influx docker-build docker-up docker-down docker-push docker-logs docker-config
 
 help:
 	@echo "WebScraperAgent — 商机洞察 8091 + 股票 8092"
 	@echo ""
-	@echo "启动:  make start | start-mongo | start-influx | start-agri | start-stock | start-scheduler"
-	@echo "重启:  make restart | restart-agri | restart-stock | restart-scheduler"
-	@echo "停止:  make stop | stop-agri | stop-stock | stop-scheduler"
-	@echo "状态:  make status"
-	@echo "日志:  make logs-agri | logs-stock | logs-scheduler"
+	@echo "启动:  make start | start-mongo | start-influx | start-agri | start-stock | start-scheduler | start-hermes-agent | start-hermes-ui"
+	@echo "重启:  make restart | restart-agri | restart-stock | restart-scheduler | restart-hermes-agent | restart-hermes-ui"
+	@echo "停止:  make stop | stop-agri | stop-stock | stop-scheduler | stop-hermes-agent | stop-hermes-ui"
+	@echo "状态:  make status | status-hermes-agent"
+	@echo "日志:  make logs-agri | logs-stock | logs-scheduler | logs-hermes-agent | logs-hermes-ui"
 	@echo "同步:  make sync-biz-clue"
 
 $(LOG_DIR):
@@ -116,7 +123,7 @@ stop-scheduler:
 	@pkill -f '[.]venv/bin/python.*scripts/run_scheduler.py' 2>/dev/null || true
 	@pkill -f '[p]ython.*scripts/run_scheduler.py' 2>/dev/null || true
 
-stop: stop-agri stop-stock stop-scheduler
+stop: stop-agri stop-stock stop-scheduler stop-hermes-agent stop-hermes-ui
 	@echo "已停止 screen 会话与 UI/调度器进程"
 
 start-agri: $(LOG_DIR)
@@ -143,8 +150,48 @@ start-scheduler: $(LOG_DIR)
 		>> "$(LOG_SCHED)" 2>&1'
 	@echo "调度器 screen: $(SCREEN_SCHED) → 日志 $(LOG_SCHED)"
 
-start: start-mongo start-influx start-agri start-stock start-scheduler
-	@echo "全栈已启动（Mongo + InfluxDB + 8091 + 8092 + scheduler）"
+stop-hermes-agent:
+	@pkill -f '[.]venv/bin/hermes gateway run' 2>/dev/null || true
+	@pkill -f '[p]ython.*scripts/run_hermes_agent.py' 2>/dev/null || true
+	@pkill -f '[h]ermes gateway run' 2>/dev/null || true
+
+start-hermes-agent: $(LOG_DIR)
+	@test -x $(PYTHON) || (echo "错误: 缺少 $(PYTHON)" && exit 1)
+	$(MAKE) stop-hermes-agent
+	@$(PYTHON) scripts/bootstrap_hermes_agent.py
+	@$(PYTHON) scripts/run_hermes_agent.py
+	@echo "Hermes Agent gateway → http://127.0.0.1:8642/health"
+
+restart-hermes-agent: stop-hermes-agent start-hermes-agent
+
+stop-hermes-ui:
+	$(call stop_screen,$(SCREEN_HERMES_UI))
+	@pkill -f '[.]venv/bin/python.*scripts/run_hermes_ui.py' 2>/dev/null || true
+	@pkill -f '[p]ython.*scripts/run_hermes_ui.py' 2>/dev/null || true
+
+start-hermes-ui: $(LOG_DIR)
+	@test -x $(PYTHON) || (echo "错误: 缺少 $(PYTHON)" && exit 1)
+	$(MAKE) stop-hermes-ui
+	@cd $(ROOT) && screen -dmS $(SCREEN_HERMES_UI) bash -lc '\
+		cd "$(ROOT)" && exec $(PYTHON) scripts/run_hermes_ui.py --host $(HOST_UI) --port $(PORT_HERMES_UI) \
+		>> "$(LOG_HERMES_UI)" 2>&1'
+	@echo "Hermes Crawl Agent UI screen: $(SCREEN_HERMES_UI) → http://127.0.0.1:$(PORT_HERMES_UI)/hermes"
+
+restart-hermes-ui: stop-hermes-ui start-hermes-ui
+
+logs-hermes-ui:
+	@tail -f $(LOG_HERMES_UI)
+
+status-hermes-agent:
+	@echo "== Hermes Agent API (:8642) =="
+	@code=$$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 3 http://127.0.0.1:8642/health 2>/dev/null || echo "000"); \
+		echo "  $$code  http://127.0.0.1:8642/health"
+
+logs-hermes-agent:
+	@tail -f $(LOG_HERMES_AGENT) $(LOG_HERMES_AGENT_ERR)
+
+start: start-mongo start-influx start-agri start-stock start-scheduler start-hermes-agent start-hermes-ui
+	@echo "全栈已启动（Mongo + InfluxDB + 8091 + 8092 + scheduler + Hermes 8642/8095）"
 
 restart-agri: stop-agri start-agri
 restart-stock: stop-stock start-stock
@@ -156,7 +203,7 @@ status:
 	@screen -ls 2>/dev/null || true
 	@echo ""
 	@echo "== 端口监听 =="
-	@for p in $(PORT_AGRI) $(PORT_STOCK); do \
+	@for p in $(PORT_AGRI) $(PORT_STOCK) $(PORT_HERMES_UI) 8642; do \
 		if command -v lsof >/dev/null 2>&1 && lsof -iTCP:$$p -sTCP:LISTEN -P -n 2>/dev/null | grep -q LISTEN; then \
 			echo "  $$p: 监听中"; \
 		else \
@@ -171,7 +218,9 @@ status:
 		"http://127.0.0.1:$(PORT_AGRI)/api/agri/health" \
 		"http://127.0.0.1:$(PORT_STOCK)/" \
 		"http://127.0.0.1:$(PORT_STOCK)/insights" \
-		"http://127.0.0.1:$(PORT_STOCK)/api/stock/health"; do \
+		"http://127.0.0.1:$(PORT_STOCK)/api/stock/health" \
+		"http://127.0.0.1:8642/health" \
+		"http://127.0.0.1:$(PORT_HERMES_UI)/hermes"; do \
 		code=$$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 3 "$$url" 2>/dev/null || echo "000"); \
 		echo "  $$code  $$url"; \
 	done
@@ -212,3 +261,17 @@ docker-logs:
 
 docker-config:
 	docker compose -f $(COMPOSE_FILE) config
+
+stripe-listen:
+	@echo "Forward Stripe webhooks to local billing API (requires Stripe CLI)"
+	stripe listen --forward-to http://127.0.0.1:8091/api/billing/webhook
+
+.PHONY: web-industry-test billing-test phase2-test
+web-industry-test:
+	python -m pytest tests/test_industry_*.py tests/test_region_normalizer.py tests/test_pseudo_industry.py tests/test_award_parser.py tests/test_ted_adapter.py tests/test_supply_chain_tool.py tests/test_phase3_global.py -q
+
+billing-test:
+	python -m pytest tests/test_billing_*.py tests/test_stripe_client.py tests/test_auth_*.py -q
+
+phase2-test: web-industry-test
+	python -m pytest tests/test_industry_graph_e2e.py -q

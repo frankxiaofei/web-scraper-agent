@@ -63,7 +63,10 @@ async def main() -> None:
         stop_event.set()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, _signal_handler)
+        try:
+            loop.add_signal_handler(sig, _signal_handler)
+        except NotImplementedError:
+            signal.signal(sig, lambda _s, _f: loop.call_soon_threadsafe(_signal_handler))
 
     await scheduler.start(run_on_start=True)
     logger.info("调度器已启动，等待任务执行...")
